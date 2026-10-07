@@ -1,0 +1,160 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('adm.email.title') }} — {{ app_name }}{% endblock %}
+
+{% set status_color = { 'sent': '#1a7f37', 'delivered': '#1a7f37', 'failed': '#cf222e', 'bounced': '#cf222e', 'complained': '#cf222e', 'logged': '#6e7781' } %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--gh-border-default); padding-bottom:16px;">
+        <div>
+            <h1 style="font-size:22px; margin:0 0 4px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                <svg class="ti ti-mail"><use href="#ti-mail"/></svg> {{ t('adm.email.title') }}
+            </h1>
+            <p style="color:var(--gh-fg-muted); font-size:13px; margin:0;">{{ t('adm.email.subtitle') }}</p>
+        </div>
+        <span class="gh-badge" title="{{ t_attr('adm.email.transport', {transport: config.transport}) }}">{{ t('adm.email.transport', {transport: config.transport}) }}</span>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'email', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; flex:1;">
+            {% if error %}<div class="gh-flash gh-flash-error" role="alert">{{ error }}</div>{% endif %}
+            {% if success %}<div class="gh-flash gh-flash-success" role="status">{{ success }}</div>{% endif %}
+
+            {# ── Delivery stats ── #}
+            <div class="gh-stat-grid" style="margin-bottom:20px;">
+                <div class="gh-stat-card"><span class="gh-stat-label">{{ t('adm.email.stat_total') }}</span><span class="gh-stat-value">{{ stats.total }}</span></div>
+                <div class="gh-stat-card"><span class="gh-stat-label">{{ t('adm.email.stat_sent') }}</span><span class="gh-stat-value" style="color:#1a7f37;">{{ stats.sent }}</span></div>
+                <div class="gh-stat-card"><span class="gh-stat-label">{{ t('adm.email.stat_failed') }}</span><span class="gh-stat-value" style="color:#cf222e;">{{ stats.failed }}</span></div>
+                <div class="gh-stat-card"><span class="gh-stat-label">{{ t('adm.email.stat_logged') }}</span><span class="gh-stat-value" style="color:var(--gh-fg-muted);">{{ stats.logged }}</span></div>
+            </div>
+
+            {# ── Server configuration ── #}
+            <div class="gh-box" style="margin-bottom:20px;">
+                <div class="gh-box-header"><h3 class="gh-box-title">{{ t('adm.email.config_title') }}</h3></div>
+                <form method="POST" action="{{ admin_prefix }}/email">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                    <div class="gh-form-group">
+                        <label class="gh-label" for="provider">{{ t('adm.email.provider') }}</label>
+                        <select class="gh-select" id="provider" name="provider">
+                            <option value="log"  {{ config.provider == 'log'  ? 'selected' : '' }}>{{ t('adm.email.provider_log') }}</option>
+                            <option value="mail" {{ config.provider == 'mail' ? 'selected' : '' }}>{{ t('adm.email.provider_mail') }}</option>
+                            <option value="smtp" {{ config.provider == 'smtp' ? 'selected' : '' }}>{{ t('adm.email.provider_smtp') }}</option>
+                        </select>
+                        <div class="gh-form-hint">{{ t('adm.email.provider_hint') }}</div>
+                    </div>
+
+                    <div class="gh-support-row">
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="from_email">{{ t('adm.email.from_email') }}</label>
+                            <input class="gh-input" type="email" id="from_email" name="from_email" value="{{ config.from_email }}" placeholder="no-reply@example.com" dir="ltr">
+                        </div>
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="from_name">{{ t('adm.email.from_name') }}</label>
+                            <input class="gh-input" type="text" id="from_name" name="from_name" value="{{ config.from_name }}" placeholder="{{ app_name }}">
+                        </div>
+                    </div>
+
+                    <div class="gh-support-row">
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="smtp_host">{{ t('adm.email.smtp_host') }}</label>
+                            <input class="gh-input" type="text" id="smtp_host" name="smtp_host" value="{{ config.smtp_host }}" placeholder="smtp.provider.com" dir="ltr">
+                        </div>
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="smtp_port">{{ t('adm.email.smtp_port') }}</label>
+                            <input class="gh-input" type="number" id="smtp_port" name="smtp_port" value="{{ config.smtp_port }}" placeholder="587" dir="ltr">
+                        </div>
+                    </div>
+
+                    <div class="gh-support-row">
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="smtp_encryption">{{ t('adm.email.encryption') }}</label>
+                            <select class="gh-select" id="smtp_encryption" name="smtp_encryption">
+                                <option value="tls"  {{ config.smtp_encryption == 'tls'  ? 'selected' : '' }}>{{ t('adm.email.encryption_tls') }}</option>
+                                <option value="ssl"  {{ config.smtp_encryption == 'ssl'  ? 'selected' : '' }}>{{ t('adm.email.encryption_ssl') }}</option>
+                                <option value="none" {{ config.smtp_encryption == 'none' ? 'selected' : '' }}>{{ t('adm.email.encryption_none') }}</option>
+                            </select>
+                        </div>
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="smtp_user">{{ t('adm.email.smtp_user') }}</label>
+                            <input class="gh-input" type="text" id="smtp_user" name="smtp_user" value="{{ config.smtp_user }}" autocomplete="off" dir="ltr">
+                        </div>
+                    </div>
+
+                    <div class="gh-form-group">
+                        <label class="gh-label" for="smtp_pass">{{ t('adm.email.smtp_pass') }}</label>
+                        <input class="gh-input" type="password" id="smtp_pass" name="smtp_pass" autocomplete="new-password" dir="ltr"
+                               placeholder="{{ config.smtp_pass_set ? t_attr('adm.email.pass_stored_placeholder') : t_attr('adm.email.pass_placeholder') }}">
+                        <div class="gh-form-hint">{{ t('adm.email.pass_hint') }}</div>
+                    </div>
+
+                    <button type="submit" class="gh-btn gh-btn-primary"><svg class="ti ti-device-floppy"><use href="#ti-device-floppy"/></svg> {{ t('adm.email.save_btn') }}</button>
+                </form>
+            </div>
+
+            {# ── Test send ── #}
+            <div class="gh-box" style="margin-bottom:20px;">
+                <div class="gh-box-header"><h3 class="gh-box-title">{{ t('adm.email.test_title') }}</h3></div>
+                <form method="POST" action="{{ admin_prefix }}/email/test" style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="gh-form-group" style="flex:1; min-width:220px; margin:0;">
+                        <label class="gh-label" for="test_email">{{ t('adm.email.destination') }}</label>
+                        <input class="gh-input" type="email" id="test_email" name="test_email" required placeholder="you@example.com" dir="ltr">
+                    </div>
+                    <button type="submit" class="gh-btn"><svg class="ti ti-send"><use href="#ti-send"/></svg> {{ t('adm.email.send_test') }}</button>
+                </form>
+            </div>
+
+            {# ── Templates ── #}
+            <div class="gh-box" style="margin-bottom:20px;">
+                <div class="gh-box-header"><h3 class="gh-box-title">{{ t('adm.email.templates_title', {count: templates|length}) }}</h3></div>
+                <div class="gh-table-wrap">
+                    <table class="gh-table">
+                        <thead><tr><th>{{ t('adm.email.th_key') }}</th><th>{{ t('adm.email.th_name') }}</th><th>{{ t('adm.email.th_subject') }}</th><th>{{ t('adm.email.th_locale') }}</th><th>{{ t('adm.email.th_status') }}</th></tr></thead>
+                        <tbody>
+                            {% for t in templates %}
+                                <tr>
+                                    <td class="gh-mono" style="font-size:12px;">{{ t.template_key }}</td>
+                                    <td>{{ t.name }}</td>
+                                    <td class="gh-ticket-subject">{{ t.subject }}</td>
+                                    <td>{{ t.locale }}</td>
+                                    <td><span class="gh-badge">{{ t.is_active ? t('adm.email.template_active') : t('adm.email.template_off') }}</span></td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="5" class="gh-muted" style="text-align:center; padding:20px;">{{ t('adm.email.no_templates') }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# ── Delivery log ── #}
+            <div class="gh-box">
+                <div class="gh-box-header"><h3 class="gh-box-title">{{ t('adm.email.log_title') }}</h3></div>
+                <div class="gh-table-wrap">
+                    <table class="gh-table">
+                        <thead><tr><th>{{ t('adm.email.th_recipient') }}</th><th>{{ t('adm.email.th_subject') }}</th><th>{{ t('adm.email.th_event') }}</th><th>{{ t('adm.email.th_provider') }}</th><th>{{ t('adm.email.th_status') }}</th><th>{{ t('adm.email.th_when') }}</th></tr></thead>
+                        <tbody>
+                            {% for l in logs %}
+                                <tr>
+                                    <td style="font-size:12.5px;" dir="ltr">{{ l.to_email }}</td>
+                                    <td class="gh-ticket-subject">{{ l.subject }}{% if l.error %}<div style="font-size:11px; color:#cf222e;">{{ l.error }}</div>{% endif %}</td>
+                                    <td class="gh-mono" style="font-size:11.5px; color:var(--gh-fg-muted);" dir="ltr">{{ l.event_key ?: '—' }}</td>
+                                    <td style="font-size:12px; color:var(--gh-fg-muted);" dir="ltr">{{ l.provider }}</td>
+                                    <td><span class="gh-badge" style="color:{{ status_color[l.status]|default('#6e7781') }}; border-color:{{ status_color[l.status]|default('#6e7781') }};">{{ l.status }}</span></td>
+                                    <td class="gh-ticket-when"><time datetime="{{ l.created_at }}">{{ l.created_at|time_ago }}</time></td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="6" class="gh-muted" style="text-align:center; padding:20px;">{{ t('adm.email.no_emails') }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

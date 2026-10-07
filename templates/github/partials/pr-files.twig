@@ -1,0 +1,97 @@
+{% if diff_files is empty %}
+    <div class="gh-box" style="padding: 32px; text-align:center; color: var(--gh-fg-muted);">
+        {{ t('ui.pulls.no_files') }}
+    </div>
+{% else %}
+    {% for f in diff_files %}
+        <div class="gh-box" style="margin-bottom: 16px;">
+            <div style="padding: 10px 14px; border-bottom: 1px solid var(--gh-border-default); display:flex; justify-content:space-between; align-items:center;">
+                <span class="gh-mono" dir="ltr" style="font-size: 13px;">{{ f.path }}</span>
+                <span style="font-size:12px;">
+                    <span style="color: var(--gh-success-fg, #3fb950);">+{{ f.additions }}</span>
+                    <span style="color: var(--gh-danger-fg, #f85149);">−{{ f.deletions }}</span>
+                </span>
+            </div>
+
+            <div class="gh-table-wrap" dir="ltr" style="border: none; border-radius: 0;">
+                <table style="width:100%; border-collapse: collapse; font-family: monospace; font-size: 12px;" data-diff-table>
+                    <tbody>
+                    {% for line in f.lines %}
+                        {% if line.type == 'hunk' %}
+                            <tr><td colspan="3" style="background: var(--gh-bg-subtle, #161b22); padding: 5px 14px; color: var(--gh-fg-muted);">{{ line.content }}</td></tr>
+                        {% else %}
+                            {% set anchorKey = f.path ~ '|' ~ (line.new ?? line.old ?? 0) ~ '|' ~ (line.type == 'del' ? 'old' : 'new') %}
+                            <tr id="{{ (f.path ~ ':' ~ (line.new ?? line.old ?? 0))|md5 }}" data-line-row
+                                style="{{ line.type == 'add' ? 'background: var(--gh-diff-add-bg);' : (line.type == 'del' ? 'background: var(--gh-diff-del-bg);' : '') }}">
+                                <td style="width:40px; padding: 2px 8px; text-align:right; color: var(--gh-fg-muted); user-select:none;">{{ line.old ?? '' }}</td>
+                                <td style="width:40px; padding: 2px 8px; text-align:right; color: var(--gh-fg-muted); user-select:none;">{{ line.new ?? '' }}</td>
+                                <td style="padding: 2px 14px; white-space: pre-wrap;"><span style="user-select:none;">{{ line.type == 'add' ? '+' : (line.type == 'del' ? '-' : ' ') }}</span>{{ line.content }}</td>
+                            </tr>
+
+                            {% if review_by_key[anchorKey] is defined %}
+                                {% for rc in review_by_key[anchorKey] %}
+                                    <tr><td colspan="3" style="padding:0;">
+                                        <div id="{{ rc.anchor }}" style="margin: 6px 14px; background: var(--gh-bg-subtle, #161b22); border: 1px solid var(--gh-border-default, #30363d); border-radius: 6px; padding: 8px 12px;">
+                                            <strong style="font-size: 13px;">{{ rc.author_name }}</strong>
+                                            <span style="font-size: 11px; color: var(--gh-fg-muted);">{{ t('ui.pulls.on_line', {'line': rc.line_number, 'time': rc.created_at|time_ago}) }}</span>
+                                            <div class="markdown-body" style="font-size: 13px; margin-top: 4px;">{{ rc.body_html|raw }}</div>
+                                        </div>
+                                    </td></tr>
+                                {% endfor %}
+                            {% endif %}
+
+                            {% if is_logged_in and is_open %}
+                                <tr data-comment-slot style="display:none;">
+                                    <td colspan="3" style="padding:0;">
+                                        <form method="post" action="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}/review-comment"
+                                              style="margin: 6px 14px;"
+                                              data-file-path="{{ f.path }}" data-line-no="{{ line.new ?? line.old ?? 0 }}" data-side="{{ line.type == 'del' ? 'old' : 'new' }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <input type="hidden" name="file_path">
+                                            <input type="hidden" name="line_number">
+                                            <input type="hidden" name="side">
+                                            <textarea name="body" rows="3" required placeholder="{{ t_attr('ui.pulls.leave_review_comment') }}"
+                                                      style="width:100%; background: var(--gh-bg-canvas, #0d1117); color: var(--gh-fg-default); border:1px solid var(--gh-border-default, #30363d); border-radius:6px; padding:8px;"></textarea>
+                                            <button type="submit" class="gh-btn gh-btn-primary gh-btn-sm" style="margin-top:6px;">{{ t('ui.pulls.add_review_btn') }}</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+
+    {% if is_logged_in and is_open %}
+        <script>
+        (function(){
+            document.querySelectorAll('[data-diff-table]').forEach(function(table){
+                table.addEventListener('click', function(ev){
+                    var row = ev.target.closest('tr[data-line-row]');
+                    if (!row) return;
+
+                    document.querySelectorAll('tr[data-comment-slot]').forEach(function(slot){
+                        slot.style.display = 'none';
+                    });
+
+                    var slot = row.nextElementSibling;
+                    while (slot && !slot.hasAttribute('data-comment-slot')) slot = slot.nextElementSibling;
+                    if (!slot) return;
+
+                    var form = slot.querySelector('form');
+                    form.querySelector('input[name="file_path"]').value   = form.getAttribute('data-file-path');
+                    form.querySelector('input[name="line_number"]').value = form.getAttribute('data-line-no');
+                    form.querySelector('input[name="side"]').value        = form.getAttribute('data-side');
+
+                    slot.style.display = '';
+                    slot.querySelector('textarea').focus();
+                });
+            });
+        })();
+        </script>
+        <p style="font-size: 12px; color: var(--gh-fg-muted);">{{ t('ui.pulls.inline_tip') }}</p>
+    {% endif %}
+{% endif %}

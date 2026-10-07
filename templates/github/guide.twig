@@ -1,0 +1,668 @@
+{% extends "layout.twig" %}
+
+{% set lang = lang|default('en') %}
+{% set current_cat = current_cat|default('all') %}
+{% set is_rtl = (lang == 'ar') %}
+
+{% block title %}{{ t.title }} — {{ app_name }}{% endblock %}
+
+{% block head %}
+<style>
+/* ── GitHub Docs Official Layout & Typography System ── */
+.gh-docs-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 16px 16px 48px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.gh-docs-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--gh-border-default, #30363d);
+}
+
+.gh-docs-breadcrumb-trail {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--gh-fg-muted, #8b949e);
+}
+
+.gh-docs-breadcrumb-trail a {
+    color: var(--gh-accent-fg, #58a6ff);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.gh-docs-lang-switch {
+    display: inline-flex;
+    border: 1px solid var(--gh-border-default, #30363d);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--gh-bg-subtle, #161b22);
+}
+
+.gh-docs-lang-btn {
+    padding: 4px 12px;
+    font-size: 12.5px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    color: var(--gh-fg-muted, #8b949e);
+}
+
+.gh-docs-lang-btn.active {
+    background: var(--gh-accent-emphasis, #1f6feb);
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+/* ── Hero Banner ── */
+.gh-docs-hero {
+    background: linear-gradient(135deg, rgba(31, 111, 235, 0.08) 0%, rgba(56, 139, 253, 0.02) 100%);
+    border: 1px solid var(--gh-border-default, #30363d);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+}
+
+.gh-docs-hero h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gh-fg-default, #f0f6fc);
+    margin: 0 0 6px 0;
+    letter-spacing: -0.01em;
+}
+
+.gh-docs-hero p {
+    font-size: 13.5px;
+    color: var(--gh-fg-muted, #8b949e);
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+    max-width: 880px;
+}
+
+.gh-docs-quick-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ── Category Pill Bar ── */
+.gh-docs-categories {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.gh-docs-cat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    text-decoration: none;
+    border: 1px solid var(--gh-border-default, #30363d);
+    background: var(--gh-bg-subtle, #161b22);
+    color: var(--gh-fg-default, #f0f6fc);
+    transition: all 0.15s ease;
+}
+
+.gh-docs-cat-pill:hover {
+    border-color: var(--gh-accent-fg, #58a6ff);
+    text-decoration: none;
+}
+
+
+.gh-docs-badge-new {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #ffffff;
+    background: linear-gradient(135deg, #1f6feb 0%, #a371f7 100%);
+    box-shadow: 0 2px 8px rgba(31, 111, 235, 0.35);
+    letter-spacing: 0.5px;
+    user-select: none;
+}
+.gh-docs-badge-new-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 9.5px;
+    font-weight: 800;
+    background: #cf222e;
+    color: #fff;
+    margin-left: 4px;
+    text-transform: uppercase;
+}
+.gh-docs-pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #58a6ff;
+    box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.7);
+    animation: pulse-dot 1.8s infinite;
+}
+@keyframes pulse-dot {
+    0% {
+        box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(88, 166, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(88, 166, 255, 0);
+    }
+}
+.gh-docs-cat-pill.active {
+    background: var(--gh-accent-emphasis, #1f6feb);
+    border-color: var(--gh-accent-emphasis, #1f6feb);
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+/* ── Two-Column Docs Layout ── */
+.gh-docs-grid-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+/* ── Sidebar (Sticky Table of Contents) ── */
+.gh-docs-sidebar {
+    position: sticky;
+    top: 60px;
+    background: var(--gh-bg-subtle, #161b22);
+    border: 1px solid var(--gh-border-default, #30363d);
+    border-radius: 8px;
+    padding: 14px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.gh-docs-sidebar-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gh-fg-muted, #8b949e);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--gh-border-default, #30363d);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.gh-docs-toc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gh-docs-toc-link {
+    display: block;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: var(--gh-fg-muted, #8b949e);
+    text-decoration: none;
+    transition: all 0.15s ease;
+    border-left: 2px solid transparent;
+    line-height: 1.35;
+}
+
+.gh-docs-toc-link:hover {
+    color: var(--gh-fg-default, #f0f6fc);
+    background: var(--gh-bg-overlay, #21262d);
+    text-decoration: none;
+}
+
+.gh-docs-toc-link.active {
+    color: var(--gh-accent-fg, #58a6ff);
+    background: rgba(56, 139, 253, 0.1);
+    border-left-color: var(--gh-accent-fg, #58a6ff);
+    font-weight: 600;
+}
+
+/* ── Main Content Area ── */
+.gh-docs-content {
+    min-width: 0;
+    width: 100%;
+}
+
+.gh-docs-section {
+    background: var(--gh-bg-canvas);
+    border: 1px solid var(--gh-border-default, #d0d7de);
+    border-left: 3px solid var(--gh-accent-emphasis, #1f6feb);
+    border-radius: var(--gh-radius, 6px);
+    padding: 20px 22px;
+    margin-bottom: 18px;
+    box-sizing: border-box;
+    width: 100%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.gh-docs-section h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gh-fg-default, #f0f6fc);
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--gh-border-muted, #21262d);
+}
+
+.gh-docs-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 6px;
+    background: var(--gh-accent-subtle, rgba(31, 111, 235, 0.12));
+    color: var(--gh-accent-fg, #58a6ff);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.gh-docs-section h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--gh-fg-default, #f0f6fc);
+    margin: 16px 0 8px 0;
+}
+
+.gh-docs-section h4 {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--gh-fg-default, #f0f6fc);
+    margin: 12px 0 6px 0;
+}
+
+.gh-docs-section p,
+.gh-docs-section li {
+    font-size: 13.5px;
+    color: var(--gh-fg-default, #f0f6fc);
+    line-height: 1.6;
+}
+
+.gh-docs-section a {
+    color: var(--gh-accent-fg, #58a6ff);
+    text-decoration: none;
+}
+
+.gh-docs-section a:hover {
+    text-decoration: underline;
+}
+
+/* ── Code Blocks (Strict LTR & Instant Copy) ── */
+.gh-docs pre,
+.gh-docs code,
+.gh-docs-code {
+    direction: ltr !important;
+    text-align: left !important;
+    unicode-bidi: embed !important;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important;
+}
+
+.gh-docs-inline-code {
+    display: inline-block;
+    padding: 1px 5px;
+    font-size: 12px;
+    border-radius: 4px;
+    background: var(--gh-bg-inset, rgba(125, 133, 144, 0.12));
+    color: var(--gh-accent-fg, #58a6ff);
+    border: 1px solid var(--gh-border-default, #30363d);
+}
+
+/* API version badge (gold, brand-matched) */
+.gh-docs-api-version {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #8a5a00;
+    background: rgba(255, 209, 102, 0.18);
+    border: 1px solid rgba(199, 152, 16, 0.5);
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .gh-docs-api-version {
+    color: #ffd166;
+    background: rgba(255, 209, 102, 0.12);
+    border-color: rgba(255, 209, 102, 0.4);
+}
+
+.gh-docs-api-version .gh-mono {
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+/* Divider marking the API documentation area as its own section */
+.gh-docs-api-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 30px 0 18px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--gh-accent-fg, #58a6ff);
+}
+
+.gh-docs-api-divider::before,
+.gh-docs-api-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--gh-border-default, #30363d);
+}
+
+.gh-code-block-wrap {
+    position: relative;
+    margin: 10px 0 14px 0;
+    border: 1px solid var(--gh-border-default, #30363d);
+    border-radius: 6px;
+    background: var(--gh-bg-inset, #0d1117);
+    overflow: hidden;
+}
+
+.gh-code-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 10px;
+    background: var(--gh-bg-subtle, #161b22);
+    border-bottom: 1px solid var(--gh-border-default, #30363d);
+    font-size: 11px;
+    color: var(--gh-fg-muted, #8b949e);
+    user-select: none;
+}
+
+.gh-code-body {
+    margin: 0;
+    padding: 12px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.5;
+    background: transparent;
+    color: var(--gh-fg-default, #f0f6fc);
+}
+
+.gh-code-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 4px;
+    background: var(--gh-bg-overlay, #21262d);
+    border: 1px solid var(--gh-border-default, #30363d);
+    color: var(--gh-fg-muted, #8b949e);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gh-code-copy-btn:hover {
+    background: var(--gh-bg-canvas, #ffffff);
+    color: var(--gh-fg-default, #1f2328);
+}
+
+.gh-code-copy-btn.copied {
+    background: rgba(46, 160, 67, 0.15);
+    color: #3fb950;
+    border-color: #2ea043;
+}
+
+/* ── GitHub Callouts (Note, Tip, Important, Warning) ── */
+.gh-callout {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    margin: 12px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    border-left: 3px solid;
+    box-sizing: border-box;
+}
+
+.gh-callout-note {
+    background: rgba(56, 139, 253, 0.08);
+    border-color: #58a6ff;
+    color: var(--gh-fg-default, #f0f6fc);
+}
+
+.gh-callout-tip {
+    background: rgba(46, 160, 67, 0.08);
+    border-color: #3fb950;
+    color: var(--gh-fg-default, #f0f6fc);
+}
+
+.gh-callout-important {
+    background: rgba(163, 113, 247, 0.08);
+    border-color: #a371f7;
+    color: var(--gh-fg-default, #f0f6fc);
+}
+
+.gh-callout-warning {
+    background: rgba(210, 153, 34, 0.08);
+    border-color: #d29922;
+    color: var(--gh-fg-default, #f0f6fc);
+}
+
+.gh-callout svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* ── Mobile Layout (< 900px) ── */
+@media (max-width: 900px) {
+    .gh-docs-grid-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .gh-docs-sidebar {
+        position: static;
+        max-height: none;
+    }
+    .gh-docs-container {
+        padding: 10px 10px 32px;
+    }
+    .gh-docs-hero {
+        padding: 14px 16px;
+    }
+    .gh-docs-section {
+        padding: 14px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gh-docs-container gh-docs" {% if is_rtl %}dir="rtl"{% endif %}>
+
+    {# ── HEADER BAR (Breadcrumb + Search + Language Switch) ── #}
+    <div class="gh-docs-header-bar">
+        <div class="gh-docs-breadcrumb-trail">
+            <a href="/">{{ app_name }}</a>
+            <span>/</span>
+            <strong style="color: var(--gh-fg-default, #f0f6fc);">Docs</strong>
+            {% if current_cat != 'all' and categories[current_cat] is defined %}
+                <span>/</span>
+                <span>{{ categories[current_cat].title }}</span>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            {# In-Docs Instant Live Search #}
+            <div style="position: relative; min-width: 180px;">
+                <input type="search" id="docs-live-search" placeholder="{{ is_rtl ? 'بحث داخل الدليل...' : 'Filter topics...' }}"
+                       style="padding: 4px 8px 4px 26px; font-size: 12px; border-radius: 6px; border: 1px solid var(--gh-border-default, #30363d); background: var(--gh-bg-subtle, #161b22); color: var(--gh-fg-default, #f0f6fc); outline: none; width: 100%; box-sizing: border-box;" />
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="var(--gh-fg-muted, #8b949e)" style="position: absolute; {% if is_rtl %}right: 8px;{% else %}left: 8px;{% endif %} top: 50%; transform: translateY(-50%); pointer-events: none;"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg>
+            </div>
+
+            {# Language Switcher #}
+            <div class="gh-docs-lang-switch">
+                <a href="/docs?cat={{ current_cat }}&lang=en" class="gh-docs-lang-btn{{ lang == 'en' ? ' active' : '' }}">English</a>
+                <a href="/docs?cat={{ current_cat }}&lang=ar" class="gh-docs-lang-btn{{ lang == 'ar' ? ' active' : '' }}">العربية</a>
+            </div>
+
+            <span class="gh-docs-api-version" title="{{ is_rtl ? 'الإصدار الحالي لواجهة REST API' : 'Current REST API version' }}">
+                ⚡️ REST API <span class="gh-mono">{{ api_version|default('v1') }}</span>
+            </span>
+        </div>
+    </div>
+
+    {# ── HERO BANNER ── #}
+    <div class="gh-docs-hero">
+        <h1>{{ t.hero.title|replace({':app': app_name}) }}</h1>
+        <p>{{ t.hero.subtitle }}</p>
+        
+        <div class="gh-docs-quick-links">
+            <a href="/docs?cat=remote-updates&lang={{ lang }}#remote-updates" class="gh-btn gh-btn-sm" style="font-size: 12px; padding: 4px 10px; background: linear-gradient(135deg, #1f6feb 0%, #1158c7 100%); border-color: #1f6feb; color: #ffffff; display: inline-flex; align-items: center; gap: 5px;">
+                🚀 {{ t.hero.cta_updates|default('التحديثات عن بعد 🚀') }}
+                <span style="background: rgba(255,255,255,0.25); font-size: 9px; padding: 1px 5px; border-radius: 8px; font-weight: 800;">NEW</span>
+            </a>
+            <a href="/docs?cat=installation&lang={{ lang }}#installation" class="gh-btn gh-btn-primary gh-btn-sm" style="font-size: 12px; padding: 4px 10px;">
+                📦 {{ t.hero.cta_install }}
+            </a>
+            <a href="/docs?cat=token-push&lang={{ lang }}#token-push" class="gh-btn gh-btn-sm" style="font-size: 12px; padding: 4px 10px; background: #238636; border-color: #2ea043; color: #ffffff;">
+                🔑 {{ t.hero.cta_token }}
+            </a>
+            <a href="/docs?cat=api-webhooks&lang={{ lang }}#api" class="gh-btn gh-btn-sm" style="font-size: 12px; padding: 4px 10px;">
+                ⚡️ {{ t.hero.cta_api }}
+            </a>
+            <a href="/docs?cat=getting-started&lang={{ lang }}#quick-start" class="gh-btn gh-btn-sm" style="font-size: 12px; padding: 4px 10px;">
+                �� {{ t.hero.cta_start }}
+            </a>
+            <a href="/docs?cat=git-push&lang={{ lang }}#git-http" class="gh-btn gh-btn-sm" style="font-size: 12px; padding: 4px 10px;">
+                💻 {{ t.hero.cta_git }}
+            </a>
+            <a href="/docs?cat=collaboration&lang={{ lang }}#pull-requests" class="gh-btn gh-btn-sm" style="font-size: 12px; padding: 4px 10px;">
+                🔀 {{ t.hero.cta_pr }}
+            </a>
+        </div>
+    </div>
+
+    {# ── CATEGORY FILTER PILLS BAR ── #}
+    <div class="gh-docs-categories">
+        {% for cat_key, cat_info in categories %}
+            {% set is_active = (current_cat == cat_key) %}
+            <a href="/docs?cat={{ cat_key }}&lang={{ lang }}" class="gh-docs-cat-pill{{ is_active ? ' active' : '' }}">
+                <span>{{ cat_info.icon }}</span>
+                <span>{{ cat_info.title }}</span>
+                {% if cat_info.is_new is defined and cat_info.is_new %}
+                    <span class="gh-docs-badge-new-pill">NEW</span>
+                {% endif %}
+            </a>
+        {% endfor %}
+    </div>
+
+    {# ── TWO-COLUMN LAYOUT: SIDEBAR (TOC) + MAIN CONTENT ── #}
+    <div class="gh-docs-grid-layout">
+        
+        {# Sidebar #}
+        <aside class="gh-docs-sidebar">
+            <div class="gh-docs-sidebar-title">
+                <span>{{ categories[current_cat].title|default(t.toc.title) }}</span>
+                {% if current_cat != 'all' %}
+                    <a href="/docs?cat=all&lang={{ lang }}" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none; font-size: 11px; text-transform: none; font-weight: 500;">
+                        {{ is_rtl ? 'عرض الكل' : 'View all' }}
+                    </a>
+                {% endif %}
+            </div>
+
+            <nav class="gh-docs-toc-list" id="docs-toc-nav">
+                {% set allowed_sections = categories[current_cat].sections %}
+                {% for id, label in t.toc.items %}
+                    {% if current_cat == 'all' or id in allowed_sections %}
+                        <a href="#{{ id }}" class="gh-docs-toc-link" data-section="{{ id }}">
+                            {{ label }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </nav>
+
+            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--gh-border-default, #30363d); font-size: 11.5px; color: var(--gh-fg-muted, #8b949e);">
+                <div style="font-weight: 600; color: var(--gh-fg-default, #f0f6fc); margin-bottom: 4px;">
+                    {{ is_rtl ? 'ملفات التوثيق الفنية' : 'Technical Docs' }}
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px; font-family: var(--gh-font-mono, monospace);">
+                    <span>📄 docs/README.md</span>
+                    <span>⚡️ docs/api.md</span>
+                    <span>🔑 docs/token-push.md</span>
+                    <span>🛡️ docs/ssh-setup.md</span>
+                </div>
+            </div>
+        </aside>
+
+        {# Main Content #}
+        <main class="gh-docs-content">
+            {% include "docs/content-" ~ lang ~ ".twig" %}
+        </main>
+    </div>
+
+</div>
+
+{# ── Client-side Docs Helpers (Copy buttons, Live search & Scroll spy) ── #}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Live in-page filter
+    const searchInput = document.getElementById('docs-live-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            document.querySelectorAll('.gh-docs-section').forEach((sec) => {
+                const text = sec.innerText.toLowerCase();
+                sec.style.display = (!query || text.includes(query)) ? 'block' : 'none';
+            });
+        });
+    }
+
+    // 2. Scroll Spy on Table of Contents
+    const tocLinks = document.querySelectorAll('.gh-docs-toc-link');
+    const sections = document.querySelectorAll('.gh-docs-section');
+    if (sections.length > 0 && tocLinks.length > 0) {
+        window.addEventListener('scroll', () => {
+            let currentId = '';
+            sections.forEach((sec) => {
+                const top = sec.offsetTop - 100;
+                if (window.pageYOffset >= top) {
+                    currentId = sec.getAttribute('id');
+                }
+            });
+            tocLinks.forEach((link) => {
+                link.classList.toggle('active', link.getAttribute('data-section') === currentId);
+            });
+        }, { passive: true });
+    }
+});
+</script>
+{% endblock %}

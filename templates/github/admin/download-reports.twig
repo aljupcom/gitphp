@@ -1,0 +1,233 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('adm.download_reports.title') }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    
+    {# Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600; display:flex; align-items:center; gap:8px;">
+                <svg class="ti ti-flag" style="color:#cf222e; width:22px; height:22px;"><use href="#ti-flag"/></svg>
+                {{ t('adm.download_reports.title') }}
+            </h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                {{ t('adm.download_reports.desc') }}
+            </p>
+        </div>
+        <div>
+            <a href="{{ admin_prefix }}/downloads" class="gh-btn gh-btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+                <svg class="ti ti-cloud-download"><use href="#ti-cloud-download"/></svg>
+                <span>{{ t('adm.nav.downloads') }}</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'download_reports', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; flex:1;">
+
+            {% if flash_success %}
+                <div style="background: rgba(46, 160, 67, 0.15); color: #2ea043; border: 1px solid rgba(46, 160, 67, 0.4); border-radius: 6px; padding: 8px 12px; font-size: 13px; margin-bottom: 16px; display:flex; align-items:center; gap:8px;">
+                    <svg class="ti ti-circle-check" style="width:16px; height:16px;"><use href="#ti-circle-check"/></svg>
+                    <span>{{ flash_success }}</span>
+                </div>
+            {% endif %}
+
+            {% if flash_error %}
+                <div style="background: rgba(207, 34, 46, 0.12); color: #cf222e; border: 1px solid rgba(207, 34, 46, 0.35); border-radius: 6px; padding: 8px 12px; font-size: 13px; margin-bottom: 16px; display:flex; align-items:center; gap:8px;">
+                    <svg class="ti ti-alert-triangle" style="width:16px; height:16px;"><use href="#ti-alert-triangle"/></svg>
+                    <span>{{ flash_error }}</span>
+                </div>
+            {% endif %}
+
+            {# Status Filter Tabs #}
+            <div style="display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--gh-border-default); padding-bottom:12px; flex-wrap:wrap;">
+                {% for key in ['open', 'investigating', 'resolved', 'dismissed', 'all'] %}
+                    <a class="gh-btn gh-btn-sm {{ status == key ? 'gh-btn-primary' : '' }}" href="{{ admin_prefix }}/downloads/reports?status={{ key }}" style="display:inline-flex; align-items:center; gap:6px;">
+                        {% if key == 'open' %}
+                            <svg class="ti ti-circle-dot" style="color:{{ status == key ? '#fff' : '#cf222e' }};"><use href="#ti-circle-dot"/></svg>
+                            <span>{{ t('adm.download_reports.status_open') }}</span>
+                        {% elseif key == 'investigating' %}
+                            <svg class="ti ti-clock" style="color:{{ status == key ? '#fff' : '#d29922' }};"><use href="#ti-clock"/></svg>
+                            <span>{{ t('adm.download_reports.status_investigating') }}</span>
+                        {% elseif key == 'resolved' %}
+                            <svg class="ti ti-circle-check" style="color:{{ status == key ? '#fff' : '#2ea043' }};"><use href="#ti-circle-check"/></svg>
+                            <span>{{ t('adm.download_reports.status_resolved') }}</span>
+                        {% elseif key == 'dismissed' %}
+                            <svg class="ti ti-circle-x" style="color:{{ status == key ? '#fff' : 'var(--gh-fg-muted)' }};"><use href="#ti-circle-x"/></svg>
+                            <span>{{ t('adm.download_reports.status_dismissed') }}</span>
+                        {% else %}
+                            <svg class="ti ti-list"><use href="#ti-list"/></svg>
+                            <span>{{ t('adm.download_reports.filter_all') }}</span>
+                        {% endif %}
+                        <span class="gh-badge" style="font-size:11px; {{ status == key ? 'background:rgba(255,255,255,0.25); color:#fff;' : '' }}">{{ counts[key] }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+
+            {% if reports|length > 0 %}
+                <div class="gh-box">
+                    <div style="overflow-x:auto;">
+                        <table class="gh-table" style="width:100%; font-size:13px;">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px;">{{ t('adm.download_reports.col_id') }}</th>
+                                    <th>{{ t('adm.download_reports.col_file') }}</th>
+                                    <th>{{ t('adm.download_reports.col_reason') }}</th>
+                                    <th>{{ t('adm.download_reports.col_reporter') }}</th>
+                                    <th>{{ t('adm.download_reports.col_date') }}</th>
+                                    <th style="text-align:right;">{{ t('adm.download_reports.col_actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in reports %}
+                                    <tr>
+                                        <td style="font-family:var(--gh-font-mono, monospace); font-size:12px; color:var(--gh-fg-muted);">
+                                            #{{ r.id }}
+                                        </td>
+                                        <td>
+                                            <div style="font-weight:600; color:var(--gh-fg-default);">
+                                                {{ r.file_title|default(r.short_code) }}
+                                            </div>
+                                            <div style="font-size:11px; color:var(--gh-fg-muted); margin-top:2px; font-family:monospace;">
+                                                <a href="/d/{{ r.short_code }}" target="_blank" style="color:var(--gh-accent-fg); text-decoration:none;">
+                                                    /d/{{ r.short_code }} <svg class="ti ti-external-link" style="width:11px; height:11px; vertical-align:-1px;"><use href="#ti-external-link"/></svg>
+                                                </a>
+                                                {% if r.original_name %}
+                                                    &bull; {{ r.original_name }}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td style="max-width:320px;">
+                                            <span class="gh-badge" style="
+                                                {% if r.reason == 'file_missing' %}background:rgba(207,34,46,0.12); color:#cf222e; border:1px solid rgba(207,34,46,0.3);
+                                                {% elseif r.reason == 'corrupt_hash' %}background:rgba(210,153,34,0.12); color:#d29922; border:1px solid rgba(210,153,34,0.3);
+                                                {% else %}background:var(--gh-bg-secondary); color:var(--gh-fg-muted); border:1px solid var(--gh-border-default);{% endif %}
+                                                font-size:11px; margin-bottom:4px; display:inline-block;">
+                                                {% if r.reason == 'file_missing' %}{{ t('adm.download_reports.reason_file_missing') }}
+                                                {% elseif r.reason == 'corrupt_hash' %}{{ t('adm.download_reports.reason_corrupt_hash') }}
+                                                {% elseif r.reason == 'slow_timeout' %}{{ t('adm.download_reports.reason_slow_timeout') }}
+                                                {% elseif r.reason == 'wrong_version' %}{{ t('adm.download_reports.reason_wrong_version') }}
+                                                {% else %}{{ t('adm.download_reports.reason_other') }}{% endif %}
+                                            </span>
+                                            {% if r.details %}
+                                                <div style="font-size:12px; color:var(--gh-fg-default); line-height:1.4; word-break:break-word; background:var(--gh-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--gh-border-default); margin-top:2px;">
+                                                    {{ r.details }}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {# Reporter Details: Member vs Guest #}
+                                            <div style="font-size:12.5px; margin-bottom:3px;">
+                                                {% if r.user_id and r.username %}
+                                                    <a href="{{ admin_prefix }}/users/{{ r.user_id }}" target="_blank" style="color:var(--gh-accent-fg); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                                                        <svg class="ti ti-user-check" style="width:14px; height:14px; color:#2ea043;"><use href="#ti-user-check"/></svg>
+                                                        <span>{{ r.display_name|default(r.username) }}</span>
+                                                    </a>
+                                                    <span style="font-size:11px; color:var(--gh-fg-muted); display:block;">@{{ r.username }}</span>
+                                                {% else %}
+                                                    <span style="color:var(--gh-fg-muted); display:inline-flex; align-items:center; gap:4px; font-weight:500;">
+                                                        <svg class="ti ti-user" style="width:13px; height:13px;"><use href="#ti-user"/></svg>
+                                                        <span>{{ t('adm.download_reports.reporter_guest') }}</span>
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            {# IP Address #}
+                                            <div style="font-size:11.5px; font-family:monospace; color:var(--gh-fg-muted); margin-bottom:4px;">
+                                                <svg class="ti ti-network" style="width:12px; height:12px; vertical-align:-1px;"><use href="#ti-network"/></svg>
+                                                {{ r.reporter_ip|default('—') }}
+                                            </div>
+
+                                            <div>
+                                                {% if r.status == 'open' %}
+                                                    <span class="gh-badge" style="background:rgba(207,34,46,0.15); color:#cf222e; font-size:10px;">{{ t('adm.download_reports.status_open') }}</span>
+                                                {% elseif r.status == 'investigating' %}
+                                                    <span class="gh-badge" style="background:rgba(210,153,34,0.15); color:#d29922; font-size:10px;">{{ t('adm.download_reports.status_investigating') }}</span>
+                                                {% elseif r.status == 'resolved' %}
+                                                    <span class="gh-badge" style="background:rgba(46,160,67,0.15); color:#2ea043; font-size:10px;">{{ t('adm.download_reports.status_resolved') }}</span>
+                                                {% else %}
+                                                    <span class="gh-badge" style="background:rgba(110,118,129,0.15); color:var(--gh-fg-muted); font-size:10px;">{{ t('adm.download_reports.status_dismissed') }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td style="font-size:12px; color:var(--gh-fg-muted); white-space:nowrap;">
+                                            <div>{{ r.created_at|date('Y-m-d') }}</div>
+                                            <div style="font-size:11px;">{{ r.created_at|date('H:i') }}</div>
+                                        </td>
+                                        <td style="text-align:right; white-space:nowrap;">
+                                            <div style="display:inline-flex; gap:4px; align-items:center;">
+                                                {% if r.status != 'resolved' %}
+                                                    <form method="POST" action="{{ admin_prefix }}/downloads/reports/{{ r.id }}/status" style="display:inline;">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                        <input type="hidden" name="status" value="resolved">
+                                                        <input type="hidden" name="return_status" value="{{ status }}">
+                                                        <button type="submit" class="gh-btn gh-btn-sm" style="color:#2ea043; border-color:rgba(46,160,67,0.4);" title="{{ t_attr('adm.download_reports.btn_resolve') }}">
+                                                            <svg class="ti ti-check"><use href="#ti-check"/></svg>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+
+                                                {% if r.status != 'investigating' and r.status != 'resolved' %}
+                                                    <form method="POST" action="{{ admin_prefix }}/downloads/reports/{{ r.id }}/status" style="display:inline;">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                        <input type="hidden" name="status" value="investigating">
+                                                        <input type="hidden" name="return_status" value="{{ status }}">
+                                                        <button type="submit" class="gh-btn gh-btn-sm" style="color:#d29922; border-color:rgba(210,153,34,0.4);" title="{{ t_attr('adm.download_reports.btn_investigate') }}">
+                                                            <svg class="ti ti-clock"><use href="#ti-clock"/></svg>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+
+                                                {% if r.status != 'dismissed' %}
+                                                    <form method="POST" action="{{ admin_prefix }}/downloads/reports/{{ r.id }}/status" style="display:inline;">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                        <input type="hidden" name="status" value="dismissed">
+                                                        <input type="hidden" name="return_status" value="{{ status }}">
+                                                        <button type="submit" class="gh-btn gh-btn-sm" title="{{ t_attr('adm.download_reports.btn_dismiss') }}">
+                                                            <svg class="ti ti-eye-off"><use href="#ti-eye-off"/></svg>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+
+                                                {% if r.status != 'open' %}
+                                                    <form method="POST" action="{{ admin_prefix }}/downloads/reports/{{ r.id }}/status" style="display:inline;">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                        <input type="hidden" name="status" value="open">
+                                                        <input type="hidden" name="return_status" value="{{ status }}">
+                                                        <button type="submit" class="gh-btn gh-btn-sm" title="{{ t_attr('adm.download_reports.btn_reopen') }}">
+                                                            <svg class="ti ti-rotate-clockwise"><use href="#ti-rotate-clockwise"/></svg>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+
+                                                <form method="POST" action="{{ admin_prefix }}/downloads/reports/{{ r.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this report?');">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                    <input type="hidden" name="return_status" value="{{ status }}">
+                                                    <button type="submit" class="gh-btn gh-btn-sm" style="color:#cf222e;" title="{{ t_attr('adm.download_reports.btn_delete') }}">
+                                                        <svg class="ti ti-trash"><use href="#ti-trash"/></svg>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="gh-box" style="padding:40px 20px; text-align:center; color:var(--gh-fg-muted);">
+                    <svg class="ti ti-circle-check" style="font-size:42px; margin-bottom:8px; opacity:0.6; color:#2ea043; width:42px; height:42px;"><use href="#ti-circle-check"/></svg>
+                    <h2 style="font-size:16px; margin:0 0 4px; color:var(--gh-fg-default);">{{ t('adm.download_reports.empty_title') }}</h2>
+                    <p style="font-size:13px; margin:0;">{{ t('adm.download_reports.empty_desc') }}</p>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

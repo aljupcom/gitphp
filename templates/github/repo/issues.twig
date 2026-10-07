@@ -1,0 +1,164 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.repo.issues') }} — {{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+        {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'issues' } %}
+
+    {% set qsBase = 'state=' ~ (state == 'all' ? 'all' : (state == 'closed' ? 'closed' : 'open')) %}
+
+    <div style="display:flex; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--gh-border-default); font-size: 14px; margin-top: 8px;">
+        <a href="?state=open"
+           style="text-decoration:none; {{ state != 'closed' and state != 'all' ? 'font-weight:600;' : 'color: var(--gh-fg-muted);' }}">
+            ○ {{ issues_open_count }} {{ t('ui.repo.open') }}
+        </a>
+        <a href="?state=closed"
+           style="text-decoration:none; {{ state == 'closed' ? 'font-weight:600;' : 'color: var(--gh-fg-muted);' }}">
+            ✓ {{ closed_count }} {{ t('ui.repo.closed') }}
+        </a>
+        <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+            {% if can_write %}
+                <a class="gh-btn gh-btn-sm" href="#label-manager" data-toggle-panel="labels">{{ t('ui.issues.labels')|default('Labels') }}</a>
+                <a class="gh-btn gh-btn-sm" href="#milestone-manager" data-toggle-panel="milestones">{{ t('ui.issues.milestones')|default('Milestones') }}</a>
+            {% endif %}
+            <form method="GET" action="/{{ owner }}/{{ repo.slug }}/issues" style="margin: 0; display: flex; gap: 6px;">
+                <input type="hidden" name="state" value="{{ state }}">
+                <select name="sort" class="gh-form-control" style="font-size: 12px; padding: 2px 6px; height: 28px;" onchange="this.form.submit()">
+                    <option value="newest"{{ current_filters.sort == 'newest' ? ' selected' : '' }}>Newest</option>
+                    <option value="oldest"{{ current_filters.sort == 'oldest' ? ' selected' : '' }}>Oldest</option>
+                    <option value="updated"{{ current_filters.sort == 'updated' ? ' selected' : '' }}>Recently updated</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    {% if can_write %}
+    {# Label manager panel #}
+    <details id="label-manager" class="gh-box" style="margin-top: 10px; padding: 12px;">
+        <summary style="cursor: pointer; font-weight: 600; font-size: 13px;">{{ t('ui.issues.labels')|default('Labels') }}</summary>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+            {% for l in repo_labels %}
+                <span style="display: inline-flex; align-items: center; gap: 6px; border: 1px solid {{ l.color }}; border-radius: 999px; padding: 2px 10px; font-size: 12px;">
+                    <a href="?{{ qsBase }}&label={{ l.name|url_encode }}" style="color: {{ l.color }}; text-decoration: none; font-weight: 600;">{{ l.name }}</a>
+                    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/issues/labels/{{ l.id }}/delete" onsubmit="return confirm('Delete label \'{{ l.name|e('js') }}\'? It will be removed from all issues.');" style="margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token|default('') }}">
+                        <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--gh-fg-muted); padding: 0; font-size: 11px;">✕</button>
+                    </form>
+                </span>
+            {% endfor %}
+        </div>
+        <form method="POST" action="/{{ owner }}/{{ repo.slug }}/issues/labels" style="display: flex; gap: 8px; margin-top: 10px; align-items: center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token|default('') }}">
+            <input type="text" name="name" placeholder="Label name" required maxlength="50" class="gh-form-control" style="width: 160px;">
+            <input type="color" name="color" value="#8b949e" style="width: 42px; height: 28px; border: 1px solid var(--gh-border-default); border-radius: 4px; background: none; padding: 2px;">
+            <button type="submit" class="gh-btn gh-btn-sm">Add</button>
+        </form>
+    </details>
+
+    {# Milestones panel #}
+    <details id="milestone-manager" class="gh-box" style="margin-top: 10px; padding: 12px;">
+        <summary style="cursor: pointer; font-weight: 600; font-size: 13px;">{{ t('ui.issues.milestones')|default('Milestones') }}</summary>
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+            {% for m in milestones %}
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
+                    <a href="?{{ qsBase }}&milestone={{ m.id }}" style="font-weight: 600; color: var(--gh-accent-fg); text-decoration: none;">{{ m.title }}</a>
+                    {% if m.due_date %}<span style="color: var(--gh-fg-muted); font-size: 12px;">due {{ m.due_date }}</span>{% endif %}
+                    <span class="gh-badge" style="font-size: 11px;">{{ m.open_count }} open</span>
+                    {% if m.is_closed %}<span class="gh-badge" style="background: var(--gh-success-subtle); color: var(--gh-success-fg);">closed</span>{% endif %}
+                    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/issues/milestones/{{ m.id }}/close" style="margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token|default('') }}">
+                        <button type="submit" class="gh-btn gh-btn-sm" style="font-size: 11px;">{{ m.is_closed ? 'Reopen' : 'Close' }}</button>
+                    </form>
+                    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/issues/milestones/{{ m.id }}/delete" onsubmit="return confirm('Delete milestone \'{{ m.title|e('js') }}\'?');" style="margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token|default('') }}">
+                        <button type="submit" class="gh-btn gh-btn-sm" style="font-size: 11px; color: var(--gh-danger-fg);">Delete</button>
+                    </form>
+                </div>
+            {% endfor %}
+            <form method="POST" action="/{{ owner }}/{{ repo.slug }}/issues/milestones" style="display: flex; gap: 8px; margin-top: 6px; align-items: center; flex-wrap: wrap;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token|default('') }}">
+                <input type="text" name="title" placeholder="Milestone title" required maxlength="120" class="gh-form-control" style="width: 180px;">
+                <input type="text" name="due_date" placeholder="YYYY-MM-DD" class="gh-form-control" style="width: 120px;" pattern="\d{4}-\d{2}-\d{2}">
+                <button type="submit" class="gh-btn gh-btn-sm">Add</button>
+            </form>
+        </div>
+    </details>
+    {% endif %}
+
+    {# Active filter chips #}
+    {% if current_filters.label or current_filters.milestone or current_filters.assignee %}
+    <div style="display: flex; gap: 8px; margin-top: 10px; font-size: 12px; align-items: center;">
+        <span style="color: var(--gh-fg-muted);">Filters:</span>
+        {% if current_filters.label %}<span class="gh-badge">{{ t('ui.issues.label')|default('Label') }}: {{ current_filters.label }} <a href="?{{ qsBase }}" style="color: inherit;">✕</a></span>{% endif %}
+        {% if current_filters.milestone %}<span class="gh-badge">{{ t('ui.issues.milestone')|default('Milestone') }} #{{ current_filters.milestone }} <a href="?{{ qsBase }}" style="color: inherit;">✕</a></span>{% endif %}
+        {% if current_filters.assignee %}<span class="gh-badge">{{ t('ui.issues.assignee')|default('Assignee') }} #{{ current_filters.assignee }} <a href="?{{ qsBase }}" style="color: inherit;">✕</a></span>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if issues|length > 0 %}
+        <div class="gh-issue-list">
+            {% for issue in issues %}
+                <a class="gh-issue-item" href="/{{ owner }}/{{ repo.slug }}/issues/{{ issue.id }}">
+                    <span class="gh-issue-icon {{ issue.status == 'open' ? 'gh-issue-open' : 'gh-issue-closed' }}"
+                          title="{{ t_attr(issue.status == 'open' ? 'ui.repo.open' : (issue.status == 'closed' ? 'ui.repo.closed' : issue.status)) }}" aria-label="{{ issue.status }}">
+                        {% if issue.status == 'open' %}
+                            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg>
+                        {% else %}
+                            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg>
+                        {% endif %}
+                    </span>
+                    <span class="gh-issue-body">
+                        <span class="gh-issue-title">{{ issue.title }}</span>
+                        <span class="gh-issue-meta">
+                            <span class="gh-issue-id">#{{ issue.id }}</span>
+                            <span>{{ t('ui.repo.opened') }} <time datetime="{{ issue.created_at }}">{{ issue.created_at|time_ago }}</time></span>
+                            {% if issue.reporter %}
+                                <span>{{ t('ui.repo.by') }} <strong>{{ issue.reporter }}</strong></span>
+                            {% endif %}
+                        </span>
+                    </span>
+                    <span style="display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; max-width: 40%;">
+                        {% for l in issue.labels %}
+                            <span style="border: 1px solid {{ l.color }}; color: {{ l.color }}; border-radius: 999px; font-size: 11px; padding: 1px 8px; white-space: nowrap;">{{ l.name }}</span>
+                        {% endfor %}
+                        {% if issue.milestone_title %}
+                            <span style="color: var(--gh-fg-muted); font-size: 12px; white-space: nowrap;" title="{{ t('ui.issues.milestone')|default('Milestone') }}">⚑ {{ issue.milestone_title }}</span>
+                        {% endif %}
+                        {% if issue.assignee_name %}
+                            <span style="color: var(--gh-fg-muted); font-size: 12px; white-space: nowrap;">@{{ issue.assignee_name }}</span>
+                        {% endif %}
+                    </span>
+                    <span class="gh-issue-status gh-status-{{ issue.status }}">{{ issue.status }}</span>
+                </a>
+            {% endfor %}
+        </div>
+
+        {# Pagination #}
+        {% if pagination.last_page > 1 %}
+        <div style="display: flex; gap: 8px; justify-content: center; margin-top: 18px; align-items: center;">
+            {% set pqs = qsBase ~ (current_filters.label ? '&label=' ~ current_filters.label|url_encode : '') ~ (current_filters.milestone ? '&milestone=' ~ current_filters.milestone : '') ~ (current_filters.assignee ? '&assignee=' ~ current_filters.assignee : '') ~ '&sort=' ~ current_filters.sort %}
+            {% if pagination.page > 1 %}
+                <a class="gh-btn gh-btn-sm" href="?{{ pqs }}&page={{ pagination.page - 1 }}">← Prev</a>
+            {% endif %}
+            <span style="color: var(--gh-fg-muted); font-size: 13px;">Page {{ pagination.page }} / {{ pagination.last_page }} ({{ pagination.total }})</span>
+            {% if pagination.page < pagination.last_page %}
+                <a class="gh-btn gh-btn-sm" href="?{{ pqs }}&page={{ pagination.page + 1 }}">Next →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="gh-empty">
+            <svg width="48" height="48" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg>
+            {% if state == 'closed' %}
+                <h2>{{ t('ui.repo.no_closed') }}</h2><p>{{ t('ui.repo.no_closed_sub') }}</p>
+            {% else %}
+                <h2>{{ t('ui.repo.no_issues') }}</h2>
+                <p>{% if closed_count > 0 %}{{ t('ui.repo.all_resolved', {count: closed_count}) }}{% else %}{{ t('ui.repo.no_reports') }}{% endif %}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

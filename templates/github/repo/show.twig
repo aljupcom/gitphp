@@ -1,0 +1,738 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+    {% include "partials/repo-nav.twig" with { active_tab: 'code' } %}
+
+    {% if is_empty %}
+        <div class="gh-empty-repo-container">
+            
+            {# ── 1. Top Quick Setup Box ── #}
+            <div class="gh-box gh-empty-banner">
+                <div class="gh-empty-banner-header">
+                    <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 6px 0; color: var(--gh-fg-default);">
+                        Quick setup — if you’ve done this kind of thing before
+                    </h2>
+                    <p style="font-size: 13px; color: var(--gh-fg-muted); margin: 0; line-height: 1.5;">
+                        Get started by 
+                        <a href="/{{ owner }}/{{ repo.slug }}/new/{{ repo.default_branch|default('main') }}" style="color: var(--gh-accent-fg); text-decoration: none; font-weight: 500;">creating a new file</a> 
+                        or uploading an existing file. We recommend every repository include a 
+                        <a href="/{{ owner }}/{{ repo.slug }}/new/{{ repo.default_branch|default('main') }}?filename=README.md" style="color: var(--gh-accent-fg); text-decoration: none;">README</a>, 
+                        <a href="/{{ owner }}/{{ repo.slug }}/new/{{ repo.default_branch|default('main') }}?filename=LICENSE" style="color: var(--gh-accent-fg); text-decoration: none;">LICENSE</a>, and 
+                        <a href="/{{ owner }}/{{ repo.slug }}/new/{{ repo.default_branch|default('main') }}?filename=.gitignore" style="color: var(--gh-accent-fg); text-decoration: none;">.gitignore</a>.
+                    </p>
+                </div>
+
+                <div class="gh-empty-banner-body">
+                    <div class="gh-empty-clone-toolbar">
+                        
+                        {# Protocol Toggle + Input + Copy #}
+                        <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 480px; min-width: 0; max-width: 100%;">
+                            <div class="gh-btn-group" id="empty-protocol-switch">
+                                <button type="button" class="gh-btn gh-btn-sm active" data-protocol="https" id="btn-proto-https">
+                                    HTTPS
+                                </button>
+                                <button type="button" class="gh-btn gh-btn-sm" data-protocol="ssh" id="btn-proto-ssh">
+                                    SSH
+                                </button>
+                            </div>
+
+                            <div style="display: flex; flex: 1 1 auto; min-width: 0; position: relative;">
+                                <input type="text" id="empty-clone-input" value="{{ https_url }}" readonly data-select-on-click
+                                       style="width: 100%; height: 32px; padding: 0 10px; font-family: var(--gh-font-mono); font-size: 12px; background: var(--gh-bg-inset); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px 0 0 6px; direction: ltr !important; text-align: left !important; outline: none;">
+                                <button type="button" class="gh-btn gh-btn-sm gh-copy-btn-feedback" id="btn-copy-clone-url" data-copy="{{ https_url }}" title="Copy to clipboard"
+                                        style="height: 32px; padding: 0 12px; border-left: none; border-radius: 0 6px 6px 0; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; flex-shrink: 0;">
+                                    <svg class="gh-copy-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+                                    <span class="gh-copy-label">Copy</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {# Action shortcuts #}
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <a href="/{{ owner }}/{{ repo.slug }}/new/{{ repo.default_branch|default('main') }}" class="gh-btn gh-btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 500; font-size: 12px; height: 32px; padding: 0 12px;">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+                                <span>Create new file</span>
+                            </a>
+                            <a href="/settings/tokens?tab=signed" class="gh-btn gh-btn-sm" title="Capability Push Tokens" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 500; font-size: 12px; height: 32px; padding: 0 10px; color: var(--gh-success-fg, #1a7f37);">
+                                <svg class="ti ti-bolt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#ti-bolt"/></svg>
+                                <span>Signed Push</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── 2. Section: Create a new repository on the command line ── #}
+            <div class="gh-empty-section">
+                <div class="gh-empty-section-header">
+                    <h3 class="gh-empty-section-title">
+                        …or create a new repository on the command line
+                    </h3>
+                    <button type="button" class="gh-btn gh-btn-sm gh-copy-btn-feedback" id="btn-copy-block-1" data-copy="" style="font-size: 12px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 5px;">
+                        <svg class="gh-copy-icon" width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+                        <span class="gh-copy-label">Copy</span>
+                    </button>
+                </div>
+                <div class="gh-code-snippet-box">
+                    <pre class="gh-mono"><span class="cmd-line">echo "# {{ repo.name }}" &gt;&gt; README.md</span><span class="cmd-line">git init</span><span class="cmd-line">git add README.md</span><span class="cmd-line">git commit -m "first commit"</span><span class="cmd-line">git branch -M {{ repo.default_branch|default('main') }}</span><span class="cmd-line">git remote add origin <span class="js-empty-clone-target">{{ https_url }}</span></span><span class="cmd-line">git push -u origin {{ repo.default_branch|default('main') }}</span></pre>
+                </div>
+            </div>
+
+            {# ── 3. Section: Push an existing repository from the command line ── #}
+            <div class="gh-empty-section">
+                <div class="gh-empty-section-header">
+                    <h3 class="gh-empty-section-title">
+                        …or push an existing repository from the command line
+                    </h3>
+                    <button type="button" class="gh-btn gh-btn-sm gh-copy-btn-feedback" id="btn-copy-block-2" data-copy="" style="font-size: 12px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 5px;">
+                        <svg class="gh-copy-icon" width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+                        <span class="gh-copy-label">Copy</span>
+                    </button>
+                </div>
+                <div class="gh-code-snippet-box">
+                    <pre class="gh-mono"><span class="cmd-line">git remote add origin <span class="js-empty-clone-target">{{ https_url }}</span></span><span class="cmd-line">git branch -M {{ repo.default_branch|default('main') }}</span><span class="cmd-line">git push -u origin {{ repo.default_branch|default('main') }}</span></pre>
+                </div>
+            </div>
+
+            {# ── 4. Section: Import code from another repository ── #}
+            <div class="gh-empty-section" style="margin-bottom: 24px; padding-bottom: 8px;">
+                <h3 class="gh-empty-section-title" style="margin-bottom: 6px;">
+                    …or import code from another repository
+                </h3>
+                <p style="font-size: 13px; color: var(--gh-fg-muted); margin: 0 0 12px 0;">
+                    You can initialize this repository with code from a Subversion, Mercurial, or Git repository.
+                </p>
+                <a href="/repos/import" class="gh-btn gh-btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 500; font-size: 12px; padding: 5px 14px;">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+                    <span>Import code</span>
+                </a>
+            </div>
+
+            <script>
+            (function() {
+                const httpsUrl = {{ https_url|json_encode|raw }};
+                const sshUrl = {{ ssh_url|json_encode|raw }};
+                const repoName = {{ repo.name|json_encode|raw }};
+                const defaultBranch = {{ (repo.default_branch|default('main'))|json_encode|raw }};
+
+                const input = document.getElementById('empty-clone-input');
+                const btnHttps = document.getElementById('btn-proto-https');
+                const btnSsh = document.getElementById('btn-proto-ssh');
+                const copyCloneBtn = document.getElementById('btn-copy-clone-url');
+                const copyBlock1Btn = document.getElementById('btn-copy-block-1');
+                const copyBlock2Btn = document.getElementById('btn-copy-block-2');
+                const targets = document.querySelectorAll('.js-empty-clone-target');
+
+                function updateSnippets(proto) {
+                    const url = proto === 'ssh' ? sshUrl : httpsUrl;
+                    
+                    if (input) input.value = url;
+                    if (copyCloneBtn) copyCloneBtn.setAttribute('data-copy', url);
+
+                    targets.forEach(t => t.textContent = url);
+
+                    if (btnHttps && btnSsh) {
+                        if (proto === 'https') {
+                            btnHttps.classList.add('active');
+                            btnSsh.classList.remove('active');
+                        } else {
+                            btnSsh.classList.add('active');
+                            btnHttps.classList.remove('active');
+                        }
+                    }
+
+                    const block1Text = 'echo "# ' + repoName + '" >> README.md\n' +
+                                      'git init\n' +
+                                      'git add README.md\n' +
+                                      'git commit -m "first commit"\n' +
+                                      'git branch -M ' + defaultBranch + '\n' +
+                                      'git remote add origin ' + url + '\n' +
+                                      'git push -u origin ' + defaultBranch;
+                    if (copyBlock1Btn) copyBlock1Btn.setAttribute('data-copy', block1Text);
+
+                    const block2Text = 'git remote add origin ' + url + '\n' +
+                                      'git branch -M ' + defaultBranch + '\n' +
+                                      'git push -u origin ' + defaultBranch;
+                    if (copyBlock2Btn) copyBlock2Btn.setAttribute('data-copy', block2Text);
+                }
+
+                if (btnHttps) btnHttps.addEventListener('click', () => updateSnippets('https'));
+                if (btnSsh) btnSsh.addEventListener('click', () => updateSnippets('ssh'));
+
+                updateSnippets('https');
+
+                document.querySelectorAll('.gh-copy-btn-feedback').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const text = this.getAttribute('data-copy') || '';
+                        if (!text) return;
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(text).then(() => showCopied(this)).catch(() => fallbackCopy(text, this));
+                        } else {
+                            fallbackCopy(text, this);
+                        }
+                    });
+                });
+
+                function showCopied(btn) {
+                    const label = btn.querySelector('.gh-copy-label');
+                    const orig = label ? label.textContent : '';
+                    if (label) label.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        if (label) label.textContent = orig;
+                        btn.classList.remove('copied');
+                    }, 2000);
+                }
+
+                function fallbackCopy(text, btn) {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.left = '-9999px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try { document.execCommand('copy'); showCopied(btn); } catch (e) {}
+                    document.body.removeChild(ta);
+                }
+            })();
+            </script>
+        </div>
+
+        {# Empty Repo Owner Actions / Danger Zone #}
+        {% if can_manage|default(can_write|default(false)) %}
+            <div class="gh-box" style="border-color: var(--gh-danger-fg, #f85149); border-radius: 8px; padding: 18px; margin-top: 24px; background: var(--gh-bg-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+                    <div>
+                        <h3 style="font-size: 15px; font-weight: 600; color: var(--gh-danger-fg, #f85149); margin: 0 0 4px 0; display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a2.25 2.25 0 0 0 2.24 2.025h1.208a2.25 2.25 0 0 0 2.24-2.025l.66-6.6a.75.75 0 0 0-1.492-.15l-.66 6.6a.75.75 0 0 1-.748.675H7.396a.75.75 0 0 1-.748-.675l-.66-6.6a.75.75 0 1 0-1.492.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>
+                            <span>Delete this empty repository</span>
+                        </h3>
+                        <p style="font-size: 13px; color: var(--gh-fg-muted); margin: 0;">
+                            This repository is empty. As the owner, you can permanently delete it at any time.
+                        </p>
+                    </div>
+
+                    <button type="button" class="gh-btn" style="background: var(--gh-danger-fg, #da3633); color: #ffffff; font-weight: 600; border: none; padding: 7px 16px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"
+                            onclick="document.getElementById('delete-empty-repo-modal').style.display='flex'">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a2.25 2.25 0 0 0 2.24 2.025h1.208a2.25 2.25 0 0 0 2.24-2.025l.66-6.6a.75.75 0 0 0-1.492-.15l-.66 6.6a.75.75 0 0 1-.748.675H7.396a.75.75 0 0 1-.748-.675l-.66-6.6a.75.75 0 1 0-1.492.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>
+                        <span>Delete repository</span>
+                    </button>
+                </div>
+            </div>
+
+            {# Delete Confirmation Modal #}
+            <div id="delete-empty-repo-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+                <div style="background: var(--gh-bg-overlay, #161b22); border: 1px solid var(--gh-border-default); border-radius: 12px; width: 100%; max-width: 480px; margin: 16px; overflow: hidden; box-shadow: 0 16px 36px rgba(0,0,0,0.5);">
+                    <div style="padding: 16px 20px; border-bottom: 1px solid var(--gh-border-default); display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="font-size: 15px; color: var(--gh-danger-fg, #f85149); display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a2.25 2.25 0 0 0 2.24 2.025h1.208a2.25 2.25 0 0 0 2.24-2.025l.66-6.6a.75.75 0 0 0-1.492-.15l-.66 6.6a.75.75 0 0 1-.748.675H7.396a.75.75 0 0 1-.748-.675l-.66-6.6a.75.75 0 1 0-1.492.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>
+                            <span>Confirm repository deletion</span>
+                        </strong>
+                        <button type="button" onclick="document.getElementById('delete-empty-repo-modal').style.display='none'" style="background: transparent; border: none; color: var(--gh-fg-muted); font-size: 18px; cursor: pointer;">✕</button>
+                    </div>
+                    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/settings/delete" style="padding: 20px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <p style="font-size: 13px; color: var(--gh-fg-default); margin: 0 0 12px 0; line-height: 1.5;">
+                            Are you absolutely sure you want to permanently delete <strong style="color: var(--gh-fg-default);">{{ owner }}/{{ repo.name }}</strong>? This action cannot be undone.
+                        </p>
+                        <p style="font-size: 12px; color: var(--gh-fg-muted); margin: 0 0 8px 0;">
+                            Please type <code class="gh-mono" style="background: var(--gh-bg-inset, rgba(125,133,144,0.1)); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--gh-border-default); color: var(--gh-fg-default);">{{ repo.slug }}</code> to confirm:
+                        </p>
+                        <input type="text" name="confirm_slug" id="empty-repo-confirm-input" class="gh-form-control"
+                               placeholder="{{ repo.slug }}" required autocomplete="off"
+                               style="width: 100%; padding: 8px 12px; margin-bottom: 16px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-canvas, #ffffff); color: var(--gh-fg-default, #1f2328);">
+                        
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" class="gh-btn" onclick="document.getElementById('delete-empty-repo-modal').style.display='none'">
+                                Cancel
+                            </button>
+                            <button type="submit" class="gh-btn" style="background: var(--gh-danger-fg, #da3633); color: #ffffff; font-weight: 600; border: none;">
+                                I understand the consequences, delete
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        {# 2-Column Layout: Main Tree (Left) + GitHub About Sidebar (Right) #}
+        <div class="gh-repo-layout" style="margin-top: 16px;">
+            
+            {# Left Column: Branch selector, files, and readme #}
+            <div class="gh-repo-main" style="min-width: 0;">
+                {# ── GitHub-Exact Tree Toolbar (Independent Modular Buttons) ── #}
+                {% set is_current_tag = false %}
+                {% for t in tags %}
+                    {% set t_name = t.name is defined ? t.name : t %}
+                    {% if t_name == current_ref %}
+                        {% set is_current_tag = true %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if is_current_tag %}
+                    <div class="gh-tag-banner" style="display: flex; align-items: center; justify-content: space-between; background: var(--gh-bg-subtle, #161b22); border: 1px solid var(--gh-border-default, #30363d); border-radius: 6px; padding: 10px 16px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gh-fg-default);">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--gh-accent-fg, #58a6ff)"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25v5.025ZM6 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+                            <span>You are browsing repository files at tag <strong style="font-family: var(--gh-font-mono); color: var(--gh-accent-fg);">{{ current_ref }}</strong>.</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <a href="/{{ owner }}/{{ repo.slug }}/releases/tag/{{ current_ref|url_encode }}" class="gh-btn gh-btn-sm" style="color: var(--gh-accent-fg, #58a6ff); font-weight: 600;">
+                                View release / downloads
+                            </a>
+                            <a href="/{{ owner }}/{{ repo.slug }}/archive/{{ current_ref }}.zip" class="gh-btn gh-btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+                                Download ZIP
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="gh-tree-bar" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                    
+                    {# ── 1. Left Side: Branch selector + Branches count + Tags count ── #}
+                    <div class="gh-tree-bar-left" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        {% include "partials/ref-selector.twig" with {
+                            type: 'branch',
+                            current: current_ref,
+                            options: branches,
+                            repo_slug: repo.slug,
+                            owner: owner,
+                            tags: tags,
+                            branches: branches
+                        } %}
+
+                        <a href="/{{ owner }}/{{ repo.slug }}/branches" class="gh-tree-stat-btn" title="View all branches" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--gh-fg-muted); text-decoration: none; padding: 5px 8px; border-radius: 6px; white-space: nowrap;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"/></svg>
+                            <span><strong style="color: var(--gh-fg-default); font-weight: 600;">{{ branches|length }}</strong> Branches</span>
+                        </a>
+
+                        <a href="/{{ owner }}/{{ repo.slug }}/tags" class="gh-tree-stat-btn" title="View all tags" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--gh-fg-muted); text-decoration: none; padding: 5px 8px; border-radius: 6px; white-space: nowrap;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>
+                            <span><strong style="color: var(--gh-fg-default); font-weight: 600;">{{ tags|length }}</strong> Tags</span>
+                        </a>
+                    </div>
+
+                    {# ── 2. Right Side: Go to file + Add file + Code dropdown ── #}
+                    <div class="gh-tree-bar-right" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        
+                        {# 2a. Go to file button #}
+                        <button type="button" class="gh-find-file-btn" id="gh-btn-find-file" title="Search files in this repository (Shortcut: t)" onclick="toggleFileFinderModal(event);" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; color: var(--gh-fg-muted); background: var(--gh-btn-bg, #21262d); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 0 10px; height: 32px; cursor: pointer; white-space: nowrap;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg>
+                            <span>{{ t('ui.repo.go_to_file') }}</span>
+                            <kbd style="display: inline-block; padding: 1px 5px; font-size: 10.5px; font-family: inherit; line-height: 12px; color: var(--gh-fg-muted); background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 4px; margin-left: 4px;">t</kbd>
+                        </button>
+
+                        {% if can_write %}
+                            {# 2b. Add file dropdown #}
+                            <div id="gh-wrap-add-file" style="position: relative; display: inline-block;">
+                                <button type="button" class="gh-btn gh-btn-sm" id="gh-btn-add-file" onclick="toggleAddFileMenu(event);" style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; height: 32px; padding: 0 10px;">
+                                    <span>{{ t('ui.repo.add_file') }}</span>
+                                    <svg class="gh-caret" width="10" height="10" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg>
+                                </button>
+                                <div id="gh-menu-add-file" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; min-width: 160px; background: var(--gh-bg-overlay, #161b22); border: 1px solid var(--gh-border-default); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); padding: 4px 0; z-index: 1000;">
+                                    <a href="/{{ owner }}/{{ repo.slug }}/new/{{ current_ref }}" style="display: flex; align-items: center; gap: 8px; padding: 7px 14px; font-size: 13px; color: var(--gh-fg-default); text-decoration: none;">
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011ZM8 7.25a.75.75 0 0 1 .75.75v1.25H10a.75.75 0 0 1 0 1.5H8.75V12a.75.75 0 0 1-1.5 0v-1.25H6a.75.75 0 0 1 0-1.5h1.25V8A.75.75 0 0 1 8 7.25Z"/></svg>
+                                        <span>{{ t('ui.repo.create_new_file') }}</span>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {# 2c. Code clone dropdown #}
+                        <div id="gh-wrap-clone-code" style="position: relative; display: inline-block;">
+                            <button type="button" class="gh-btn gh-btn-primary gh-btn-sm" id="gh-btn-clone-code" onclick="toggleCloneMenu(event);" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; height: 32px; padding: 0 12px; background: var(--gh-success-emphasis, #238636) !important; border-color: rgba(240,246,252,0.1) !important; color: #ffffff !important;">
+                                <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="m11.28 3.22 4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L13.94 8l-3.72-3.72a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215Zm-6.56 0a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L2.06 8l3.72 3.72a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L.47 8.53a.75.75 0 0 1 0-1.06Z"/></svg>
+                                <span>Code</span>
+                                <svg class="gh-caret" width="10" height="10" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg>
+                            </button>
+                            <div id="gh-panel-clone-code" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; width: 340px; max-width: calc(100vw - 20px); background: var(--gh-bg-overlay, #161b22); border: 1px solid var(--gh-border-default); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); padding: 12px; z-index: 1000; box-sizing: border-box;">
+                                {% include "partials/clone-urls.twig" %}
+                                <div style="display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--gh-border-default);">
+                                    <a class="gh-btn gh-btn-sm" href="/{{ owner }}/{{ repo.slug }}/archive/{{ current_ref }}.zip" style="flex: 1; justify-content: center; font-size: 12px; text-decoration: none;">
+                                        <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+                                        <span>Download ZIP</span>
+                                    </a>
+                                    <button type="button" class="gh-btn gh-btn-sm" onclick="openDownloadModal('repo_archive', '{{ repo.slug }}', '{{ current_ref }}', '', 'Repository Snapshot ({{ repo.name }})', '/{{ owner }}/{{ repo.slug }}/archive/{{ current_ref }}.zip')" style="flex: 1; justify-content: center; font-size: 12px;" title="Create encrypted short link">
+                                        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M7.775 3.275a.75.75 0 0 0 1.06 1.06l1.25-1.25a2 2 0 1 1 2.83 2.83l-2.5 2.5a2 2 0 0 1-2.83 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l2.5-2.5a3.5 3.5 0 0 0-4.95-4.95l-1.25 1.25Zm-4.69 9.64a2 2 0 0 1 0-2.83l2.5-2.5a2 2 0 0 1 2.83 0 .75.75 0 0 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-2.5 2.5a3.5 3.5 0 0 0 4.95 4.95l1.25-1.25a.75.75 0 0 0-1.06-1.06l-1.25 1.25a2 2 0 0 1-2.83 0Z"/></svg>
+                                        <span>Share Link</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                {# ── 3. File Finder Modal (Go to file popup) ── #}
+                <div id="gh-file-finder-modal" style="display: none; position: fixed; inset: 0; background: rgba(1, 4, 9, 0.7); backdrop-filter: blur(2px); z-index: 99999; align-items: flex-start; justify-content: center; padding-top: 12vh;" onclick="if(event.target===this)closeFileFinderModal();">
+                    <div style="background: var(--gh-bg-overlay, #161b22); border: 1px solid var(--gh-border-default); border-radius: 10px; width: 100%; max-width: 580px; box-shadow: 0 16px 36px rgba(0,0,0,0.6); overflow: hidden;">
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--gh-border-default); background: var(--gh-bg-subtle, #0d1117);">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--gh-fg-muted)"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg>
+                            <input type="text" id="gh-file-finder-input" placeholder="Search files in {{ repo.name }}..." autocomplete="off" style="flex: 1; background: transparent; border: none; outline: none; font-size: 14px; color: var(--gh-fg-default); font-family: inherit;" oninput="var q=this.value.toLowerCase().trim(); document.querySelectorAll('.gh-finder-entry').forEach(function(el){ el.style.display = (q==='' || el.getAttribute('data-name').indexOf(q)!==-1) ? 'flex' : 'none'; });">
+                            <kbd style="cursor: pointer; padding: 2px 6px; font-size: 11px; background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 4px; color: var(--gh-fg-muted);" onclick="closeFileFinderModal();">esc</kbd>
+                        </div>
+                        <div style="max-height: 380px; overflow-y: auto; padding: 6px 0;">
+                            {% for file in files %}
+                                <a href="/{{ owner }}/{{ repo.slug }}/{{ file.type == 'tree' ? 'tree' : 'blob' }}/{{ current_ref }}/{{ file.path|default(file.name) }}" class="gh-finder-entry" data-name="{{ (file.path|default(file.name))|lower }}" style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; font-size: 13px; color: var(--gh-fg-default); text-decoration: none;">
+                                    {% if file.type == 'tree' %}
+                                        <svg width="15" height="15" viewBox="0 0 16 16" fill="var(--gh-accent-fg, #58a6ff)"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"/></svg>
+                                    {% else %}
+                                        <svg width="15" height="15" viewBox="0 0 16 16" fill="var(--gh-fg-muted)"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011ZM8 7.25a.75.75 0 0 1 .75.75v1.25H10a.75.75 0 0 1 0 1.5H8.75V12a.75.75 0 0 1-1.5 0v-1.25H6a.75.75 0 0 1 0-1.5h1.25V8A.75.75 0 0 1 8 7.25Z"/></svg>
+                                    {% endif %}
+                                    <span>{{ file.path|default(file.name) }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                function toggleFileFinderModal(e) {
+                    if (e) e.stopPropagation();
+                    var m = document.getElementById('gh-file-finder-modal');
+                    if (m) {
+                        m.style.display = 'flex';
+                        var inp = document.getElementById('gh-file-finder-input');
+                        if (inp) { inp.value = ''; inp.focus(); }
+                        document.querySelectorAll('.gh-finder-entry').forEach(function(el){ el.style.display = 'flex'; });
+                    }
+                }
+                function closeFileFinderModal() {
+                    var m = document.getElementById('gh-file-finder-modal');
+                    if (m) m.style.display = 'none';
+                }
+                function toggleAddFileMenu(e) {
+                    if (e) e.stopPropagation();
+                    var menu = document.getElementById('gh-menu-add-file');
+                    var cloneMenu = document.getElementById('gh-panel-clone-code');
+                    if (cloneMenu) cloneMenu.style.display = 'none';
+                    if (menu) {
+                        menu.style.display = (menu.style.display === 'block' ? 'none' : 'block');
+                    }
+                }
+                function toggleCloneMenu(e) {
+                    if (e) e.stopPropagation();
+                    var menu = document.getElementById('gh-panel-clone-code');
+                    var addMenu = document.getElementById('gh-menu-add-file');
+                    if (addMenu) addMenu.style.display = 'none';
+                    if (menu) {
+                        menu.style.display = (menu.style.display === 'block' ? 'none' : 'block');
+                    }
+                }
+                document.addEventListener('click', function(e) {
+                    var addMenu = document.getElementById('gh-menu-add-file');
+                    var cloneMenu = document.getElementById('gh-panel-clone-code');
+                    if (addMenu && !e.target.closest('#gh-wrap-add-file')) addMenu.style.display = 'none';
+                    if (cloneMenu && !e.target.closest('#gh-wrap-clone-code')) cloneMenu.style.display = 'none';
+                });
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        closeFileFinderModal();
+                        var addMenu = document.getElementById('gh-menu-add-file');
+                        var cloneMenu = document.getElementById('gh-panel-clone-code');
+                        if (addMenu) addMenu.style.display = 'none';
+                        if (cloneMenu) cloneMenu.style.display = 'none';
+                    }
+                    if ((e.key === 't' || e.key === 'T') && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) {
+                        var modal = document.getElementById('gh-file-finder-modal');
+                        if (modal && modal.style.display !== 'flex') {
+                            e.preventDefault();
+                            toggleFileFinderModal();
+                        }
+                    }
+                });
+                </script>
+
+                {# File tree with Latest Commit Header #}
+                {% if files|length > 0 %}
+                    <div class="gh-table-wrap" dir="ltr" style="margin-bottom: 20px;">
+                        {% if latest_commit %}
+                            {# ── GitHub-exact Latest Commit Bar ── #}
+                            <div class="gh-latest-commit-bar" dir="ltr">
+                                {# Left: avatar + author + message + ellipsis #}
+                                <div class="gh-commit-bar-left">
+                                    {# Author avatar via Gravatar (md5 of git commit email) #}
+                                    {% set _email = latest_commit.author_email|default('')|lower|trim %}
+                                    <img
+                                        src="https://www.gravatar.com/avatar/{{ _email|length > 0 ? _email|md5 : 'd93a5b36d5f8d33eab9b03be69f60ef7' }}?d=identicon&s=40"
+                                        alt="{{ latest_commit.author_name|default(owner) }}"
+                                        class="gh-commit-bar-avatar"
+                                        loading="lazy"
+                                        onerror="this.style.display='none'"
+                                    >
+                                    <a href="/{{ latest_commit.author_name|default(owner) }}" class="gh-commit-bar-author">{{ latest_commit.author_name|default(owner) }}</a>
+                                    <a href="/{{ owner }}/{{ repo.slug }}/commit/{{ latest_commit.hash }}"
+                                       class="gh-commit-bar-msg"
+                                       title="{{ latest_commit.message|e }}">{{ latest_commit.message|default('Initial commit')|slice(0,72) }}{% if latest_commit.message|length > 72 %}…{% endif %}</a>
+                                    <button type="button" class="gh-commit-bar-ellipsis" title="View full commit message" onclick="this.closest('.gh-latest-commit-bar').querySelector('.gh-commit-bar-full').classList.toggle('open')">
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM1.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm13 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>
+                                    </button>
+                                </div>
+                                {# Right: hash · time · commits count #}
+                                <div class="gh-commit-bar-right">
+                                    <a href="/{{ owner }}/{{ repo.slug }}/commit/{{ latest_commit.hash }}"
+                                       class="gh-commit-bar-hash gh-mono">{{ latest_commit.short_hash }}</a>
+                                    <span class="gh-commit-bar-sep">·</span>
+                                    <span class="gh-commit-bar-time">{{ latest_commit.date|time_ago }}</span>
+                                    <span class="gh-commit-bar-sep">·</span>
+                                    <a href="/{{ owner }}/{{ repo.slug }}/commits/{{ current_ref }}"
+                                       class="gh-commit-bar-count">
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px;"><path d="M11.93 8.5a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5Zm-1.43-.75a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z"/></svg>
+                                        {{ commit_count|default(1) }} {{ t('ui.repo.commits') }}
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <table class="gh-table gh-file-table" dir="ltr">
+                            <thead>
+                                <tr>
+                                    <th style="width:1%"></th>
+                                    <th>{{ t('ui.repo.name') }}</th>
+                                    <th>{{ t('ui.repo.last_commit_msg') }}</th>
+                                    <th style="width:1%">{{ t('ui.repo.commit_time') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in files %}
+                                    <tr>
+                                        <td class="gh-file-icon-cell">
+                                            {{ file_icon(file.name, file.type) }}
+                                        </td>
+                                        <td class="gh-file-name">
+                                            {% if file.type == 'tree' %}
+                                                <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}/{{ file.name }}" dir="ltr" class="gh-mono">{{ file.name }}</a>
+                                            {% else %}
+                                                <a href="/{{ owner }}/{{ repo.slug }}/blob/{{ current_ref }}/{{ file.name }}" dir="ltr" class="gh-mono">{{ file.name }}</a>
+                                            {% endif %}
+                                        </td>
+                                        <td class="gh-file-msg">
+                                            {% if file.last_commit %}
+                                                <a href="/{{ owner }}/{{ repo.slug }}/commit/{{ file.last_commit.hash }}" title="{{ file.last_commit.message }}">
+                                                    {{ file.last_commit.message }}
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                        <td class="gh-file-time">
+                                            {% if file.last_commit %}
+                                                <time datetime="{{ file.last_commit.date }}">{{ file.last_commit.date|time_ago }}</time>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+
+                {# README #}
+                {% if readme_html %}
+                    <div class="gh-readme" id="readme">
+                        <div class="gh-readme-head" style="display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.244a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.244a2.25 2.25 0 0 0-1.756.843l-.25.3a.75.75 0 0 1-1.15 0l-.25-.3A2.25 2.25 0 0 0 5.003 13H.75a.75.75 0 0 1-.75-.75ZM1.5 2.5v9h3.503c.793 0 1.536.37 2.02.988l.977 1.25.977-1.25a3.743 3.743 0 0 1 2.02-.988h3.503v-9h-3.494c-.966 0-1.89.4-2.56 1.11l-.946 1a.75.75 0 0 1-1.1 0l-.946-1A3.72 3.72 0 0 0 4.994 2.5Z"/></svg>
+                            <span>README.md</span>
+                        </div>
+                        <div class="gh-readme-body">
+                            <div class="markdown-body">
+                                {{ readme_html|raw }}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# Right Column: GitHub Repository About Sidebar #}
+            <aside class="gh-repo-sidebar" style="flex-shrink: 0; display: flex; flex-direction: column;">
+                
+                {# 1. About #}
+                <div>
+                    <h3 style="font-size: 14px; font-weight: 600; margin: 0 0 8px; color: var(--gh-fg-default);">About</h3>
+                    {% if repo.description %}
+                        <p style="font-size: 13px; color: var(--gh-fg-default); line-height: 1.5; margin: 0 0 12px; word-break: break-word;">
+                            {{ repo.description }}
+                        </p>
+                    {% else %}
+                        <p style="font-size: 13px; color: var(--gh-fg-muted); font-style: italic; margin: 0 0 12px;">
+                            {{ t('ui.repo.no_description') }}
+                        </p>
+                    {% endif %}
+
+                    {% if repo.website %}
+                        <div style="margin-bottom: 12px; font-size: 13px;">
+                            <a href="{{ repo.website }}" target="_blank" rel="noopener noreferrer" style="color: var(--gh-accent-fg, #58a6ff); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; word-break: break-all;">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a2 2 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"/></svg>
+                                <span>{{ repo.website|replace({'https://': '', 'http://': ''}) }}</span>
+                            </a>
+                        </div>
+                    {% endif %}
+
+                    {% if topics|length > 0 %}
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px;">
+                            {% for topic in topics %}
+                                <a href="/search?q=topic:{{ topic }}" class="gh-topic-tag" style="background: rgba(56, 139, 253, 0.15); color: #58a6ff; border-radius: 12px; padding: 2px 10px; font-size: 11px; font-weight: 500; text-decoration: none;">
+                                    {{ topic }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: var(--gh-fg-muted); margin-top: 10px;">
+                        {% if readme_html %}
+                            <a href="#readme" style="color: var(--gh-fg-muted); text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.244a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.244a2.25 2.25 0 0 0-1.756.843l-.25.3a.75.75 0 0 1-1.15 0l-.25-.3A2.25 2.25 0 0 0 5.003 13H.75a.75.75 0 0 1-.75-.75ZM1.5 2.5v9h3.503c.793 0 1.536.37 2.02.988l.977 1.25.977-1.25a3.743 3.743 0 0 1 2.02-.988h3.503v-9h-3.494c-.966 0-1.89.4-2.56 1.11l-.946 1a.75.75 0 0 1-1.1 0l-.946-1A3.72 3.72 0 0 0 4.994 2.5Z"/></svg>
+                                <span style="color: var(--gh-fg-default); font-weight: 500;">Readme</span>
+                            </a>
+                        {% endif %}
+
+                        {% if license_info %}
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8.75.75a.75.75 0 0 0-1.5 0V2h-.984c-.383 0-.74.205-.936.54L4.01 4.757H1.75a.75.75 0 0 0 0 1.5h1.228L.68 11.23a.75.75 0 0 0 .616 1.02h4.408a.75.75 0 0 0 .616-1.02L4.022 6.257h2.228V14H4.75a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5H9.75V6.257h2.228l-2.3 4.973a.75.75 0 0 0 .616 1.02h4.408a.75.75 0 0 0 .616-1.02L13.022 6.257h1.228a.75.75 0 0 0 0-1.5h-2.26l-1.32-2.217a1.079 1.079 0 0 0-.936-.54H8.75ZM6.984 3.5h2.032l.893 1.5H6.091ZM2.756 10.75l1.626-3.515 1.626 3.515ZM10.756 10.75l1.626-3.515 1.626 3.515Z"/></svg>
+                                <span style="color: var(--gh-fg-default); font-weight: 500;">{{ license_info }}</span>
+                            </div>
+                        {% endif %}
+
+                        <a href="/{{ owner }}/{{ repo.slug }}/activity" style="color: var(--gh-fg-muted); text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0ZM0 8a8 8 0 1 0 16 0A8 8 0 0 0 0 8Zm7.75-4.25a.75.75 0 0 1 .75.75v3.69l2.28 2.28a.75.75 0 1 1-1.06 1.06l-2.5-2.5A.75.75 0 0 1 7 8.5V4.5a.75.75 0 0 1 .75-.75Z"/></svg>
+                            <span>{{ t('ui.repo.activity') }}</span>
+                        </a>
+
+                        <a href="/{{ owner }}/{{ repo.slug }}/insights" style="color: var(--gh-fg-muted); text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25ZM3.5 12h2V7h-2Zm3.5 0h2V4h-2Zm3.5 0h2V9h-2Z"/></svg>
+                            <span>{{ t('ui.repo.custom_props') }}</span>
+                        </a>
+
+                        <div style="display: flex; align-items: center; gap: 8px; color: var(--gh-fg-muted);">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+                            <strong style="color: var(--gh-fg-default);">{{ social.stars|default(0) }}</strong> <span>{{ t('ui.repo.stars') }}</span>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 8px; color: var(--gh-fg-muted);">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 0 1 0 1.798c-.45.678-1.367 1.932-2.637 3.023C11.67 13.008 9.981 14 8 14c-1.473 0-2.825.742-3.955 1.715-1.124.967-1.954 2.096-2.366 2.717a.12.12 0 0 0 0 .136c.411.622 1.241 1.75 2.366 2.717C5.176 11.758 6.527 12.5 8 12.5c1.473 0 2.825-.742 3.955-1.715 1.124-.967 1.954-2.096 2.366-2.717a.12.12 0 0 0 0-.136c-.412-.621-1.242-1.75-2.366-2.717C10.824 4.242 9.473 3.5 8 3.5c-1.473 0-2.825.742-3.955 1.715-1.124.967-1.954 2.096-2.366 2.717ZM8 10a2 2 0 1 1-.001-3.999A2 2 0 0 1 8 10Z"/></svg>
+                            <strong style="color: var(--gh-fg-default);">{{ social.watchers|default(0) }}</strong> <span>{{ t('ui.repo.watching') }}</span>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 8px; color: var(--gh-fg-muted);">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm0 2.122a2.25 2.25 0 1 0-1.5 0v.878A2.25 2.25 0 0 0 5.75 8.5h1.5v2.128a2.251 2.251 0 1 0 1.5 0V8.5h1.5a2.25 2.25 0 0 0 2.25-2.25v-.878a2.25 2.25 0 1 0-1.5 0v.878a.75.75 0 0 1-.75.75h-4.5A.75.75 0 0 1 5 6.25v-.878Zm3.75 7.378a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm3-8.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
+                            <strong style="color: var(--gh-fg-default);">{{ forks_count|default(0) }}</strong> <span>{{ t('ui.repo.forks') }}</span>
+                        </div>
+
+                        <div style="margin-top: 4px;">
+                            <a href="/{{ owner }}/{{ repo.slug }}/issues/new" style="color: var(--gh-fg-muted); text-decoration: none; font-size: 12px;">
+                                {{ t('ui.repo.report') }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {# 2. Releases #}
+                <div style="border-top: 1px solid var(--gh-border-default); margin: 0;"></div>
+                <div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <a href="/{{ owner }}/{{ repo.slug }}/releases" style="font-size: 14px; font-weight: 600; color: var(--gh-fg-default); text-decoration: none;">
+                            {{ t('ui.repo.releases') }}
+                            {% if releases_count > 0 %}
+                                <span class="gh-badge" style="font-size: 11px; margin-left: 4px;">{{ releases_count }}</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                    {% if latest_release %}
+                        <div style="font-size: 13px;">
+                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="var(--gh-success-fg, #3fb950)"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0 2Z"/></svg>
+                                <a href="/{{ owner }}/{{ repo.slug }}/releases/tag/{{ latest_release.tag_name|url_encode }}" style="font-weight: 600; color: var(--gh-fg-default); text-decoration: none;">
+                                    {{ latest_release.tag_name }}
+                                </a>
+                                <span class="gh-badge" style="background: rgba(63,185,80,0.15); color: #3fb950; font-size: 10.5px; border-color: rgba(63,185,80,0.4);">Latest</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--gh-fg-muted); margin-bottom: 6px;">
+                                {{ (latest_release.published_at ?: latest_release.created_at)|time_ago }}
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+                                <a href="/{{ owner }}/{{ repo.slug }}/archive/{{ latest_release.tag_name }}.zip" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none; display: inline-flex; align-items: center; gap: 3px;">
+                                    <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+                                    zip
+                                </a>
+                                {% if releases_count > 1 %}
+                                    <span style="color: var(--gh-fg-muted);">·</span>
+                                    <a href="/{{ owner }}/{{ repo.slug }}/releases" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none;">
+                                        + {{ releases_count - 1 }} releases
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div style="font-size: 12px; color: var(--gh-fg-muted);">
+                            No releases published
+                            {% if can_write %}
+                                <div style="margin-top: 4px;">
+                                    <a href="/{{ owner }}/{{ repo.slug }}/releases/new" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none;">
+                                        + Create a new release
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {# 3. Packages #}
+                {% if packages|default([])|length > 0 %}
+                    <div style="border-top: 1px solid var(--gh-border-default); margin: 0;"></div>
+                    <div>
+                        <h3 style="font-size: 14px; font-weight: 600; margin: 0 0 8px; color: var(--gh-fg-default);">Packages</h3>
+                        {% for pkg in packages %}
+                            <div style="font-size: 12px;"><a href="{{ pkg.url }}" style="color: var(--gh-fg-default); text-decoration: none;">{{ pkg.name }}</a></div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {# 4. Contributors #}
+                {% if contributors|default([])|length > 0 %}
+                    <div style="border-top: 1px solid var(--gh-border-default); margin: 0;"></div>
+                    <div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <h3 style="font-size: 14px; font-weight: 600; margin: 0; color: var(--gh-fg-default);">
+                                {{ t('ui.repo.contributors') }}
+                                <span class="gh-badge" style="font-size: 11px; margin-left: 4px;">{{ contributors|length }}</span>
+                            </h3>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            {% for c in contributors|slice(0, 14) %}
+                                <img src="{{ c.avatar }}" alt="{{ c.name }}" title="{{ c.name }}" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--gh-border-default); background: var(--gh-bg-subtle);">
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {# 5. Languages — GitHub-style stacked bar + legend #}
+                {% if languages|length > 0 %}
+                    <div class="gh-lang" style="border-top: 1px solid var(--gh-border-default); padding-top: 16px; margin-top: 16px;">
+                        <h3 class="gh-lang-title" style="margin: 0 0 10px;">Languages</h3>
+
+                        <div class="gh-lang-bar" role="img" aria-label="Repository language breakdown">
+                            {% for lang in languages %}
+                                <span class="gh-lang-bar-seg" style="width: {{ lang.percentage }}%; background: {{ lang.color }};"
+                                      title="{{ lang.name }}: {{ lang.percentage }}%"></span>
+                            {% endfor %}
+                        </div>
+
+                        <ul class="gh-lang-list">
+                            {% for lang in languages %}
+                                <li>
+                                    <span class="gh-lang-dot" style="background: {{ lang.color }};"></span>
+                                    <a class="gh-lang-name" href="/{{ owner }}/{{ repo.slug }}/languages?lang={{ lang.name|url_encode }}" title="{{ lang.name }}">{{ lang.name }}</a>
+                                    <span class="gh-lang-pct">{{ lang.percentage }}%</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </aside>
+        </div>
+    {% endif %}
+</div>
+
+{% include "partials/download-modal.twig" %}
+{% endblock %}

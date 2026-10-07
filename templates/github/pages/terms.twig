@@ -1,0 +1,32 @@
+{% extends "pages/base.twig" %}
+
+{% block page_content %}
+<p><strong>Last updated:</strong> {{ "now"|date("F j, Y") }}</p>
+
+<p>These Terms &amp; Conditions ("Terms") govern your use of {{ app_name }} (the "Service") hosted at <strong>{{ app_url }}</strong>. By creating an account or using the Service, you agree to these Terms.</p>
+
+<h2>1. Eligibility &amp; Accounts</h2>
+<p>You must be at least the age of majority in your jurisdiction. You are responsible for safeguarding your credentials and for all activity under your account. You must provide accurate information and keep it current.</p>
+
+<h2>2. Acceptable Use</h2>
+<ul>
+    <li>Do not upload content that is unlawful, malicious, or infringes the rights of others.</li>
+    <li>Do not attempt to disrupt, overload, or gain unauthorized access to the Service or other accounts.</li>
+    <li>Do not use the Service to host malware, spam, or distribute stolen credentials.</li>
+</ul>
+
+<h2>3. Your Content</h2>
+<p>You retain ownership of the content you post. You grant {{ app_name }} a limited license to host, store, and display that content solely to operate and provide the Service. You are solely responsible for your content and its compliance with applicable law.</p>
+
+<h2>4. Service Availability &amp; Changes</h2>
+<p>We may modify, suspend, or discontinue any part of the Service at any time. We may update these Terms from time to time; continued use after changes constitutes acceptance.</p>
+
+<h2>5. Termination</h2>
+<p>We may suspend or terminate accounts that violate these Terms or abuse the Service. You may stop using the Service and delete your account at any time.</p>
+
+<h2>6. Disclaimer &amp; Limitation of Liability</h2>
+<p>The Service is provided "as is" without warranty of any kind. To the maximum extent permitted by law, {{ app_name }} is not liable for indirect, incidental, or consequential damages arising from your use of the Service.</p>
+
+<h2>7. Governing Law &amp; Contact</h2>
+<p>These Terms are governed by the laws applicable to {{ app_name }}'s operating jurisdiction. Questions? <a href="/contact">Contact us</a>.</p>
+{% endblock %}

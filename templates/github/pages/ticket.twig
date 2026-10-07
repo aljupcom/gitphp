@@ -1,0 +1,82 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ page_title }} — {{ app_name }}{% endblock %}
+
+{% set prio_labels = { 'low': 'Low', 'normal': 'Normal', 'high': 'High', 'urgent': 'Urgent' } %}
+{% set status_labels = { 'open': 'Open', 'pending': 'Awaiting reply', 'answered': 'Answered', 'closed': 'Closed' } %}
+{% set cat_labels = { 'general': 'General enquiry', 'technical': 'Technical issue', 'account': 'Account & access', 'abuse': 'Report abuse', 'feature': 'Feature request' } %}
+
+{% block content %}
+<div class="gh-page" dir="ltr">
+
+    <nav class="gh-breadcrumb" aria-label="Breadcrumb">
+        <a href="/support">Support</a>
+        <span class="sep">/</span>
+        <strong class="gh-mono">{{ ticket.reference }}</strong>
+    </nav>
+
+    {% if error %}<div class="gh-flash gh-flash-error" role="alert">{{ error }}</div>{% endif %}
+    {% if success %}<div class="gh-flash gh-flash-success" role="status">{{ success }}</div>{% endif %}
+
+    <header class="gh-ticket-head">
+        <div>
+            <h1 class="gh-ticket-title">{{ ticket.subject }}</h1>
+            <div class="gh-ticket-meta">
+                <span class="gh-ticket-status gh-ticket-status--{{ ticket.status }}">{{ status_labels[ticket.status]|default(ticket.status) }}</span>
+                <span class="gh-ticket-status gh-ticket-status--{{ ticket.priority }}">{{ prio_labels[ticket.priority]|default(ticket.priority) }}</span>
+                <span class="gh-muted">{{ cat_labels[ticket.category]|default(ticket.category) }}</span>
+                <span class="gh-muted">·</span>
+                <span class="gh-muted">opened <time datetime="{{ ticket.created_at }}">{{ ticket.created_at|time_ago }}</time></span>
+            </div>
+        </div>
+        <div class="gh-ticket-head-ref">
+            <span class="gh-ticket-ref">{{ ticket.reference }}</span>
+            <button type="button" class="gh-copy-inline" data-copy="{{ ticket.reference }}" title="Copy reference" aria-label="Copy reference">
+                <svg class="ti ti-copy"><use href="#ti-copy"/></svg>
+            </button>
+        </div>
+    </header>
+
+    {# ── Conversation ───────────────────────────────────────── #}
+    <div class="gh-ticket-thread">
+        <article class="gh-ticket-msg">
+            <div class="gh-ticket-msg-head">
+                <strong>{{ ticket.guest_name|default('You') }}</strong>
+                <time class="gh-muted" datetime="{{ ticket.created_at }}">{{ ticket.created_at|time_ago }}</time>
+            </div>
+            <div class="gh-ticket-msg-body">{{ ticket.message|nl2br }}</div>
+        </article>
+
+        {% for r in replies %}
+            <article class="gh-ticket-msg{{ r.is_staff ? ' gh-ticket-msg--staff' : '' }}">
+                <div class="gh-ticket-msg-head">
+                    <strong>{{ r.author_name|default('Guest') }}</strong>
+                    {% if r.is_staff %}<span class="gh-ticket-status gh-ticket-status--answered">Support</span>{% endif %}
+                    <time class="gh-muted" datetime="{{ r.created_at }}">{{ r.created_at|time_ago }}</time>
+                </div>
+                <div class="gh-ticket-msg-body">{{ r.body|nl2br }}</div>
+            </article>
+        {% endfor %}
+    </div>
+
+    {# ── Reply ──────────────────────────────────────────────── #}
+    {% if can_reply %}
+        <form class="gh-box gh-support-form" method="POST" action="/support/ticket/{{ ticket.reference }}/reply">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="gh-form-group">
+                <label class="gh-label" for="r-body">Add a reply</label>
+                <textarea class="gh-textarea" id="r-body" name="body" rows="5" required
+                          minlength="2" maxlength="5000" placeholder="Type your reply…"></textarea>
+            </div>
+            <button type="submit" class="gh-btn gh-btn-primary">
+                <svg class="ti ti-send"><use href="#ti-send"/></svg> Send reply
+            </button>
+        </form>
+    {% else %}
+        <div class="gh-empty">
+            <div class="gh-empty-title">This ticket is closed</div>
+            <p class="gh-muted" style="margin:0;">Need more help? <a href="/support">Open a new ticket</a>.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

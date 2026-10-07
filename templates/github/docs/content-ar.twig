@@ -1,0 +1,900 @@
+{# ── محتوى الدليل بالعربية (يُضمَّن من guide.twig) ─────────────────── #}
+
+{% set allowed = categories[current_cat].sections %}
+
+{# ── 0. دليل التثبيت والاستضافة الذاتية �� ── #}
+{# ── 0.1 كارد مخصص: التحديثات عن بعد وربط المستودعات (Remote Updaters upd_*) 🚀 ── #}
+{% if current_cat == 'all' or 'remote-updates' in allowed %}
+<section id="remote-updates" class="gh-docs-section" style="border: 2px solid rgba(31,111,235,0.45); background: linear-gradient(180deg, rgba(31,111,235,0.04) 0%, transparent 100%); border-radius:12px; padding:1.75rem; margin-bottom:2rem; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.85rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0; border:none; padding:0; display:flex; align-items:center; gap:8px;">
+            <span class="gh-docs-num" style="background:#1f6feb; color:#fff;">🚀</span>
+            التحديثات عن بعد وربط المستودعات بأنظمة التثبيت (Remote Updaters upd_*)
+        </h2>
+        <span class="gh-docs-badge-new">
+            <span class="gh-docs-pulse-dot"></span>
+            جديد NEW
+        </span>
+    </div>
+    
+    <p style="font-size:14px; line-height:1.6; margin-bottom:1rem;">
+        ميزة متطورة تتيح للمطورين وأصحاب المشاريع ربط برامج التثبيت الآلية ومثبتات الـ Linux/CLI (مثل <code class="gh-docs-inline-code">antigravity-installer-linux</code>) وسكربتات الـ CI/CD لتنزيل أحدث الإصدارات والأرشيفات البرمجية مباشرة من المستودع دون تدخل يدوي ودون حظر الروابط.
+    </p>
+
+    <div class="gh-docs-grid" style="margin:1.25rem 0; display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-key" style="color:#1f6feb;"><use href="#ti-key"/></svg>
+                رمز تحديث شخصي لكل حساب (upd_*)
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                لكل مستخدم رمز أمان دائم ومميز يبدأ بـ <code class="gh-docs-inline-code">upd_...</code> يمكن نسخه وإعادة توليده في أي وقت من إعدادات الحساب.
+            </p>
+        </div>
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-terminal-2" style="color:#2ea043;"><use href="#ti-terminal-2"/></svg>
+                توافق كامل مع cURL و Wget
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                تجاوز بوابات التحقق المؤقتة واستدعاء الملفات البرمجية وسحوبات الأرشيف عبر تمرير الترويسة <code class="gh-docs-inline-code">X-Update-Token</code> أو المعامل <code class="gh-docs-inline-code">?token=upd_*</code>.
+            </p>
+        </div>
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-shield-check" style="color:#a371f7;"><use href="#ti-shield-check"/></svg>
+                حماية ضد التنزيل العشوائي
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                يتم حظر التنزيل المباشر غير المصرح به وإعادة توجيهه تلقائياً نحو البوابة الآمنة الموحدة ما لم يحمل ترويسة التحديث المعتمدة.
+            </p>
+        </div>
+    </div>
+
+    <h3>أمثلة الاستخدام البرمجي في السكربتات (CLI &amp; Shell Automation):</h3>
+<pre class="gh-docs-code" dir="ltr"><code># 1. التنزيل المباشر عبر ترويسة الأمان X-Update-Token (مستحسن للسكربتات):
+curl -sSL -H "X-Update-Token: upd_YOUR_PERSONAL_TOKEN" \
+     "{{ app_url }}/username/repository/releases/download/v1.0.0/app.tar.gz" -o app.tar.gz
+
+# 2. تنزيل أرشيف الشيفرة المصدرية (Source Archive) مباشرة:
+curl -sSL -H "X-Update-Token: upd_YOUR_PERSONAL_TOKEN" \
+     "{{ app_url }}/username/repository/archive/main.zip" -o source.zip
+
+# 3. استخدام معامل الرابط المباشر في أدوات Wget:
+wget "{{ app_url }}/d/SHORT_CODE/get?token=upd_YOUR_PERSONAL_TOKEN" -O package.zip</code></pre>
+
+    <div class="gh-docs-callout ok" style="background:rgba(31,111,235,0.08); border-left:3px solid #1f6feb; padding:10px 14px; border-radius:6px; margin-top:1rem;">
+        🚀 <strong>أين تجد رمزك الشخصي؟</strong> توجه إلى <strong>الإعدادات ← التحديثات عن بعد (Remote Updates)</strong> أو عبر الرابط المباشر <a href="/settings/updates" target="_blank" style="color:#1f6feb; font-weight:600;"><code class="gh-docs-inline-code">/settings/updates</code></a> لنسخ الرمز واستخدامه فوراً في أدواتك ومستودعاتك.
+    </div>
+</section>
+{% endif %}
+
+{# ── 0.2 كارد مخصص: مركز التنزيل الموحد ونظام الإبلاغ عن الروابط المعطلة (/d/*) ☁️ ── #}
+{% if current_cat == 'all' or 'downloads-gateway' in allowed %}
+<section id="downloads-gateway" class="gh-docs-section" style="border: 2px solid rgba(46,160,67,0.45); background: linear-gradient(180deg, rgba(46,160,67,0.04) 0%, transparent 100%); border-radius:12px; padding:1.75rem; margin-bottom:2rem; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.85rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0; border:none; padding:0; display:flex; align-items:center; gap:8px;">
+            <span class="gh-docs-num" style="background:#2ea043; color:#fff;">☁️</span>
+            مركز التنزيل الموحد ونظام الإبلاغ عن الروابط المعطلة (/d/* Gateway)
+        </h2>
+        <span class="gh-docs-badge-new">
+            <span class="gh-docs-pulse-dot"></span>
+            جديد NEW
+        </span>
+    </div>
+    
+    <p style="font-size:14px; line-height:1.6; margin-bottom:1rem;">
+        بوابة موحدة فائقة الأناقة والحماية لكل الملفات والإصدارات والأرشيفات المشاركة عبر المنصة، تضمن سلامة الملفات وسرعة تحميلها وموثوقيتها.
+    </p>
+
+    <div class="gh-docs-grid" style="margin:1.25rem 0; display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-shield-check" style="color:#2ea043;"><use href="#ti-shield-check"/></svg>
+                التحقق التلقائي وبصمة SHA-256
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                توليد بصمة التشفير الرقمية (SHA-256 Checksum) تلقائياً وعرضها مع زر نسخ بنقرة واحدة لتمكين المستخدم من التحقق من سلامة الملف ومطابقته.
+            </p>
+        </div>
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-flag" style="color:#cf222e;"><use href="#ti-flag"/></svg>
+                نظام الإبلاغ عن الروابط المعطلة
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                إمكانية تقديم بلاغ فوري عند وجود خلل أو انقطاع أو تلف في الملف، مع إرسال البلاغ مباشرة للوحة تحكم الإدارة للمتابعة السريعة.
+            </p>
+        </div>
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-device-desktop" style="color:#1f6feb;"><use href="#ti-device-desktop"/></svg>
+                شريط جانبي متجاوب وذكي
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                قائمة جانبية غنية بالإحصائيات ومؤشرات النشاط الحي تظهر حصرياً على الشاشات الكبيرة وتتحول لنمط مدمج خفيف على الأجهزة الذكية.
+            </p>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if current_cat == 'all' or 'installation' in allowed %}
+<section id="installation" class="gh-docs-section" style="border: 2px solid rgba(31,111,235,0.4); background: linear-gradient(180deg, rgba(31,111,235,0.03) 0%, transparent 100%); border-radius:10px; padding:1.75rem; margin-bottom:2rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0;"><span class="gh-docs-num" style="background:#1f6feb; color:#fff;">📦</span> دليل التثبيت والاستضافة الذاتية (Self-Hosting)</h2>
+        <span style="background:rgba(31,111,235,0.15); color:var(--gh-accent-fg); border:1px solid rgba(31,111,235,0.4); font-size:.78rem; font-weight:700; padding:.2rem .6rem; border-radius:12px;">مفتوح المصدر (Open Source)</span>
+    </div>
+    
+    <p>
+        منصة <strong>GitPHP</strong> مفتوحة المصدر بالكامل ومصممة لتكون خفيفة وسريعة وسهلة التثبيت على أي خادم Linux مشترك أو VPS مخصص، دون الحاجة لـ Docker أو خدمات خلفية معقدة.
+    </p>
+
+    <h3>📋 متطلبات الخادم (System Requirements):</h3>
+    <ul style="padding-left:1.4rem; line-height:1.8;">
+        <li><strong>نظام التشغيل:</strong> أي توزيعة Linux حديثة (Ubuntu 20.04+, Debian 11+, AlmaLinux 9+, Rocky Linux).</li>
+        <li><strong>إصدار PHP:</strong> PHP 8.1 أو أحدث (PHP 8.2 / 8.3 موصى به) مع الامتدادات: <code class="gh-docs-inline-code">pdo_mysql</code>, <code class="gh-docs-inline-code">mbstring</code>, <code class="gh-docs-inline-code">curl</code>, <code class="gh-docs-inline-code">intl</code>, <code class="gh-docs-inline-code">sodium</code>, <code class="gh-docs-inline-code">fileinfo</code>.</li>
+        <li><strong>قاعدة البيانات:</strong> MariaDB 10.6+ أو MySQL 8.0+.</li>
+        <li><strong>محرك Git:</strong> Git 2.30 أو أحدث مثبت على السيرفر ومتاح في الـ PATH.</li>
+        <li><strong>مدير الحزم:</strong> Composer 2.x.</li>
+        <li><strong>خادم الويب:</strong> OpenLiteSpeed / LiteSpeed، Nginx، أو Apache.</li>
+    </ul>
+
+    <hr style="border:0; border-top:1px solid var(--gh-border-default); margin:1.5rem 0;">
+
+    <h3>🚀 خطوات التثبيت السريع عبر سطر الأوامر (CLI):</h3>
+
+    <h4>1. استنساخ المستودع وتثبيت الاعتماديات:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># استنساخ المشروع في مسار الموقع
+git clone https://github.com/ysnapp/gitphp.git /var/www/gitphp
+cd /var/www/gitphp
+
+# تثبيت مكتبات Composer
+composer install --no-dev --optimize-autoloader</code></pre>
+
+    <h4>2. إعداد قاعدة البيانات وملف الإعدادات:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># انسخ قالب الإعدادات
+cp config/config.example.php config/config.php
+
+# افتح الملف وعدل بيانات قاعدة البيانات والاسم والرابط
+nano config/config.php</code></pre>
+
+    <h4>3. تشغيل معالج التثبيت التلقائي:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># تشغيل معالج سطر الأوامر
+php bin/install.php
+
+# أو يمكنك التثبيت عبر متصفح الويب بالدخول إلى:
+# https://your-domain.com/install.php</code></pre>
+
+    <h4>4. ضبط أذونات وصلاحيات المجلدات:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># منح ملكية الملفات لمستخدم خادم الويب (www-data أو nobody أو مستخدم الموقع)
+chown -R www-data:www-data /var/www/gitphp/
+chmod -R 755 /var/www/gitphp/
+chmod -R 775 /var/www/gitphp/data/ /var/www/gitphp/storage/
+
+# تشغيل أداة الفحص والإصلاح الآمنة
+php bin/fix-push.php</code></pre>
+
+    <div class="gh-docs-callout ok">✅ بعد إتمام التثبيت، احذف ملف <code class="gh-docs-inline-code">public_html/install.php</code> أو سيقوم النظام بحظره تلقائياً لضمان الأمان.</div>
+</section>
+{% endif %}
+
+{# ── 0.1 إعداد خوادم الويب ⚙️ ── #}
+{% if current_cat == 'all' or 'deploy-server' in allowed %}
+<section id="deploy-server" class="gh-docs-section">
+    <h2><span class="gh-docs-num">⚙️</span> إعداد خوادم الويب (OpenLiteSpeed / Nginx / Apache)</h2>
+    <p>يجب تعيين مجلد <strong>Document Root</strong> إلى المجلد الفرعي <code class="gh-docs-inline-code">public_html</code> وضبط إعادة التوجيه وتمرير ترويسة المصادقة:</p>
+
+    <h3>أ) إعداد خادم OpenLiteSpeed / CyberPanel:</h3>
+    <p>في لوحة CyberPanel → Website → vHost Conf، تأكد من توجيه المسار وضبط قواعد الـ Rewrite:</p>
+<pre class="gh-docs-code" dir="ltr"><code># في ملف vHost Conf:
+docRoot                   /home/git.ysnapp.com/public_html
+vhssl {
+  enableContextRewrite    1
+}
+
+# قواعد .htaccess في public_html/.htaccess:
+RewriteEngine On
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]</code></pre>
+
+    <h3>ب) إعداد خادم Nginx:</h3>
+<pre class="gh-docs-code" dir="ltr"><code>server {
+    listen 80;
+    server_name git.example.com;
+    root /var/www/gitphp/public_html;
+    index index.php;
+
+    # رفع حد حجم الملفات للـ Git Push الكبير
+    client_max_body_size 500M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param HTTP_AUTHORIZATION $http_authorization;
+    }
+
+    # حماية المجلدات الحساسة
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}</code></pre>
+
+    <h3>ج) إعداد مهام Cron الدورية (Background Tasks):</h3>
+    <p>أضف المهمة المجدولة التالية إلى crontab لتنفيذ عمليات مزامنة المستودعات، إرسال الـ Webhooks، وتنظيف الجلسات المنتهية:</p>
+<pre class="gh-docs-code" dir="ltr"><code># افتح محرر crontab لمستخدم الويب
+crontab -u www-data -e
+
+# أضف السطر التالي للتشغيل كل دقيقة:
+* * * * * php /var/www/gitphp/bin/cron.php >/dev/null 2>&1</code></pre>
+
+    <div class="gh-docs-callout info">📖 للمزيد من الشروحات المفصلة حول الخوادم، راجع ملفات التوثيق الفنية: <code class="gh-docs-inline-code">docs/installation.md</code> و <code class="gh-docs-inline-code">docs/deploy.md</code>.</div>
+</section>
+{% endif %}
+
+{# ── 1. نظرة عامة ── #}
+{% if current_cat == 'all' or 'overview' in allowed %}
+<section id="overview" class="gh-docs-section">
+    <h2><span class="gh-docs-num">1</span> نظرة عامة</h2>
+    <p>
+        {{ app_name }} منصة ذاتية الاستضافة لإدارة مستودعات Git بواجهة عصرية تشبه GitHub.
+        توفّر استضافة كاملة وسريعة عبر HTTP بمصادقة الرموز (Personal Tokens) وكلمة المرور، وكذلك واجهة SSH مؤمّنة وموثّقة،
+        مع طبقة تعاون متكاملة: Pull Requests، مراجعة الكود السطرية، حماية الفروع، Webhooks، وواجهة REST API برمجية.
+    </p>
+    <div class="gh-docs-grid">
+        <div class="gh-docs-card"><h4>استضافة Git متعددة الطرق</h4><p>Clone / Fetch / Push عبر HTTP (بالرموز أو كلمة المرور) ومفاتيح SSH.</p></div>
+        <div class="gh-docs-card"><h4>Pull Requests & الدمج</h4><p>ترقيم تسلسلي، محادثة تفاعلية، مراجعة التغييرات، ودمج بنقرة واحدة.</p></div>
+        <div class="gh-docs-card"><h4>مراجعة الكود (Code Review)</h4><p>تعليق على أي سطر في الـ Diff، واعتماد (Approve) أو طلب تعديلات.</p></div>
+        <div class="gh-docs-card"><h4>Webhooks</h4><p>إشعارات فورية موقّعة بـ HMAC-SHA256 على أحداث Push و Issues و PRs والإصدارات.</p></div>
+        <div class="gh-docs-card"><h4>حماية الفروع (Branch Protection)</h4><p>منع الحذف، منع Force-push، واشتراط مراجعة معتمدة قبل الدمج.</p></div>
+        <div class="gh-docs-card"><h4>REST API & Tokens</h4><p>نقاط استعلام برمجية متكاملة مدعومة بالرموز الشخصية <code class="gh-docs-inline-code">gtp_…</code>.</p></div>
+    </div>
+</section>
+{% endif %}
+
+{# ── 2. البدء السريع ── #}
+{% if current_cat == 'all' or 'quick-start' in allowed %}
+<section id="quick-start" class="gh-docs-section">
+    <h2><span class="gh-docs-num">2</span> البدء السريع وإنشاء أول مستودع</h2>
+    <p>أنشئ مستودعاً جديداً من <strong>New repository</strong> في أعلى الصفحة أو قائمة حسابك، وحدد الاسم والوصف والخصوصية (Public / Private).</p>
+    <div class="gh-docs-callout info">💡 <strong>رابط المستودع النموذجي:</strong> <code class="gh-docs-inline-code">{{ app_url }}/{{ owner }}/my-project.git</code></div>
+    <div class="gh-docs-callout ok">✅ كل مستودع جديد يتم تهيئته تلقائياً ليقبل الدفع المباشر والـ Hooks بدون أي إعدادات إضافية.</div>
+</section>
+{% endif %}
+
+{# ── 3. كارد مخصص: الدفع بالـ Token (PAT) ⭐️ ── #}
+{% if current_cat == 'all' or 'token-push' in allowed %}
+<section id="token-push" class="gh-docs-section" style="border: 2px solid rgba(56,139,253,0.4); background: linear-gradient(180deg, rgba(56,139,253,0.03) 0%, transparent 100%); border-radius:10px; padding:1.75rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0;"><span class="gh-docs-num" style="background:#238636; color:#fff;">⭐️</span> الدفع بالرموز الشخصية (Personal Access Token)</h2>
+        <span style="background:rgba(56,139,253,0.15); color:var(--gh-accent-fg); border:1px solid rgba(56,139,253,0.4); font-size:.78rem; font-weight:700; padding:.2rem .6rem; border-radius:12px;">موصى به للأمان و CI/CD</span>
+    </div>
+    
+    <p>
+        تتيح لك ميزة <strong>الرموز الشخصية (PAT)</strong> الدفع إلى مستودعاتك بأمان تام دون كتابة أو كشف كلمة مرور حسابك الرئيسية.
+        التوكنات تولَّد بصيغة <code class="gh-docs-inline-code">gtp_…</code> وتُخزَّن مجزأة بالكامل (SHA-256) في قاعدة البيانات.
+    </p>
+
+    <div class="gh-docs-grid" style="margin:1.25rem 0;">
+        <div class="gh-docs-card">
+            <h4>1. توليد التوكن</h4>
+            <p>من <strong>Settings → Access Tokens</strong> (أو الرابط المباشر <code>/settings/tokens</code>) اختر اسماً وحدد صلاحية <code>write</code> ثم انسخ التوكن.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>2. الاستخدام مع Git</h4>
+            <p>استخدم التوكن في حقل كلمة المرور (Password) في أي أمر <code>git push</code> أو <code>git clone</code>.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>3. إلغاء فوري</h4>
+            <p>إذا تم تسريب التوكن أو انتهت مهمته، أوقفه فوراً بنقرة واحدة من لوحة التحكم دون تغيير كلمة مرورك.</p>
+        </div>
+    </div>
+
+    <h3>أمثلة الاستخدام العملي:</h3>
+    
+    <h4>1. الحفظ التلقائي في جهازك (Git Credential Store):</h4>
+<pre class="gh-docs-code" dir="ltr"><code># فعّل حفظ الاعتماديات محلياً
+git config --global credential.helper store
+
+# نفّذ الدفع وأدخل التوكن مرة واحدة فقط
+git push https://{{ app_url|replace({'https://':'', 'http://':''}) }}/{{ owner }}/my-project.git main
+# Username: {{ owner }}
+# Password: gtp_your_token_here</code></pre>
+
+    <h4>2. التضمين المباشر في رابط المستودع:</h4>
+<pre class="gh-docs-code" dir="ltr"><code>git remote set-url origin https://{{ owner }}:gtp_your_token_here@{{ app_url|replace({'https://':'', 'http://':''}) }}/{{ owner }}/my-project.git
+git push origin main</code></pre>
+
+    <h4>3. بيئات التكامل المستمر (CI/CD) — GitHub Actions & GitLab CI:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># في GitHub Actions:
+- name: Push to GitPHP
+  env:
+    GIT_TOKEN: ${{ '{{' }} secrets.GITPHP_TOKEN {{ '}}' }}
+  run: |
+    git remote set-url origin https://{{ owner }}:${GIT_TOKEN}@{{ app_url|replace({'https://':'', 'http://':''}) }}/{{ owner }}/my-project.git
+    git push origin main</code></pre>
+
+    <div class="gh-docs-callout ok">💡 <strong>أنواع الصلاحيات:</strong> نطاق <code class="gh-docs-inline-code">write</code> يتيح الدفع والاستنساخ واستعلامات API، بينما نطاق <code class="gh-docs-inline-code">read</code> مخصص للاستنساخ والقراءة فقط.</div>
+</section>
+{% endif %}
+
+{# ── 3.1 كارد مخصص: التواقيع الرقمية المشفرة والمحددة بالوقت (Signed Push Signatures) ── تنبيه إهمال الميزة (DEPRECATED) ── #}
+{% if current_cat == 'all' or 'token-push' in allowed %}
+<section id="signed-tokens" class="gh-docs-section" style="border: 2px solid rgba(207,34,46,0.4); background: linear-gradient(180deg, rgba(207,34,46,0.03) 0%, transparent 100%); border-radius:12px; padding:1.75rem; margin-top:2rem; position:relative;">
+    
+    <!-- شريط تنبيه الإهمال الشفاف -->
+    <div style="background: rgba(207,34,46,0.1); border: 1px solid rgba(207,34,46,0.35); border-radius: 8px; padding: 12px 16px; margin-bottom: 1.25rem; display: flex; align-items: flex-start; gap: 12px;">
+        <svg class="ti ti-alert-triangle" style="width: 22px; height: 22px; color: #cf222e; flex-shrink: 0; margin-top: 2px;"><use href="#ti-alert-triangle"/></svg>
+        <div style="font-size: 13.5px; line-height: 1.55; color: var(--gh-fg-default);">
+            <strong style="color: #cf222e; font-size: 14px; display: block; margin-bottom: 2px;">⚠️ تنبيه رسمي: تم إهمال هذه الميزة (Deprecated Feature)</strong>
+            نظام التواقيع الرقمية المؤقتة (<code class="gh-docs-inline-code">gitsig_*</code>) أصبح <strong>مهملاً وغير مستحسن للاستخدام الجديد</strong>، حيث تم استبداله واعتماد البدائل الأكثر استقراراً وأماناً:
+            <ul style="margin: 6px 0 0 0; padding-right: 20px;">
+                <li><strong>لعمليات الرفع والدفع المباشر:</strong> استخدم <strong>رموز الوصول الشخصية المعتمدة (PAT)</strong> (<code class="gh-docs-inline-code">pat_*</code>) أو مفاتيح <strong>SSH Keys</strong>.</li>
+                <li><strong>لأنظمة التحديث المؤتمتة والـ CI/CD:</strong> استخدم نظام <strong>رموز التحديث عن بعد</strong> (<code class="gh-docs-inline-code">upd_*</code>) عبر الرابط <a href="/settings/updates" style="color:var(--gh-accent-fg); font-weight:600;"><code class="gh-docs-inline-code">/settings/updates</code></a>.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0; opacity: 0.85;"><span class="gh-docs-num" style="background:#cf222e; color:#fff;"><svg class="ti ti-history"><use href="#ti-history"/></svg></span> التواقيع الرقمية للدفع السريع (Signed Push Signatures) <span style="font-size:12px; color:#cf222e; font-weight:600;">[مُهملة / Deprecated]</span></h2>
+        <span style="background:rgba(207,34,46,0.15); color:#cf222e; border:1px solid rgba(207,34,46,0.4); font-size:.78rem; font-weight:700; padding:.2rem .6rem; border-radius:12px;">ميزة قديمة مهملة</span>
+    </div>
+    
+    <p style="opacity: 0.85;">
+        كانت هذه الميزة تُستخدم لتوليد توقيع دفع مؤقت محدد بالدقائق أو الساعات بصيغة <code class="gh-docs-inline-code">gitsig_…</code> لتنفيذ أمر <code>git push</code> خاطف. <strong>يُرجى عدم الاعتماد عليها في المشاريع البرمجية الجديدة واستخدام البدائل الرسمية المعتمدة.</strong>
+    </p>
+
+    <div class="gh-docs-grid" style="margin:1.25rem 0; opacity: 0.75;">
+        <div class="gh-docs-card">
+            <h4><svg class="ti ti-flame" style="color:#d29922;"><use href="#ti-flame"/></svg> وضع الاحتراق لمرة واحدة (Single-Use)</h4>
+            <p>خيار قديم لإلغاء التوقيع فور إتمام أول عملية دفع.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4><svg class="ti ti-clock" style="color:#58a6ff;"><use href="#ti-clock"/></svg> مدة صلاحية مؤقتة</h4>
+            <p>تحديد مدة زمنية قصيرة لانتهاء صلاحية التوقيع تلقائياً.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4><svg class="ti ti-shield-lock" style="color:#cf222e;"><use href="#ti-shield-lock"/></svg> حصر المستودع والـ IP</h4>
+            <p>تقييد التوقيع على مستودع أو شبكة محددة.</p>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+
+{# ── 4. Git HTTP ── #}
+{% if current_cat == 'all' or 'git-http' in allowed %}
+<section id="git-http" class="gh-docs-section">
+    <h2><span class="gh-docs-num">4</span> الرفع والاستنساخ عبر HTTP (كلمة المرور)</h2>
+    <h3>أ) رفع مشروع محلي موجود</h3>
+<pre class="gh-docs-code" dir="ltr"><code>cd my-project
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin {{ app_url }}/{{ owner }}/my-project.git
+git push -u origin main</code></pre>
+
+    <h3>ب) الاستنساخ والسحب</h3>
+<pre class="gh-docs-code" dir="ltr"><code>git clone {{ app_url }}/{{ owner }}/my-project.git
+cd my-project
+git pull origin main</code></pre>
+
+    <div class="gh-docs-callout info">💡 <strong>المصادقة:</strong> عند طلب Git لاسم المستخدم وكلمة المرور، استخدم بيانات حسابك أو <a href="/docs?cat=token-push#token-push">الرمز الشخصي PAT</a>. المستودعات الخاصة تتطلب صلاحية متعاون (read أو write).</div>
+</section>
+{% endif %}
+
+{# ── 5. Git SSH ── #}
+{% if current_cat == 'all' or 'git-ssh' in allowed %}
+<section id="git-ssh" class="gh-docs-section">
+    <h2><span class="gh-docs-num">5</span> الرفع والسحب عبر SSH</h2>
+    <p>تتيح لك مفاتيح SSH إجراء عمليات السحب والدفع بأمان تام عبر المنفذ 22 ودون إدخال كلمات مرور:</p>
+    <ol style="padding-left:1.4rem;">
+        <li>ولّد مفتاحاً جديداً (نوع Ed25519 الموصى به):<pre class="gh-docs-code" dir="ltr"><code>ssh-keygen -t ed25519 -C "you@example.com"</code></pre></li>
+        <li>انسخ محتوى المفتاح العام:<pre class="gh-docs-code" dir="ltr"><code>cat ~/.ssh/id_ed25519.pub</code></pre></li>
+        <li>أضف المفتاح من <strong>Settings → SSH keys</strong> في حسابك.</li>
+        <li>اختبر الاتصال بالخادم:<pre class="gh-docs-code" dir="ltr"><code>ssh -T git@{{ app_url|replace({'https://':'', 'http://':''}) }}</code></pre></li>
+        <li>استخدم رابط SSH في Git:<pre class="gh-docs-code" dir="ltr"><code>git clone git@{{ app_url|replace({'https://':'', 'http://':''}) }}:{{ owner }}/my-project.git
+git push origin main</code></pre></li>
+    </ol>
+    <div class="gh-docs-callout warn">⚙️ لإعداد مستخدم git والصلاحيات على السيرفر، راجع الدليل المخصص في: <code class="gh-docs-inline-code">docs/ssh-setup.md</code>.</div>
+</section>
+{% endif %}
+
+{# ── 6. الفروع والمقارنة ── #}
+{% if current_cat == 'all' or 'branches' in allowed %}
+<section id="branches" class="gh-docs-section">
+    <h2><span class="gh-docs-num">6</span> الفروع والمقارنة والدمج</h2>
+    <div class="gh-docs-grid">
+        <div class="gh-docs-card"><h4>إنشاء فرع</h4><p>من صفحة Branches → New branch؛ حدد الفرع الأساس واسم الفرع الجديد.</p></div>
+        <div class="gh-docs-card"><h4>مقارنة (Compare)</h4><p>فحص الـ Commits المتقدمة والمتأخرة، عرض الفروقات، وفحص التعارض التلقائي.</p></div>
+        <div class="gh-docs-card"><h4>دمج مباشر (Merge)</h4><p>زر دمج مباشر لدمج فرع في آخر مع الحفاظ التام على شجرة الالتزامات.</p></div>
+    </div>
+    <div class="gh-docs-callout info">للعمل الجماعي ومراجعة التعديلات قبل دمجها، يُفضل دائماً فتح <a href="#pull-requests">Pull Request</a>.</div>
+</section>
+{% endif %}
+
+{# ── 7. Pull Requests ── #}
+{% if current_cat == 'all' or 'pull-requests' in allowed %}
+<section id="pull-requests" class="gh-docs-section">
+    <h2><span class="gh-docs-num">7</span> طلبات السحب (Pull Requests)</h2>
+    <p>من تبويب <strong>Pull requests</strong> → <strong>New pull request</strong>، اختر الفرع المصدر والفرع الهدف:</p>
+    <ol style="padding-left:1.4rem;">
+        <li>راجع عدد الالتزامات وملخص التغييرات وقابلية الدمج التلقائي.</li>
+        <li>اكتب عنواناً ووصفاً توضيحياً وأنشئ الطلب (يُرقَّم تلقائياً #1، #2…).</li>
+        <li>في صفحة الطلب: تبادل النقاش عبر التعليقات وافحص تبويب <strong>Files changed</strong>.</li>
+        <li>بعد اكتمال المراجعة، انقر <strong>Merge pull request</strong> لإتمام الدمج الفعلي.</li>
+    </ol>
+    <div class="gh-docs-callout ok">✅ الدمج يتم عبر محرك Git الحقيقي (<code class="gh-docs-inline-code">git merge-tree</code>) مع منع دمج التعارضات.</div>
+</section>
+{% endif %}
+
+{# ── 8. مراجعة الكود ── #}
+{% if current_cat == 'all' or 'code-review' in allowed %}
+<section id="code-review" class="gh-docs-section">
+    <h2><span class="gh-docs-num">8</span> مراجعة الكود (Code Review)</h2>
+    <p>افتح تبويب <strong>Files changed</strong> داخل أي طلب سحب، ثم <strong>انقر على أي سطر</strong> في الـ Diff لإضافة تعليق مراجعة سطري يظهر للجميع ويبقى مثبتاً في مكانه.</p>
+    <div class="gh-docs-callout info">
+        تتيح أزرار <strong>Approve</strong> (الموافقة) و <strong>Request changes</strong> (طلب تعديلات) للمراجعين تسجيل قراراتهم.
+        إذا تم تفعيل حماية الفرع، فلن يُسمح بدمج الطلب حتى يحصل على موافقة معتمدة.
+    </div>
+</section>
+{% endif %}
+
+{# ── 9. حماية الفروع ── #}
+{% if current_cat == 'all' or 'protections' in allowed %}
+<section id="protections" class="gh-docs-section">
+    <h2><span class="gh-docs-num">9</span> حماية الفروع (Branch Protection)</h2>
+    <p>من إعدادات المستودع → <strong>Branch protection</strong> يمكنك تعيين قواعد صارمة للفروع الرئيسية (مثل <code>main</code>):</p>
+    <ul style="padding-left:1.4rem;">
+        <li>منع <strong>حذف</strong> الفرع نهائياً.</li>
+        <li>منع <strong>Force-push</strong> (إعادة كتابة التاريخ بالرفع القسري).</li>
+        <li>اشتراط <strong>مراجعة معتمدة</strong> (Approved Review) قبل السماح بالدمج.</li>
+        <li>خيار السماح للمدير بتجاوز القواعد عند الضرورة (Admin Bypass).</li>
+    </ul>
+    <div class="gh-docs-callout warn">🛡️ تُطبَّق هذه القواعد على مستوى الخادم عبر خطافات <code class="gh-docs-inline-code">pre-receive</code> لضمان الحماية عبر Web و Git CLI على حد سواء.</div>
+</section>
+{% endif %}
+
+{# ── 10. Webhooks ── #}
+{% if current_cat == 'all' or 'webhooks' in allowed %}
+<section id="webhooks" class="gh-docs-section">
+    <h2><span class="gh-docs-num">10</span> Webhooks والتكامل الخارجي</h2>
+    <p>من إعدادات المستودع → <strong>Webhooks</strong> أضف رابط Endpoint خارجي لتلقي الإشعارات الفورية للأحداث:</p>
+    <ul style="padding-left:1.4rem;">
+        <li><code class="gh-docs-inline-code">push</code> — عند دفع أي تعديلات أو فروع جديدة.</li>
+        <li><code class="gh-docs-inline-code">issues</code> — عند فتح أو إغلاق أو التعليق على بلاغ.</li>
+        <li><code class="gh-docs-inline-code">pull_request</code> — عند فتح، مراجعة، أو دمج طلب سحب.</li>
+        <li><code class="gh-docs-inline-code">release</code> — عند نشر إصدار جديد.</li>
+    </ul>
+    <p>إذا أدخلت <strong>Secret Key</strong>، ستُوقَّع كل حمولة بـ HMAC-SHA256 في الترويسة <code class="gh-docs-inline-code">X-GitPHP-Signature</code> للتحقق من أمان المصدر.</p>
+</section>
+{% endif %}
+
+{# ── 11. REST API التوثيق الكامل ── #}
+{% if current_cat == 'all' or 'api' in allowed %}
+<div class="gh-docs-api-divider" id="api-docs">
+    ⚡️ {{ is_rtl ? 'دليل REST API' : 'REST API Documentation' }}
+    <span class="gh-docs-api-version">
+        <span class="gh-mono">{{ api_version|default('v1') }}</span>
+    </span>
+</div>
+<section id="api" class="gh-docs-section">
+    <h2><span class="gh-docs-num">11</span> دليل واجهة REST API {{ api_version|default('v1') }} البرمجية ⚡️</h2>
+    <p>
+        توفر المنصة واجهة برمجية RESTful كاملة للأتمتة والتكامل، وتدعم المصادقة بالرموز الشخصية <code class="gh-docs-inline-code">gtp_…</code> عبر ترويسة <code class="gh-docs-inline-code">Authorization: Bearer</code> أو <code class="gh-docs-inline-code">X-GitPHP-Token</code>.
+    </p>
+
+    <h3>1. ترويسات المصادقة (Request Headers)</h3>
+<pre class="gh-docs-code" dir="ltr"><code># الطريقة القياسية:
+Authorization: Bearer gtp_your_token_here
+
+# أو عبر الترويسة المخصصة:
+X-GitPHP-Token: gtp_your_token_here</code></pre>
+
+    <h3>2. استعلام هوية المستخدم (Whoami)</h3>
+<pre class="gh-docs-code" dir="ltr"><code>curl -H "Authorization: Bearer gtp_your_token" \
+  {{ app_url }}/api/v1/user</code></pre>
+
+    <h3>3. جلب بيانات المستودع</h3>
+<pre class="gh-docs-code" dir="ltr"><code>curl -H "Authorization: Bearer gtp_your_token" \
+  {{ app_url }}/api/v1/repos/my-project</code></pre>
+
+    <h3>4. سجل الالتزامات مع دعم التقسيم لصفحات (Commits)</h3>
+<pre class="gh-docs-code" dir="ltr"><code>curl -H "Authorization: Bearer gtp_your_token" \
+  "{{ app_url }}/api/v1/repos/my-project/commits?ref=main&amp;page=1&amp;per_page=10"</code></pre>
+
+        <h3>7. واجهة إدارة التراخيص والعتاد وتزامن السيرفرات البعيدة (Licensing & HWID Engine API)</h3>
+<pre class="gh-docs-code" dir="ltr"><code># 1. توليد ترخيص سيرفر جديد (Generate License Key):
+curl -X POST "{{ app_url }}/api/v1/admin/license/generate" \
+  -H "Authorization: Bearer gtp_admin_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ip": "84.46.254.56",
+    "customer": "Abu Sultan",
+    "plan": "monthly",
+    "max_devices": 3,
+    "days": 30
+  }'
+
+# 2. تفعيل ترخيص وحجز عتاد جهاز (Activate Device HWID):
+curl -X POST "{{ app_url }}/api/v1/license/activate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "license_key": "FF-ABCD-1234-EFGH",
+    "hwid": "HWID-DEV-8899",
+    "hostname": "srv1.example.com",
+    "ip": "84.46.254.56"
+  }'
+
+# 3. الفحص اللحظي المباشر ومنع الكاش (Real-Time Sync Check):
+curl -X POST "{{ app_url }}/api/v1/license/sync" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "license_key": "FF-ABCD-1234-EFGH",
+    "hwid": "HWID-DEV-8899",
+    "ip": "84.46.254.56"
+  }'
+
+# 4. إلغاء ربط عتاد جهاز وتفريغ خانة تفعيل (Revoke Device HWID):
+curl -X POST "{{ app_url }}/api/v1/admin/license/device/revoke" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "license_key": "FF-ABCD-1234-EFGH",
+    "hwid": "HWID-DEV-8899"
+  }'
+
+# 5. حذف وتدمير الترخيص نهائياً وحظر العميل فوراً (Purge License):
+curl -X POST "{{ app_url }}/api/v1/admin/delete" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "license_key": "FF-ABCD-1234-EFGH"
+  }'
+
+# 6. إعادة تعيين الـ IP والعتاد لإتاحة النقل لسيرفر جديد (Reset IP & HWID):
+curl -X POST "{{ app_url }}/api/v1/admin/reset-ip" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "license_key": "FF-ABCD-1234-EFGH"
+  }'</code></pre>
+
+    <h3>6. إدارة المستودعات عن بُعد (Repository Management API)</h3>
+<pre class="gh-docs-code" dir="ltr"><code># 1. إنشاء مستودع جديد (Create Repository):
+curl -X POST "{{ app_url }}/api/v1/repos" \
+  -H "Authorization: Bearer gtp_your_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my-new-repo",
+    "description": "Created remotely via REST API",
+    "private": false,
+    "default_branch": "main",
+    "auto_init": true
+  }'
+
+# 2. تعديل إعدادات مستودع (Update Repository):
+curl -X PATCH "{{ app_url }}/api/v1/repos/my-new-repo" \
+  -H "Authorization: Bearer gtp_your_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Updated repository description",
+    "private": true
+  }'
+
+# 3. حذف مستودع نهائياً (Delete Repository):
+curl -X DELETE "{{ app_url }}/api/v1/repos/my-new-repo" \
+  -H "Authorization: Bearer gtp_your_token"</code></pre>
+
+    <h3>5. استعراض شجرة الملفات (Tree) وقراءة محتوى الملفات (Blob)</h3>
+<pre class="gh-docs-code" dir="ltr"><code># تصفح المجلدات
+curl -H "Authorization: Bearer gtp_your_token" \
+  "{{ app_url }}/api/v1/repos/my-project/tree?ref=main&amp;path=src"
+
+# قراءة محتوى ملف (Base64)
+curl -H "Authorization: Bearer gtp_your_token" \
+  "{{ app_url }}/api/v1/repos/my-project/blob?ref=main&amp;path=README.md"</code></pre>
+
+    <div style="overflow-x:auto; margin-top:1rem;">
+    <table class="gh-docs-table">
+        <thead><tr><th>نقطة النهاية (Endpoint)</th><th>الوصف</th><th>معاملات الاستعلام (Query Params)</th></tr></thead>
+        <tbody>
+            <tr><td><code>GET /api/v1/user</code></td><td>بيانات صاحب الرمز وصلاحياته</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}</code></td><td>معلومات المستودع الشاملة</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/branches</code></td><td>قائمة الفروع والـ SHA</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/tags</code></td><td>قائمة الوسوم والإصدارات</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/commits</code></td><td>سجل الالتزامات</td><td><code>ref</code>, <code>page</code>, <code>per_page</code></td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/tree</code></td><td>شجرة الملفات والمجلدات</td><td><code>ref</code>, <code>path</code></td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/blob</code></td><td>محتوى ملف محدد (Base64)</td><td><code>ref</code>, <code>path</code></td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/issues</code></td><td>قائمة البلاغات</td><td><code>state=open|closed|all</code></td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/pulls</code></td><td>قائمة طلبات السحب</td><td><code>state=open|closed|all</code></td></tr>
+            <tr><td><code>POST /api/v1/repos</code></td><td>إنشاء مستودع جديد عن بُعد (يتطلب <code>write</code> scope)</td><td><code>name</code>, <code>description</code>, <code>private</code>, <code>auto_init</code></td></tr>
+            <tr><td><code>PATCH /api/v1/repos/{slug}</code></td><td>تعديل إعدادات المستودع (يتطلب <code>write</code> scope)</td><td><code>name</code>, <code>description</code>, <code>private</code>, <code>default_branch</code></td></tr>
+            <tr><td><code>DELETE /api/v1/repos/{slug}</code></td><td>حذف مستودع نهائياً (يتطلب <code>write</code> scope)</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/repos/{owner}/{repo}/archive/{ref}.zip</code></td><td>تنزيل أرشيف مضغوط ZIP لفرع أو Commit</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/repos/{owner}/{repo}/bundle</code></td><td>تصدير نسخة احتياطية كاملة Git Bundle</td><td>—</td></tr>
+            <tr><td><code>POST /api/v1/repos/restore</code></td><td>استعادة مستودع من ملف Bundle مرفوع</td><td><code>name</code>, <code>bundle_file</code></td></tr>
+            <tr><td><code>POST /api/v1/repos/{owner}/{repo}/sync</code></td><td>مزامنة فورية من مستودع خارجي Remote Mirror</td><td><code>remote_url</code>, <code>token</code></td></tr>
+            <tr><td><code>POST /api/v1/repos/{owner}/{repo}/branches</code></td><td>إنشاء فرع جديد</td><td><code>name</code>, <code>from_ref</code></td></tr>
+            <tr><td><code>DELETE /api/v1/repos/{owner}/{repo}/branches/{branch}</code></td><td>حذف فرع محدد</td><td>—</td></tr>
+            <tr><td><code>PUT /api/v1/repos/{owner}/{repo}/default-branch</code></td><td>تغيير الفرع الافتراضي للمستودع</td><td><code>default_branch</code></td></tr>
+            <tr><td><code>POST /api/v1/repos/{owner}/{repo}/tags</code></td><td>إنشاء وسم / إصدار جديد (Tag)</td><td><code>tag_name</code>, <code>message</code></td></tr>
+            <tr><td><code>DELETE /api/v1/repos/{owner}/{repo}/tags/{tag}</code></td><td>حذف وسم محدد</td><td>—</td></tr>
+            <tr><td><code>GET /raw/{owner}/{repo}/{ref}/{path}</code></td><td>إرجاع المحتوى الخام المباشر للملف (Raw Text/Binary)</td><td>—</td></tr>
+            <tr><td><code>POST /api/v1/repos/{owner}/{repo}/contents/{path}</code></td><td>تعديل والالتزام بملف مباشرة دون Local Git</td><td><code>message</code>, <code>content</code> (Base64)</td></tr>
+            <tr><td><code>POST /api/v1/repos/{owner}/{repo}/issues</code></td><td>إنشاء بلاغ جديد برمجياً</td><td><code>title</code>, <code>body</code></td></tr>
+            <tr><td><code>PATCH /api/v1/repos/{owner}/{repo}/issues/{id}</code></td><td>تعديل عنوان أو حالة البلاغ (إغلاق/فتح)</td><td><code>state</code>, <code>title</code>, <code>body</code></td></tr>
+            <tr><td><code>POST /api/v1/repos/{owner}/{repo}/pulls</code></td><td>إنشاء طلب سحب (Pull Request) جديد</td><td><code>title</code>, <code>body</code>, <code>head</code>, <code>base</code></td></tr>
+            <tr><td><code>POST /api/v1/repos/{owner}/{repo}/pulls/{id}/merge</code></td><td>دمج طلب السحب المفتوح برمجياً</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/user/keys</code></td><td>استعراض مفاتيح SSH الخاصة بالمستخدم</td><td>—</td></tr>
+            <tr><td><code>POST /api/v1/user/keys</code></td><td>إضافة مفتاح SSH جديد للحساب برمجياً</td><td><code>title</code>, <code>key</code></td></tr>
+            <tr><td><code>DELETE /api/v1/user/keys/{id}</code></td><td>حذف مفتاح SSH محدد</td><td>—</td></tr>
+                        <tr><td><code>POST /api/v1/admin/license/generate</code></td><td>توليد مفتاح ترخيص جديد مرتبطة حصته بـ max_devices والـ IP</td><td><code>ip</code>, <code>customer</code>, <code>plan</code>, <code>max_devices</code></td></tr>
+            <tr><td><code>POST /api/v1/license/activate</code></td><td>تفعيل السيرفر وربطه برقم عتاد Device HWID وتفريغ/حجز حصة</td><td><code>license_key</code>, <code>hwid</code>, <code>hostname</code>, <code>ip</code></td></tr>
+            <tr><td><code>POST /api/v1/license/heartbeat</code></td><td>فحص نبض الجهاز المباشر وتحديث وقت آخر اتصال للعتاد</td><td><code>license_key</code>, <code>hwid</code>, <code>ip</code></td></tr>
+            <tr><td><code>POST /api/v1/license/sync</code></td><td>التزامن اللحظي الفوري مع منع الكاش والتحقق من حالة الترخيص والعتاد</td><td><code>license_key</code>, <code>hwid</code>, <code>ip</code></td></tr>
+            <tr><td><code>GET /api/v1/admin/license/devices</code></td><td>استرجاع جميع الأجهزة والعتاد المربوط بمفتاح ترخيص محدد</td><td><code>license_key</code></td></tr>
+            <tr><td><code>POST /api/v1/admin/license/device/revoke</code></td><td>إلغاء تفعيل عتاد HWID محدد وإتاحة خانة تفعيل مفرغة فوراً</td><td><code>license_key</code>, <code>hwid</code> / <code>device_id</code></td></tr>
+            <tr><td><code>POST /api/v1/admin/delete</code></td><td>حذف وتدمير الترخيص والأجهزة نهائياً وحظر العميل لحظياً</td><td><code>license_key</code> / <code>ip</code></td></tr>
+            <tr><td><code>POST /api/v1/admin/reset-ip</code></td><td>تفريغ الـ IP والعتاد لإتاحة تفعيل الترخيص على سيرفر جديد</td><td><code>license_key</code></td></tr>
+        </tbody>
+    </table>
+    </div>
+    <div class="gh-docs-callout info">📖 لمراجعة وثيقة API الكاملة بصيغة Markdown، راجع الملف: <code class="gh-docs-inline-code">docs/api.md</code>.</div>
+</section>
+{% endif %}
+
+{# ── 12. Issues & Wiki ── #}
+{% if current_cat == 'all' or 'issues-wiki' in allowed %}
+<section id="issues-wiki" class="gh-docs-section">
+    <h2><span class="gh-docs-num">12</span> البلاغات والمستندات (Issues &amp; Wiki)</h2>
+    <p><strong>Issues:</strong> تتبع الأخطاء والمقترحات عبر تبويب Issues، مع دعم التنسيق بـ Markdown، إسناد البلاغات، والمحادثات التفاعلية.</p>
+    <p><strong>Wiki:</strong> توثيق مخصص لكل مستودع بنظام Markdown مع فهرسة تلقائية وتعديل فوري من المتصفح.</p>
+</section>
+{% endif %}
+
+{# ── 13. Releases ── #}
+{% if current_cat == 'all' or 'releases' in allowed %}
+<section id="releases" class="gh-docs-section">
+    <h2><span class="gh-docs-num">13</span> الإصدارات والمرفقات (Releases)</h2>
+    <ul style="padding-left:1.4rem;">
+        <li>إنشاء <strong>Release</strong> مرتبط بوسم Git مع وصف تفصيلي وإمكانية تعيينه كـ <strong>Pre-release</strong> أو <strong>Draft</strong>.</li>
+        <li>توليد أرشيف الكود المصدري تلقائياً بصيغتي <code class="gh-docs-inline-code">.zip</code> و <code class="gh-docs-inline-code">.tar.gz</code>.</li>
+        <li><strong>مركز التنزيلات الآمن</strong> (<code class="gh-docs-inline-code">/d/{code}</code>) لتوليد روابط قصيرة محمية بكلمة مرور وتاريخ انتهاء.</li>
+    </ul>
+</section>
+{% endif %}
+
+{# ── 14. الملفات والمحرر ── #}
+{% if current_cat == 'all' or 'files' in allowed %}
+<section id="files" class="gh-docs-section">
+    <h2><span class="gh-docs-num">14</span> إدارة الملفات والتعديل المباشر</h2>
+    <ul style="padding-left:1.4rem;">
+        <li>مستعرض شجري متكامل مع عرض آخر Commit وتاريخ التعديل لكل ملف ومجلد.</li>
+        <li>عارض ملفات ملوّن يدعم أكثر من 50 لغة برمجية مع ميزة <strong>Blame</strong> و <strong>Raw</strong> الآمنة ضد XSS.</li>
+        <li><strong>محرر الويب التفاعلي:</strong> إنشاء وتعديل وحذف الملفات مباشرة من المتصفح مع كتابة رسالة Commit مخصصة.</li>
+        <li>تنزيل أرشيف مضغوط لأي فرع أو وسم بنقرة واحدة.</li>
+    </ul>
+</section>
+{% endif %}
+
+{# ── 15. الحسابات ── #}
+{% if current_cat == 'all' or 'accounts' in allowed %}
+<section id="accounts" class="gh-docs-section">
+    <h2><span class="gh-docs-num">15</span> الحسابات والملفات الشخصية</h2>
+    <p>تتيح المنصة لكل مستخدم إدارة مستودعاته الخاصة، مع ملف شخصي عام على <code class="gh-docs-inline-code">/u/{username}</code> يعرض المستودعات العامة والنجوم، وإدارة جلسات الدخول والتوكنات ومفاتيح SSH عبر صفحة <strong>Settings</strong>.</p>
+</section>
+{% endif %}
+
+{# ── 16. الإدارة ── #}
+{% if current_cat == 'all' or 'admin' in allowed %}
+<section id="admin" class="gh-docs-section">
+    <h2><span class="gh-docs-num">16</span> إدارة المنصة والصيانة</h2>
+    <p>لوحة تحكم المشرف (Admin Dashboard) تتيح:</p>
+    <ul style="padding-left:1.4rem;">
+        <li>إحصائيات شاملة ورسم بياني لنشاط المستودعات والترافيك.</li>
+        <li>إدارة المتعاونين وتحديد أدوار <code class="gh-docs-inline-code">read</code> أو <code class="gh-docs-inline-code">write</code> لكل مستودع.</li>
+        <li>استيراد المستودعات ومزامنتها تلقائياً من GitHub و GitLab و Codeberg.</li>
+        <li>سجل تدقيق أمني (Audit Log) لتتبع كافة التغييرات الحساسة.</li>
+        <li>سكريبت الصيانة المساعد <code class="gh-docs-inline-code">php bin/fix-push.php</code> لإصلاح الصلاحيات وتهيئة المفاتيح.</li>
+    </ul>
+</section>
+{% endif %}
+
+{# ── 17. الأمان والصلاحيات ── #}
+{% if current_cat == 'all' or 'security' in allowed %}
+<section id="security" class="gh-docs-section" style="border: 1px solid rgba(63,185,80,0.35); background: linear-gradient(180deg, rgba(63,185,80,0.02) 0%, transparent 100%); border-radius:10px; padding:1.75rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0;"><span class="gh-docs-num" style="background:#238636; color:#fff;">🛡️</span> دليل الأمان الشامل والصلاحيات وحماية الخادم</h2>
+        <span style="background:rgba(63,185,80,0.15); color:#3fb950; border:1px solid rgba(63,185,80,0.4); font-size:.78rem; font-weight:700; padding:.2rem .6rem; border-radius:12px;">الدفاع المتعمق (Defense in Depth)</span>
+    </div>
+
+    <p>
+        تعتمد منصة <strong>{{ app_name }}</strong> على معايير أمنية صارمة لعزل المستودعات وتأمين بيانات الاعتماد ومنع الهجمات السيبرانية على كافة طبقات التطبيق والخادم.
+    </p>
+
+    <h3>1. جدول مصفوفة الصلاحيات والأدوار (Role-Based Access Control):</h3>
+    <div style="overflow-x:auto; margin:1rem 0;">
+    <table class="gh-docs-table">
+        <thead>
+            <tr>
+                <th>الدور / المستوى</th>
+                <th>استعراض الملفات</th>
+                <th>الاستنساخ (Clone)</th>
+                <th>الرفع (Push)</th>
+                <th>إدارة Issues & PRs</th>
+                <th>دمج طلبات السحب</th>
+                <th>إعدادات المستودع والـ Hooks</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>زائر عام (Public)</strong></td>
+                <td>✅ (في العام فقط)</td>
+                <td>✅ (في العام فقط)</td>
+                <td>❌</td>
+                <td>❌</td>
+                <td>❌</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td><strong>متعاون قراءة (<code>read</code>)</strong></td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>❌</td>
+                <td>✅ (تعليق)</td>
+                <td>❌</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td><strong>متعاون كتابة (<code>write</code>)</strong></td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅ (غير المحمي)</td>
+                <td>✅ (كامل)</td>
+                <td>✅ (إذا اعتُمد)</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td><strong>مالك المستودع (<code>admin</code>)</strong></td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅ (كامل)</td>
+                <td>✅ (كامل)</td>
+                <td>✅ (كامل)</td>
+                <td>✅ (كامل مع الحذف)</td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+
+    <h3>2. الركائز الأمنية المشددة:</h3>
+    <div class="gh-docs-grid">
+        <div class="gh-docs-card">
+            <h4>🔑 تشفير Argon2id</h4>
+            <p>تشفير كلمات المرور بأحدث معيار عالمي مقاوم لهجمات القوة الغاشمة والمعالجات الرسومية (GPU/ASIC).</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>📲 المصادقة الثنائية (2FA)</h4>
+            <p>دعم تطبيقات TOTP القياسية (Google / MS Authenticator) مع توليد رموز استرداد طوارئ مشفرة.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>⚡️ تجزئة الرموز بـ SHA-256</h4>
+            <p>تخزين توكنات <code class="gh-docs-inline-code">gtp_…</code> بصيغة مشفرة (Hash) يستحيل كشفها في حال تسريب قاعدة البيانات.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>🔒 عزل مستخدم SSH</h4>
+            <p>حظر الـ Shell التفاعلي عبر <code class="gh-docs-inline-code">git-shell-wrapper.php</code> وقصر الأوامر على محرك Git فقط.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>🛡️ حماية الفروع برمجياً</h4>
+            <p>منع الحذف، منع Force-push، واشتراط مراجعة معتمدة قبل الدمج عبر خطافات <code class="gh-docs-inline-code">pre-receive</code>.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>📜 سجل تدقيق أمني (Audit)</h4>
+            <p>تسجيل كامل للعمليات الحساسة (تسجيل الدخول، إنشاء التوكنات، إضافة الأعضاء، وحذف المستودعات).</p>
+        </div>
+    </div>
+
+    <div class="gh-docs-callout ok">📖 للتفاصيل التقنية الكاملة وأوامر فحص الخادم، راجع الوثيقة المخصصة: <code class="gh-docs-inline-code">docs/security.md</code>.</div>
+</section>
+{% endif %}
+
+{# ── 18. استكشاف الأخطاء ── #}
+{% if current_cat == 'all' or 'troubleshoot' in allowed %}
+
+<!-- ── API Licenses & HWID Section (Arabic) ────────────────────────────── -->
+<section id="api-licenses" class="gh-docs-section" style="border: 1px solid rgba(56,139,253,0.35); background: linear-gradient(180deg, rgba(56,139,253,0.02) 0%, transparent 100%); border-radius:10px; padding:1.75rem;">
+    <div class="gh-docs-header">
+        <span class="gh-badge" style="background:rgba(56,139,253,0.15); color:#58a6ff; font-weight:600; font-size:11px;">
+            <svg class="ti ti-shield-check" style="font-size:13px;"><use href="#ti-shield-check"/></svg> REST API {{ api_version|default('v1') }} Suite
+        </span>
+        <h2>🛡️ واجهة برمجة التراخيص وبصمة الأجهزة (License & HWID API Suite)</h2>
+        <p>دليل الاستخدام الكامل لواجهات البرمجة الخاصة بإدارة التراخيص، الربط ببصمة عتاد الخادم (HWID)، تعيين الحد الأقصى للأجهزة، وإحصائيات النظام الشاملة.</p>
+    </div>
+
+    <div class="gh-docs-card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-top:0; font-size:15px; display:flex; align-items:center; gap:8px;">
+            <svg class="ti ti-lock" style="font-size:16px; color:#58a6ff;"><use href="#ti-lock"/></svg>
+            1. مصادقة الطلبات وأترسة الأمان (Authentication)
+        </h3>
+        <p>تتطلب جميع عمليات API الخاصة بالتراخيص والمصادقة الإدارية تمرير رمز الوصول الإداري <code>Bearer Token</code> في الترويسات:</p>
+        <pre class="gh-code-block"><code>Authorization: Bearer &lt;ADMIN_API_TOKEN&gt;
+# أو عبر الترويسة المخصصة:
+X-GitPHP-Token: &lt;ADMIN_API_TOKEN&gt;</code></pre>
+    </div>
+
+    <div class="gh-docs-card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-top:0; font-size:15px;">📋 2. جدول نقاط النهاية المتاحة (Endpoints Reference Table)</h3>
+        <div style="overflow-x:auto;">
+            <table class="gh-table" style="font-size:13px; width:100%;">
+                <thead>
+                    <tr>
+                        <th>الطريقة</th>
+                        <th>المسار (Endpoint Route)</th>
+                        <th>الوصف والوظيفة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>POST</code></td><td><code>/api/v1/licenses</code></td><td>توليد ترخيص جديد وتعيين سعة الأجهزة والأيام.</td></tr>
+                    <tr><td><code>GET</code></td><td><code>/api/v1/licenses</code></td><td>عرض واستعلام التراخيص مع تصفية بالحالة والخطة.</td></tr>
+                    <tr><td><code>GET</code></td><td><code>/api/v1/licenses/stats</code></td><td>إحصائيات النظام الشاملة وتوزيع الخطط لحظياً.</td></tr>
+                    <tr><td><code>GET</code></td><td><code>/api/v1/licenses/{id_or_key}</code></td><td>تفاصيل ترخيص منفرد مع قائمة الأجهزة المرتبطة.</td></tr>
+                    <tr><td><code>PUT</code></td><td><code>/api/v1/licenses/{id_or_key}</code></td><td>تحديث بيانات الترخيص وتمديد فترة الصلاحية.</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/v1/licenses/{id_or_key}/status</code></td><td>تغيير حالة الترخيص (تفعيل، إيقاف، حظر نهائي).</td></tr>
+                    <tr><td><code>DELETE</code></td><td><code>/api/v1/licenses/{id_or_key}</code></td><td>حذف الترخيص وكافة سجلات الأجهزة المرتبطة به.</td></tr>
+                    <tr><td><code>GET</code></td><td><code>/api/v1/licenses/{id_or_key}/devices</code></td><td>عرض قائمة الأجهزة وبصمات HWID المرتبطة بالترخيص.</td></tr>
+                    <tr><td><code>DELETE</code></td><td><code>/api/v1/licenses/{id_or_key}/devices/{machine_id}</code></td><td>إلغاء ربط بصمة جهاز محدد لتحرير خانة التفعيل.</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/v1/licenses/{id_or_key}/reset-bindings</code></td><td>تصفير جميع بصمات HWID والـ IP لنقل الترخيص.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="gh-docs-card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-top:0; font-size:15px;">💻 3. أمثلة cURL جاهزة للاستخدام Direct Examples</h3>
+        <p><strong>أ. إنشاء ترخيص شهري (30 يوم):</strong></p>
+        <pre class="gh-code-block"><code>curl -s -X POST https://git.ysnapp.com/api/v1/licenses   -H "Authorization: Bearer &lt;TOKEN&gt;"   -H "Content-Type: application/json"   -d '{
+    "customer_name": "MUHAMMED GAILAN",
+    "plan_type": "monthly",
+    "duration_days": 30,
+    "max_devices": 2,
+    "bound_ip": "169.58.135.161",
+    "notes": "VIP Client"
+  }'</code></pre>
+
+        <p><strong>ب. استعلام إحصائيات النظام الشاملة:</strong></p>
+        <pre class="gh-code-block"><code>curl -s -H "Authorization: Bearer &lt;TOKEN&gt;" https://git.ysnapp.com/api/v1/licenses/stats</code></pre>
+
+        <p><strong>جـ. إعادة ضبط الأجهزة لنقل السيرفر (Reset Bindings):</strong></p>
+        <pre class="gh-code-block"><code>curl -s -X POST -H "Authorization: Bearer &lt;TOKEN&gt;" https://git.ysnapp.com/api/v1/licenses/FF-ED54-0CED-F732/reset-bindings</code></pre>
+    </div>
+
+    <div class="gh-docs-card">
+        <h3 style="margin-top:0; font-size:15px;">📕 4. قاموس الأخطاء وهيكل الاستجابة (Error Dictionary)</h3>
+        <ul>
+            <li><code>ERR_UNAUTHORIZED</code> (401): رمز الوصول التوكن غير صحيح أو مفقود.</li>
+            <li><code>ERR_LIC_NOT_FOUND</code> (404): مفتاح الترخيص غير موجود بالنظام.</li>
+            <li><code>ERR_LIC_EXPIRED</code> (403): انتهت صلاحية الترخيص المعتمد.</li>
+            <li><code>ERR_LIC_REVOKED</code> (403): تم حظر الترخيص أو إلغاؤه من الإدارة.</li>
+            <li><code>ERR_LIC_DEVICE_LIMIT</code> (403): تجاوز الحد الأقصى المسموح للأجهزة المتصلة.</li>
+            <li><code>ERR_LIC_HWID_CLONED</code> (409): تعارض في البصمة الرقمية للعتاد.</li>
+        </ul>
+    </div>
+</section>
+
+<section id="troubleshoot" class="gh-docs-section">
+    <h2><span class="gh-docs-num">18</span> استكشاف الأخطاء وحلولها</h2>
+    <div class="gh-docs-callout warn">⚠️ <strong>رفض الرفع عبر HTTP بخطأ 401:</strong> تأكد من استخدام Personal Access Token بصلاحية <code class="gh-docs-inline-code">write</code>، أو تحقق من تمرير ترويسة <code class="gh-docs-inline-code">Authorization</code> في خادم الويب (راجع <code class="gh-docs-inline-code">docs/deploy.md</code>).</div>
+    <div class="gh-docs-callout warn">⚠️ <strong>خطأ «Permission denied (publickey)» في SSH:</strong> تأكد من إضافة مفتاحك العام في الإعدادات، وتحقق أن أذونات الملف <code class="gh-docs-inline-code">0660</code> عبر تشغيل <code class="gh-docs-inline-code">php bin/fix-push.php</code>.</div>
+    <div class="gh-docs-callout warn">⚠️ <strong>خطأ «Branch is protected»:</strong> الفرع محمي ضد الرفع المباشر أو الـ Force-push؛ ارفع تعديلاتك على فرع جديد وافتح Pull Request.</div>
+    <div class="gh-docs-callout warn">⚠️ <strong>انقطاع الاتصال عند رفع مشاريع ضخمة:</strong> ارفع قيمة <code class="gh-docs-inline-code">maxReqBodySize</code> و <code class="gh-docs-inline-code">reqTimeout</code> في إعدادات OpenLiteSpeed (راجع <code class="gh-docs-inline-code">docs/openlitespeed.conf</code>).</div>
+</section>
+{% endif %}

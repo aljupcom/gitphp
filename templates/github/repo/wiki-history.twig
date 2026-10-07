@@ -1,0 +1,53 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ page.title }} — {{ t('ui.wiki.history')|default('History') }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+    {% include "partials/repo-nav.twig" with { active_tab: 'wiki' } %}
+
+    <div class="gh-box" style="margin-top: 16px; max-width: 860px;">
+        <div class="gh-box-header">
+            <h1 class="gh-box-title" style="font-size: 15px;">
+                {{ t('ui.wiki.history')|default('History') }} — <span class="gh-mono">{{ page.slug }}</span>
+            </h1>
+        </div>
+        <div class="gh-box-body">
+            {% if revisions|length %}
+                <div class="gh-table-wrap">
+                    <table class="gh-table">
+                        <tbody>
+                            {% for r in revisions %}
+                                <tr>
+                                    <td style="width: 70px;" class="gh-mono">#{{ r.id }}</td>
+                                    <td>
+                                        <a href="/{{ owner }}/{{ repo.slug }}/wiki/{{ page.slug }}/revision/{{ r.id }}" style="color: var(--gh-accent-fg); font-weight: 600; text-decoration: none;">
+                                            {{ r.created_at|time_ago }}
+                                        </a>
+                                        <span style="color: var(--gh-fg-muted); font-size: 12px;">— {{ r.editor_name ?: 'owner' }}</span>
+                                    </td>
+                                    <td style="text-align: right; width: 120px;">
+                                        {% if can_write and not loop.first %}
+                                            <form method="POST" action="/{{ owner }}/{{ repo.slug }}/wiki/{{ page.slug }}/restore/{{ r.id }}" onsubmit="return confirm('Restore this revision? The current content will be kept in history.');" style="margin: 0;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                <button type="submit" class="gh-btn gh-btn-sm">{{ t('ui.wiki.restore')|default('Restore') }}</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: var(--gh-fg-muted);">No revisions recorded yet.</p>
+            {% endif %}
+
+            <div style="margin-top: 14px;">
+                <a class="gh-btn" href="/{{ owner }}/{{ repo.slug }}/wiki/{{ page.slug }}">← {{ t('ui.wiki.back_to_page')|default('Back to page') }}</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

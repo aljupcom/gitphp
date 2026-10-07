@@ -1,0 +1,100 @@
+{% extends "layout.twig" %}
+
+{% block title %}All Repositories — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600;">Hosted Repositories</h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                {{ stats.total }} total repositories &bull; <span style="color:#3fb950;">{{ stats.public }} public</span> &bull; <span style="color:var(--gh-fg-muted);">{{ stats.private }} private</span>
+            </p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a class="gh-btn gh-btn-sm" href="{{ admin_prefix|default('/admin') }}/repos/import">
+                <svg class="ti ti-download"><use href="#ti-download"/></svg> Import Repository
+            </a>
+            <a class="gh-btn gh-btn-sm gh-btn-primary" href="{{ admin_prefix|default('/admin') }}/repos/create" style="font-weight:600;">
+                <svg class="ti ti-plus"><use href="#ti-plus"/></svg> New Repository
+            </a>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'repos', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; flex:1;">
+            
+            {# Filter Input #}
+            <div style="margin-bottom: 16px; position: relative;">
+                <svg class="ti ti-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--gh-fg-muted); font-size:15px;"><use href="#ti-search"/></svg>
+                <input type="text" id="gh-repo-filter" placeholder="Filter repositories by name, description, or slug…" autocomplete="off" class="gh-form-control" style="width:100%; padding-left:36px; font-size:13px;">
+            </div>
+
+            {% if repos|length > 0 %}
+                <div class="gh-box">
+                    <div style="overflow-x:auto;">
+                        <table class="gh-table" id="gh-repo-grid" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>Repository Name</th>
+                                    <th>Visibility</th>
+                                    <th>Owner</th>
+                                    <th>Created</th>
+                                    <th style="text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for repo in repos %}
+                                    <tr data-search="{{ (repo.name ~ ' ' ~ repo.slug ~ ' ' ~ repo.description)|lower }}">
+                                        <td>
+                                            <a style="font-weight:600; text-decoration:none; color:var(--gh-accent-fg, #58a6ff);" href="/{{ owner }}/{{ repo.slug }}">{{ repo.name }}</a>
+                                            <div style="font-size:11px; font-family:monospace; color:var(--gh-fg-muted);">{{ owner }}/{{ repo.slug }}</div>
+                                            {% if repo.description %}
+                                                <div style="font-size:12px; color:var(--gh-fg-muted); margin-top:2px;">{{ repo.description }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="gh-badge {{ repo.visibility == 'private' ? 'gh-badge-private' : '' }}">{{ repo.visibility == 'private' ? 'Private' : 'Public' }}</span>
+                                        </td>
+                                        <td style="font-size:13px; color:var(--gh-fg-muted);">
+                                            {% if repo.owner_user_id %}{{ repo.owner_username|default('user') }}{% else %}Administrator{% endif %}
+                                        </td>
+                                        <td style="font-size:12px; color:var(--gh-fg-muted);">
+                                            {{ repo.created_at|time_ago }}
+                                        </td>
+                                        <td style="text-align:right; white-space:nowrap;">
+                                            <a class="gh-btn gh-btn-sm" href="/{{ owner }}/{{ repo.slug }}">View</a>
+                                            <a class="gh-btn gh-btn-sm" href="{{ admin_prefix|default('/admin') }}/repos/{{ repo.slug }}/edit">Edit</a>
+                                            {% if repo.source_url %}
+                                                <form method="POST" action="{{ admin_prefix|default('/admin') }}/repos/{{ repo.slug }}/sync" class="gh-inline-form" style="display:inline;">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                    <button type="submit" class="gh-btn gh-btn-sm">Sync</button>
+                                                </form>
+                                            {% endif %}
+                                            <form method="POST" action="{{ admin_prefix|default('/admin') }}/repos/{{ repo.slug }}/delete" class="gh-inline-form" data-confirm="Are you sure you want to delete repository {{ repo.name }}?" style="display:inline;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                <button type="submit" class="gh-btn gh-btn-sm gh-btn-danger" style="color:#f85149;">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="gh-box" style="padding:40px 20px; text-align:center; color:var(--gh-fg-muted);">
+                    <svg class="ti ti-box-off" style="font-size:42px; margin-bottom:8px; opacity:0.6;"><use href="#ti-box"/></svg>
+                    <h2 style="font-size:16px; margin:0 0 4px; color:var(--gh-fg-default);">No repositories found</h2>
+                    <p style="font-size:13px; margin:0 0 16px;">Create your first bare repository or import from an external Git provider.</p>
+                    <a href="{{ admin_prefix|default('/admin') }}/repos/create" class="gh-btn gh-btn-primary" style="font-weight:600;">Create Repository</a>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

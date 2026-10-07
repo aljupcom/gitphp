@@ -1,0 +1,183 @@
+{# Ref Switcher (Branches / Tags dropdown) — GitHub / Codeberg style #}
+{% set _current = current|default('main') %}
+{% set _branches = branches|default([]) %}
+{% set _tags = tags|default([]) %}
+{% set _owner = owner|default('') %}
+{% set _slug = repo_slug|default(repo.slug|default('')) %}
+{% set _base = '/' ~ _owner ~ '/' ~ _slug ~ '/tree' %}
+
+{% set _is_tag = false %}
+{% for t in _tags %}
+    {% set t_name = t.name is defined ? t.name : t %}
+    {% if t_name == _current %}
+        {% set _is_tag = true %}
+    {% endif %}
+{% endfor %}
+
+<div class="gh-ref-switcher" id="gh-ref-switcher-wrap" style="position: relative; display: inline-block;">
+    <button type="button" class="gh-btn gh-ref-btn" id="gh-ref-switcher-btn" onclick="toggleRefSwitcher(event);" aria-expanded="false" aria-haspopup="true" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px;">
+        {% if _is_tag %}
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-fg-muted);"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25v5.025ZM6 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+            <span style="font-size: 11px; color: var(--gh-fg-muted); font-weight: 400;">tag:</span>
+        {% else %}
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-fg-muted);"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"/></svg>
+        {% endif %}
+        <span id="gh-active-ref-name" style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ _current }}</span>
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-fg-muted); margin-left: 2px;"><path d="m4.427 7.427 3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 7H4.604a.25.25 0 0 0-.177.427Z"/></svg>
+    </button>
+
+    {# Popover #}
+    <div id="gh-ref-popover" data-init-tab="{{ _is_tag ? 'tags' : 'branches' }}" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 300px; max-width: calc(100vw - 24px); background: var(--gh-bg-overlay, #161b22); border: 1px solid var(--gh-border-default, #30363d); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 9999; overflow: hidden; box-sizing: border-box;">
+        
+        {# Header with Search #}
+        <div style="padding: 8px 10px; border-bottom: 1px solid var(--gh-border-default, #30363d); background: var(--gh-bg-subtle, #0d1117);">
+            <input type="text" id="gh-ref-search-input" placeholder="Find a branch or tag..." autocomplete="off" oninput="filterRefList(this.value);" style="width: 100%; box-sizing: border-box; background: var(--gh-bg-canvas, #161b22); border: 1px solid var(--gh-border-default, #30363d); border-radius: 6px; padding: 5px 8px; font-size: 12px; color: var(--gh-fg-default, #e6edf3); outline: none;">
+        </div>
+
+        {# Tabs (Branches / Tags) #}
+        <div style="display: flex; border-bottom: 1px solid var(--gh-border-default, #30363d); background: var(--gh-bg-subtle, #0d1117); font-size: 12px;">
+            <button type="button" id="gh-tab-branches" onclick="switchRefTab('branches');" style="flex: 1; padding: 6px 8px; background: transparent; border: none; border-bottom: 2px solid {{ _is_tag ? 'transparent' : 'var(--gh-accent-fg, #58a6ff)' }}; font-weight: {{ _is_tag ? '500' : '600' }}; color: {{ _is_tag ? 'var(--gh-fg-muted, #8b949e)' : 'var(--gh-fg-default, #e6edf3)' }}; cursor: pointer;">
+                Branches ({{ _branches|length }})
+            </button>
+            <button type="button" id="gh-tab-tags" onclick="switchRefTab('tags');" style="flex: 1; padding: 6px 8px; background: transparent; border: none; border-bottom: 2px solid {{ _is_tag ? 'var(--gh-accent-fg, #58a6ff)' : 'transparent' }}; font-weight: {{ _is_tag ? '600' : '500' }}; color: {{ _is_tag ? 'var(--gh-fg-default, #e6edf3)' : 'var(--gh-fg-muted, #8b949e)' }}; cursor: pointer;">
+                Tags ({{ _tags|length }})
+            </button>
+        </div>
+
+        {# List of Branches #}
+        <div id="gh-ref-list-branches" style="display: {{ _is_tag ? 'none' : 'block' }}; max-height: 220px; overflow-y: auto; padding: 4px 0;">
+            {% if _branches|length > 0 %}
+                {% for b in _branches %}
+                    {% set b_name = b.name is defined ? b.name : b %}
+                    {% set is_active = (b_name == _current) %}
+                    <a href="{{ _base }}/{{ b_name }}" class="gh-ref-item" data-name="{{ b_name|lower }}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 12px; font-size: 13px; color: {{ is_active ? '#58a6ff' : 'var(--gh-fg-default, #e6edf3)' }}; text-decoration: none; background: {{ is_active ? 'rgba(56,139,253,0.12)' : 'transparent' }}; font-weight: {{ is_active ? '600' : '400' }}; transition: background .12s;">
+                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ b_name }}</span>
+                        {% if is_active %}
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="#58a6ff" style="flex-shrink: 0;"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            {% else %}
+                <div style="padding: 14px; text-align: center; color: var(--gh-fg-muted, #8b949e); font-size: 12px;">No branches found</div>
+            {% endif %}
+        </div>
+
+        {# List of Tags #}
+        <div id="gh-ref-list-tags" style="display: {{ _is_tag ? 'block' : 'none' }}; max-height: 220px; overflow-y: auto; padding: 4px 0;">
+            {% if _tags|length > 0 %}
+                {% for t in _tags %}
+                    {% set t_name = t.name is defined ? t.name : t %}
+                    {% set is_active = (t_name == _current) %}
+                    <div class="gh-ref-item" data-name="{{ t_name|lower }}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; font-size: 13px; transition: background .12s;">
+                        <a href="{{ _base }}/{{ t_name }}" style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; color: {{ is_active ? '#58a6ff' : 'var(--gh-fg-default, #e6edf3)' }}; text-decoration: none; font-weight: {{ is_active ? '600' : '400' }}; font-family: var(--gh-font-mono);">
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-fg-muted); flex-shrink: 0;"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25v5.025ZM6 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ t_name }}</span>
+                            {% if is_active %}
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="#58a6ff" style="flex-shrink: 0;"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                            {% endif %}
+                        </a>
+                        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                            <a href="/{{ _owner }}/{{ _slug }}/archive/{{ t_name }}.zip" title="Download ZIP archive" class="gh-tag-action-btn" style="padding: 2px 6px; border-radius: 4px; font-size: 11px; color: var(--gh-fg-muted, #8b949e); background: var(--gh-bg-subtle, #21262d); text-decoration: none; border: 1px solid var(--gh-border-default, #30363d); display: inline-flex; align-items: center; gap: 3px;">
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+                                zip
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="padding: 14px; text-align: center; color: var(--gh-fg-muted, #8b949e); font-size: 12px;">No tags found</div>
+            {% endif %}
+        </div>
+
+        {# Footer #}
+        {% if _owner and _slug %}
+        <div id="gh-ref-footer-branches" style="display: {{ _is_tag ? 'none' : 'block' }}; border-top: 1px solid var(--gh-border-default, #30363d); padding: 6px 12px; background: var(--gh-bg-subtle, #0d1117); font-size: 11px;">
+            <a href="/{{ _owner }}/{{ _slug }}/branches" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none; font-weight: 500;">View all branches</a>
+        </div>
+        <div id="gh-ref-footer-tags" style="display: {{ _is_tag ? 'flex' : 'none' }}; border-top: 1px solid var(--gh-border-default, #30363d); padding: 6px 12px; background: var(--gh-bg-subtle, #0d1117); font-size: 11px; justify-content: space-between;">
+            <a href="/{{ _owner }}/{{ _slug }}/tags" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none; font-weight: 500;">View all tags</a>
+            <a href="/{{ _owner }}/{{ _slug }}/releases" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none; font-weight: 500;">View all releases</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.gh-ref-item:hover {
+    background: var(--gh-bg-subtle, rgba(255,255,255,0.08)) !important;
+}
+.gh-tag-action-btn:hover {
+    filter: brightness(1.2);
+}
+</style>
+
+<script>
+function toggleRefSwitcher(e) {
+    if (e) e.stopPropagation();
+    var pop = document.getElementById('gh-ref-popover');
+    if (!pop) return;
+    var isOpen = pop.style.display === 'block';
+    
+    var addMenu = document.getElementById('gh-menu-add-file');
+    var cloneMenu = document.getElementById('gh-panel-clone-code');
+    if (addMenu) addMenu.style.display = 'none';
+    if (cloneMenu) cloneMenu.style.display = 'none';
+
+    if (isOpen) {
+        pop.style.display = 'none';
+    } else {
+        pop.style.display = 'block';
+        var inp = document.getElementById('gh-ref-search-input');
+        if (inp) { inp.value = ''; inp.focus(); }
+        var initTab = pop.getAttribute('data-init-tab') || 'branches';
+        switchRefTab(initTab);
+        filterRefList('');
+    }
+}
+
+function switchRefTab(tab) {
+    var bList = document.getElementById('gh-ref-list-branches');
+    var tList = document.getElementById('gh-ref-list-tags');
+    var bTab = document.getElementById('gh-tab-branches');
+    var tTab = document.getElementById('gh-tab-tags');
+    var bFoot = document.getElementById('gh-ref-footer-branches');
+    var tFoot = document.getElementById('gh-ref-footer-tags');
+    if (tab === 'branches') {
+        if (bList) bList.style.display = 'block';
+        if (tList) tList.style.display = 'none';
+        if (bFoot) bFoot.style.display = 'block';
+        if (tFoot) tFoot.style.display = 'none';
+        if (bTab) { bTab.style.borderBottomColor = 'var(--gh-accent-fg, #58a6ff)'; bTab.style.color = 'var(--gh-fg-default, #e6edf3)'; bTab.style.fontWeight = '600'; }
+        if (tTab) { tTab.style.borderBottomColor = 'transparent'; tTab.style.color = 'var(--gh-fg-muted, #8b949e)'; tTab.style.fontWeight = '500'; }
+    } else {
+        if (bList) bList.style.display = 'none';
+        if (tList) tList.style.display = 'block';
+        if (bFoot) bFoot.style.display = 'none';
+        if (tFoot) { tFoot.style.display = 'flex'; }
+        if (tTab) { tTab.style.borderBottomColor = 'var(--gh-accent-fg, #58a6ff)'; tTab.style.color = 'var(--gh-fg-default, #e6edf3)'; tTab.style.fontWeight = '600'; }
+        if (bTab) { bTab.style.borderBottomColor = 'transparent'; bTab.style.color = 'var(--gh-fg-muted, #8b949e)'; bTab.style.fontWeight = '500'; }
+    }
+}
+
+function filterRefList(q) {
+    q = (q || '').toLowerCase().trim();
+    document.querySelectorAll('.gh-ref-item').forEach(function (el) {
+        var name = el.getAttribute('data-name') || '';
+        el.style.display = (q === '' || name.indexOf(q) !== -1) ? 'flex' : 'none';
+    });
+}
+
+document.addEventListener('click', function(e) {
+    var pop = document.getElementById('gh-ref-popover');
+    if (pop && !e.target.closest('#gh-ref-switcher-wrap')) {
+        pop.style.display = 'none';
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var pop = document.getElementById('gh-ref-popover');
+        if (pop) pop.style.display = 'none';
+    }
+});
+</script>

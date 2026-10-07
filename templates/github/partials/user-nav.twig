@@ -1,0 +1,81 @@
+{# Unified GitHub-style User Account & Repository Navigation #}
+{% set cur_user = current_user ?? (owner_name|default(owner|default('admin'))) %}
+{% set ap = admin_prefix|default('/admin') %}
+
+{# ── MOBILE SELECT NAVIGATION (Shown on <= 768px) ── #}
+<div class="gh-nav-mobile-wrapper" style="margin-bottom: 16px; width: 100%;">
+    <label for="gh-user-nav-select" style="display: block; font-size: 12px; font-weight: 600; color: var(--gh-fg-muted); margin-bottom: 6px;">{{ t('ui.nav.settings') }}</label>
+    <div style="position: relative; width: 100%;">
+        <select id="gh-user-nav-select" class="gh-select gh-nav-select" onchange="if(this.value) window.location.href=this.value;" style="width: 100%; height: 38px; padding: 0 32px 0 12px; font-size: 13.5px; font-weight: 500; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-subtle); color: var(--gh-fg-default); appearance: none; -webkit-appearance: none; cursor: pointer; box-sizing: border-box;">
+            <optgroup label="{{ t_attr('ui.nav.repositories') }}">
+                <option value="/repos/new" {{ active == 'new-repo' ? 'selected' : '' }}>{{ t('ui.nav.new_repo') }}</option>
+                <option value="/repos/import" {{ active == 'import' ? 'selected' : '' }}>{{ t('ui.nav.import_repo') }}</option>
+                <option value="/{{ cur_user }}?tab=repositories" {{ active == 'my-repos' ? 'selected' : '' }}>{{ t('ui.nav.repositories') }}</option>
+            </optgroup>
+            <optgroup label="{{ t_attr('ui.repo.security') }}">
+                <option value="/{{ cur_user }}" {{ active == 'profile' ? 'selected' : '' }}>{{ t('ui.nav.profile') }}</option>
+                <option value="/settings/account" {{ active == 'settings' ? 'selected' : '' }}>{{ t('ui.nav.settings') }}</option>
+                <option value="/settings/security" {{ active == 'security' ? 'selected' : '' }}>{{ t('ui.repo.security') }}</option>
+            </optgroup>
+            <optgroup label="{{ t_attr('ui.nav.dev_settings') }}">
+                <option value="/settings/tokens" {{ active == 'tokens' ? 'selected' : '' }}>{{ t('ui.nav.access_tokens') }}</option>
+            </optgroup>
+            {% if is_owner %}
+            <optgroup label="{{ t_attr('adm.nav.system') }}">
+                <option value="{{ ap }}">{{ t('adm.nav.dashboard') }}</option>
+            </optgroup>
+            {% endif %}
+        </select>
+        <svg style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; width: 14px; height: 14px; fill: var(--gh-fg-muted);" viewBox="0 0 16 16"><path d="m4.427 6.427 3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 6H4.604a.25.25 0 0 0-.177.427Z"/></svg>
+    </div>
+</div>
+
+{# ── DESKTOP SIDEBAR NAVIGATION (Shown on > 768px) ── #}
+<nav class="gh-admin-nav gh-nav-desktop" aria-label="User navigation">
+    <div class="gh-admin-nav-title">{{ t('ui.nav.repositories') }}</div>
+    <a href="/repos/new" class="{{ active == 'new-repo' ? 'is-active' : '' }}">
+        <svg class="ti ti-plus" style="font-size:16px;"><use href="#ti-plus"/></svg>
+        <span>{{ t('ui.nav.new_repo') }}</span>
+    </a>
+    <a href="/repos/import" class="{{ active == 'import' ? 'is-active' : '' }}">
+        <svg class="ti ti-download" style="font-size:16px;"><use href="#ti-download"/></svg>
+        <span>{{ t('ui.nav.import_repo') }}</span>
+    </a>
+    <a href="/{{ cur_user }}?tab=repositories" class="{{ active == 'my-repos' ? 'is-active' : '' }}">
+        <svg class="ti ti-box" style="font-size:16px;"><use href="#ti-box"/></svg>
+        <span>{{ t('ui.nav.repositories') }}</span>
+    </a>
+
+    <div class="gh-admin-nav-title" style="margin-top: .85rem;">{{ t('ui.repo.security') }}</div>
+    <a href="/{{ cur_user }}" class="{{ active == 'profile' ? 'is-active' : '' }}">
+        <svg class="ti ti-user" style="font-size:16px;"><use href="#ti-user"/></svg>
+        <span>{{ t('ui.nav.profile') }}</span>
+    </a>
+    <a href="/settings/account" class="{{ active == 'settings' ? 'is-active' : '' }}">
+        <svg class="ti ti-settings" style="font-size:16px;"><use href="#ti-settings"/></svg>
+        <span>{{ t('ui.nav.settings') }}</span>
+    </a>
+    <a href="/settings/security" class="{{ active == 'security' ? 'is-active' : '' }}">
+        <svg class="ti ti-shield-lock" style="font-size:16px;"><use href="#ti-shield-lock"/></svg>
+        <span>{{ t('ui.repo.security') }}</span>
+    </a>
+
+    <div class="gh-admin-nav-title" style="margin-top: .85rem;">{{ t('ui.nav.dev_settings') }}</div>
+    <a href="/settings/tokens" class="{{ active == 'tokens' ? 'is-active' : '' }}">
+        <svg class="ti ti-key" style="font-size:16px;"><use href="#ti-key"/></svg>
+        <span>{{ t('ui.nav.access_tokens') }}</span>
+    </a>
+
+    {% if is_owner %}
+    <div style="margin-top: 1.25rem; padding-top: .75rem; border-top: 1px solid var(--gh-border-default);">
+        <a href="{{ ap }}" style="display:flex; align-items:center; gap:.5rem; font-size:12px; color:var(--gh-fg-muted); text-decoration:none; padding:4px 8px; border-radius:6px;" onmouseover="this.style.color='var(--gh-accent-fg)'" onmouseout="this.style.color='var(--gh-fg-muted)'">
+            <svg class="ti ti-server-2" style="font-size:15px;"><use href="#ti-server-2"/></svg>
+            <span>{{ t('adm.nav.dashboard') }} →</span>
+        </a>
+        <a href="{{ ap }}/licenses" style="display:flex; align-items:center; gap:.5rem; font-size:12px; color:var(--gh-fg-muted); text-decoration:none; padding:4px 8px; border-radius:6px;" onmouseover="this.style.color='var(--gh-accent-fg)'" onmouseout="this.style.color='var(--gh-fg-muted)'">
+            <svg class="ti ti-shield-check" style="font-size:15px;"><use href="#ti-shield-check"/></svg>
+            <span>🛡️ {{ t('adm.nav.licenses') }}</span>
+        </a>
+    </div>
+    {% endif %}
+</nav>

@@ -1,0 +1,239 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.repo_settings.title') }} · {{ repo.name }} · {{ app_name }}{% endblock %}
+
+{% set base_path = '/' ~ owner_name ~ '/' ~ repo.slug %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'settings' } %}
+
+    <div style="display:flex; gap: 24px; margin-top: 16px; align-items: flex-start; flex-wrap: wrap;">
+        {# Sidebar #}
+        <nav style="width: 200px; flex-shrink: 0; font-size: 14px;">
+            {% for key, item in {
+                'overview':      [t('ui.repo_settings.tab_general'), '/settings'],
+                'collaborators': [t('ui.repo_settings.tab_collaborators'), '/settings/collaborators'],
+                'branches':      [t('ui.repo_settings.tab_branches'), '/settings/branches'],
+                'webhooks':      [t('ui.repo_settings.tab_webhooks'), '/settings/webhooks'],
+            } %}
+                <a href="{{ base_path }}{{ item[1] }}"
+                   style="display:block; padding: 6px 10px; border-radius: 6px; text-decoration:none; margin-bottom: 2px; {{ tab == key ? 'background: var(--gh-bg-subtle); font-weight: 600;' : 'color: var(--gh-fg-muted);' }}">
+                    {{ item[0] }}
+                </a>
+            {% endfor %}
+            <div style="border-top: 1px solid var(--gh-border-default); margin: 8px 0;"></div>
+            <a href="#danger" style="display:block; padding: 6px 10px; color: #f85149; text-decoration:none;">{{ t('ui.repo_settings.danger_zone') }}</a>
+        </nav>
+
+        <div style="flex:1; min-width: 0;">
+            {% if tab == 'overview' %}
+                <h2 style="font-size: 16px; margin-bottom: 12px;">{{ t('ui.repo_settings.tab_general') }}</h2>
+                <form method="post" action="{{ base_path }}/settings">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <label style="font-weight:600; font-size:13px;">{{ t('ui.repo_settings.repo_name') }}</label>
+                    <input type="text" name="name" value="{{ repo.name }}" required class="gh-form-control" style="width:100%; margin: 4px 0 12px;">
+
+                    <label style="font-weight:600; font-size:13px;">{{ t('ui.repo_settings.repo_slug') }}</label>
+                    <input type="text" name="slug" value="{{ repo.slug }}" required pattern="[a-zA-Z0-9._\-]+" class="gh-form-control gh-mono" style="width:100%; margin: 4px 0 4px;">
+                    <p style="font-size:12px; color: var(--gh-fg-muted); margin: 0 0 12px;">{{ t('ui.repo_settings.repo_slug_hint') }}</p>
+
+                    <label style="font-weight:600; font-size:13px;">{{ t('ui.repo_settings.description') }}</label>
+                    <textarea name="description" class="gh-form-control" rows="3" style="width:100%; min-height: 80px; margin: 4px 0 12px; resize: vertical; line-height: 1.5; font-family: inherit;">{{ repo.description }}</textarea>
+                    <label style="font-weight:600; font-size:13px;">{{ t('ui.repo_settings.website') }}</label>
+                    <input type="text" name="homepage" value="{{ repo.homepage }}" class="gh-form-control" style="width:100%; margin: 4px 0 12px;" placeholder="https://…">
+
+                    {% if repo.source_url %}
+                        <label style="font-weight:600; font-size:13px;">{{ t('ui.repo_settings.upstream_remote') }} <span style="font-weight:400; color: var(--gh-fg-muted);">({{ t('ui.repo_settings.upstream_hint') }})</span></label>
+                        <input type="url" name="source_url" value="{{ repo.source_url }}" class="gh-form-control gh-mono" style="width:100%; margin: 4px 0 12px;" placeholder="https://github.com/user/repo.git">
+
+                        <label style="font-weight:600; font-size:13px;">{{ t('ui.repo_settings.access_token') }} <span style="font-weight:400; color: var(--gh-fg-muted);">({{ t('ui.repo_settings.access_token_hint') }})</span></label>
+                        <input type="password" name="access_token" class="gh-form-control" style="width:100%; margin: 4px 0 12px;" placeholder="{{ t_attr('ui.repo_settings.access_token_placeholder') }}">
+
+                        {% if repo.last_synced_at %}
+                            <p style="font-size:12px; color: var(--gh-fg-muted); margin: -6px 0 12px;">{{ t('ui.repo_settings.last_synced', {time: repo.last_synced_at|time_ago}) }}</p>
+                        {% endif %}
+                    {% endif %}
+
+                    <label style="font-weight:600; font-size:13px;">{{ t('ui.repo_settings.visibility') }}</label>
+                    <select name="visibility" class="gh-form-control" style="margin: 4px 0 12px;">
+                        <option value="public"{{ repo.visibility == 'public' ? ' selected' : '' }}>{{ t('ui.repo_settings.public') }}</option>
+                        <option value="private"{{ repo.visibility == 'private' ? ' selected' : '' }}>{{ t('ui.repo_settings.private') }}</option>
+                    </select>
+                    <div style="display:flex; gap:8px;">
+                        <button type="submit" class="gh-btn gh-btn-primary">{{ t('ui.repo_settings.save_changes') }}</button>
+                        {% if repo.source_url %}
+                            <button type="submit" formaction="{{ base_path }}/settings/sync"
+                                    formnovalidate
+                                    title="{{ t_attr('ui.repo_settings.sync_upstream_title') }}"
+                                    class="gh-btn">⟳ {{ t('ui.repo_settings.sync_upstream') }}</button>
+                        {% endif %}
+                    </div>
+                </form>
+
+            {% elseif tab == 'collaborators' %}
+                <h2 style="font-size: 16px; margin-bottom: 12px;">{{ t('ui.repo_settings.collaborators_title') }}</h2>
+                <form method="post" action="{{ base_path }}/settings/collaborators" class="gh-box" style="padding: 12px; display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div style="flex:1; min-width: 180px;">
+                        <label style="font-size:12px; font-weight:600;">{{ t('ui.repo_settings.username_or_email') }}</label>
+                        <input type="text" name="username" required class="gh-form-control" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; font-weight:600;">{{ t('ui.repo_settings.role') }}</label>
+                        <select name="role" class="gh-form-control">
+                            <option value="read">{{ t('ui.repo_settings.role_read') }}</option>
+                            <option value="write">{{ t('ui.repo_settings.role_write') }}</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="gh-btn gh-btn-primary">{{ t('ui.repo_settings.add_collaborator') }}</button>
+                </form>
+
+                <table class="gh-table">
+                    <tbody>
+                    {% for c in collaborators %}
+                        <tr>
+                            <td><strong>{{ c.username }}</strong> <span style="color:var(--gh-fg-muted); font-size:12px;">{{ c.email }}</span></td>
+                            <td><span class="gh-badge">{{ c.role == 'read' ? t('ui.repo_settings.role_read') : (c.role == 'write' ? t('ui.repo_settings.role_write') : c.role) }}</span></td>
+                            <td style="text-align:right;">
+                                <form method="post" action="{{ base_path }}/settings/collaborators/{{ c.id }}/delete">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <button type="submit" class="gh-btn gh-btn-sm">{{ t('ui.repo_settings.remove') }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="3" style="color: var(--gh-fg-muted); padding: 16px;">{{ t('ui.repo_settings.no_collaborators') }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+            {% elseif tab == 'branches' %}
+                <h2 style="font-size: 16px; margin-bottom: 4px;">{{ t('ui.repo_settings.branch_rules_title') }}</h2>
+
+                <form method="post" action="{{ base_path }}/settings/branches" class="gh-box" style="padding: 12px; display:flex; gap:8px; align-items:end; flex-wrap:wrap; margin-bottom: 16px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div style="flex:1; min-width: 180px;">
+                        <label style="font-size:12px; font-weight:600;">{{ t('ui.repo_settings.branch_pattern') }}</label>
+                        <select name="branch_name" class="gh-form-control" style="width:100%;">
+                            {% for b in branches %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <label style="font-size:13px; display:flex; gap:4px; align-items:center; padding-bottom:6px;">
+                        <input type="checkbox" name="allow_admin" checked> {{ t('ui.repo_settings.allow_admin_bypass') }}
+                    </label>
+                    <label style="font-size:13px; display:flex; gap:4px; align-items:center; padding-bottom:6px;">
+                        <input type="checkbox" name="require_approval"> {{ t('ui.repo_settings.require_approval') }}
+                    </label>
+                    <button type="submit" class="gh-btn gh-btn-primary">{{ t('ui.repo_settings.protect_btn') }}</button>
+                </form>
+
+                <table class="gh-table">
+                    <tbody>
+                    {% for r in rules %}
+                        <tr>
+                            <td class="gh-mono">{{ r.branch_name }}</td>
+                            <td style="font-size:12px;">
+                                {% if r.prevent_force_push %}{{ t('ui.repo_settings.no_force_push') }}{% endif %}
+                                {% if r.prevent_delete %} · {{ t('ui.repo_settings.no_delete') }}{% endif %}
+                                {% if r.allow_admin %} · {{ t('ui.repo_settings.admin_bypass') }}{% endif %}
+                                {% if r.require_approval %} · {{ t('ui.repo_settings.require_approval_badge') }}{% endif %}
+                            </td>
+                            <td style="text-align:right;">
+                                <form method="post" action="{{ base_path }}/settings/branches/{{ r.id }}/delete">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <button type="submit" class="gh-btn gh-btn-sm">{{ t('ui.repo_settings.remove') }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="3" style="color: var(--gh-fg-muted); padding: 16px;">{{ t('ui.repo_settings.no_protected_branches') }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+            {% elseif tab == 'webhooks' %}
+                <h2 style="font-size: 16px; margin-bottom: 12px;">{{ t('ui.repo_settings.webhooks_title') }}</h2>
+                <form method="post" action="{{ base_path }}/settings/webhooks" class="gh-box" style="padding: 12px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <label style="font-size:12px; font-weight:600;">{{ t('ui.repo_settings.payload_url') }}</label>
+                    <input type="url" name="url" required placeholder="https://ci.example.com/hook" class="gh-form-control" style="width:100%; margin: 4px 0 10px;">
+                    <label style="font-size:12px; font-weight:600;">{{ t('ui.repo_settings.secret') }}</label>
+                    <input type="text" name="secret" class="gh-form-control" style="width:100%; margin: 4px 0 10px;" placeholder="{{ t_attr('ui.repo_settings.secret_placeholder') }}">
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">{{ t('ui.repo_settings.events') }}</label>
+                        {% for ev in events %}
+                            <label style="font-size:13px; margin-right: 14px;"><input type="checkbox" name="events[]" value="{{ ev }}" {{ loop.first ? 'checked' : '' }}> {{ ev }}</label>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="gh-btn gh-btn-primary">{{ t('ui.repo_settings.add_webhook') }}</button>
+                </form>
+
+                <table class="gh-table">
+                    <tbody>
+                    {% for h in hooks %}
+                        <tr>
+                            <td>
+                                <span class="gh-mono" style="font-size: 12.5px;">{{ h.url }}</span>
+                                <div style="font-size:11px; color: var(--gh-fg-muted);">
+                                    {{ t('ui.repo_settings.events') }}: {{ h.events }} · {{ h.deliveries_count }} {{ t('ui.repo_settings.deliveries') }}
+                                    {% if h.last_delivery %}· {{ t('ui.repo_settings.last_delivery', {time: h.last_delivery|time_ago}) }}{% endif %}
+                                    {% if not h.is_active %} · <strong>{{ t('ui.repo_settings.disabled') }}</strong>{% endif %}
+                                </div>
+                            </td>
+                            <td style="text-align:right;">
+                                <form method="post" action="{{ base_path }}/settings/webhooks/{{ h.id }}/delete">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <button type="submit" class="gh-btn gh-btn-sm">{{ t('ui.repo_settings.delete') }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="2" style="color: var(--gh-fg-muted); padding: 16px;">{{ t('ui.repo_settings.no_webhooks') }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+                {% if deliveries is not empty %}
+                    <h3 style="font-size: 14px; margin: 16px 0 8px;">{{ t('ui.repo_settings.recent_deliveries') }}</h3>
+                    <table class="gh-table">
+                        <tbody>
+                        {% for d in deliveries %}
+                            <tr>
+                                <td style="font-size: 12px;">
+                                    <span class="gh-badge" style="{{ d.success ? 'color:#3fb950' : 'color:#f85149' }}">{{ d.success ? '✓' : '✗' }} {{ d.response_code ?? 'ERR' }}</span>
+                                    <span class="gh-mono">{{ d.event }}</span>
+                                </td>
+                                <td style="font-size: 11px; color: var(--gh-fg-muted); text-align:right;">{{ d.created_at|time_ago }} · {{ d.duration_ms }}ms</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+
+            {% endif %}
+
+            {# Danger zone — available on every tab, anchored #}
+            <div id="danger" class="gh-box" style="border-color: #f85149; padding: 14px; margin-top: 28px;">
+                <h3 style="font-size: 14px; color:#f85149; margin-bottom: 8px;">{{ t('ui.repo_settings.danger_zone_title') }}</h3>
+                {% if allow_repo_deletion %}
+                    <form method="post" action="{{ base_path }}/settings/delete" onsubmit="return confirm('{{ t_attr('ui.repo_settings.delete_confirm_prompt') }}');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <p style="font-size: 13px; margin-bottom: 6px;">{{ t('ui.repo_settings.delete_slug_prompt', {slug: '<code class="gh-mono">' ~ repo.slug ~ '</code>'})|raw }}</p>
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" name="confirm_slug" class="gh-form-control" placeholder="{{ repo.slug }}" required>
+                            <button type="submit" class="gh-btn" style="background:#b62324; color:#fff;">{{ t('ui.repo_settings.delete_repo_btn') }}</button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div style="padding: 10px; background: rgba(248,81,73,0.08); border-radius: 6px; border: 1px solid rgba(248,81,73,0.3); color: var(--gh-fg-muted); font-size: 12.5px;">
+                        🔒 {{ t('ui.repo_settings.delete_disabled_policy') }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

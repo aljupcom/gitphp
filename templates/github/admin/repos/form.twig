@@ -1,0 +1,154 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ repo ? 'Edit' : 'Create' }} Repository — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600;">{{ repo ? ('Edit Repository: ' ~ repo.name) : 'Create New Repository' }}</h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                {{ repo ? 'Update repository settings, visibility, and collaborator permissions.' : 'Initialize a new bare Git repository hosted on this instance.' }}
+            </p>
+        </div>
+        <div>
+            <a class="gh-btn gh-btn-sm" href="{{ admin_prefix|default('/admin') }}/repos">
+                &larr; Back to Repositories
+            </a>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: (repo ? 'repos' : 'new_repo'), counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; max-width: 800px; flex:1;">
+            
+            {% if error is defined and error %}
+                <div class="gh-flash gh-flash-error" style="margin-bottom:16px;" role="alert">{{ error }}</div>
+            {% endif %}
+
+            <div class="gh-box" style="padding:20px; margin-bottom:24px;">
+                <form method="POST" action="{{ repo ? ((admin_prefix|default('/admin') ~ '/repos/') ~ repo.slug) : ((admin_prefix|default('/admin') ~ '/repos')) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                    {# Name #}
+                    <div style="margin-bottom:16px;">
+                        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;" for="name">Repository Name *</label>
+                        <input class="gh-form-control" type="text" id="name" name="name" required
+                               value="{{ repo ? repo.name : '' }}"
+                               placeholder="e.g. core-api-service"
+                               style="width:100%; max-width:460px;"
+                               autocomplete="off">
+                    </div>
+
+                    {# Slug #}
+                    <div style="margin-bottom:16px;">
+                        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;" for="slug">Slug (Repository Path)</label>
+                        <input class="gh-form-control" type="text" id="slug" name="slug"
+                               value="{{ repo ? repo.slug : '' }}"
+                               placeholder="core-api-service"
+                               pattern="[a-z0-9][a-z0-9\-]*[a-z0-9]"
+                               {{ repo ? 'readonly' : '' }}
+                               style="width:100%; max-width:460px; font-family:var(--gh-font-mono, monospace);"
+                               autocomplete="off">
+                        <div class="gh-form-hint">
+                            {% if repo %}
+                                The URL slug cannot be changed after creation.
+                            {% else %}
+                                Lowercase alphanumeric with hyphens. Auto-generated from name if left empty.
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# Description #}
+                    <div style="margin-bottom:16px;">
+                        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;" for="description">Description (Optional)</label>
+                        <textarea class="gh-form-control" id="description" name="description" rows="3"
+                                  placeholder="Short summary of this repository..."
+                                  style="width:100%;">{{ repo ? repo.description : '' }}</textarea>
+                    </div>
+
+                    {# Visibility #}
+                    <div style="margin-bottom:16px;">
+                        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:6px;">Visibility Level</label>
+                        <div style="display:flex; gap:16px;">
+                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+                                <input type="radio" name="visibility" value="public"
+                                       {{ (not repo or repo.visibility == 'public') ? 'checked' : '' }}>
+                                <span><strong>Public</strong> (Anyone on the internet can see this repository)</span>
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+                                <input type="radio" name="visibility" value="private"
+                                       {{ (repo and repo.visibility == 'private') ? 'checked' : '' }}>
+                                <span><strong>Private</strong> (You choose who can see and commit)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {# Default branch #}
+                    <div style="margin-bottom:20px;">
+                        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;" for="default_branch">Default Branch</label>
+                        <input class="gh-form-control" type="text" id="default_branch" name="default_branch"
+                               value="{{ repo ? repo.default_branch : 'main' }}"
+                               placeholder="main"
+                               style="width:100%; max-width:200px; font-family:var(--gh-font-mono, monospace);"
+                               autocomplete="off">
+                    </div>
+
+                    {# Submit #}
+                    <div style="display:flex; gap:8px; padding-top:14px; border-top:1px solid var(--gh-border-muted);">
+                        <button type="submit" class="gh-btn gh-btn-primary" style="font-weight:600;">
+                            {{ repo ? 'Update Repository Settings' : 'Create Repository' }}
+                        </button>
+                        <a href="{{ admin_prefix|default('/admin') }}/repos" class="gh-btn">Cancel</a>
+                    </div>
+                </form>
+            </div>
+
+            {# Collaborators Section (Edit only) #}
+            {% if repo %}
+                <div class="gh-box" style="padding:20px; margin-bottom:24px;">
+                    <h2 style="font-size:15px; margin:0 0 4px; font-weight:600;">Collaborators &amp; Access Control</h2>
+                    <p style="font-size:12px; color:var(--gh-fg-muted); margin:0 0 16px;">
+                        Grant registered users direct read or write access to this repository.
+                    </p>
+
+                    {% if collaborators is defined and collaborators|length > 0 %}
+                        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+                            {% for collab in collaborators %}
+                                <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--gh-border-default); background:var(--gh-bg-subtle); padding:10px 14px; border-radius:6px;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <strong>{{ collab.username }}</strong>
+                                        <span class="gh-badge">{{ collab.role }}</span>
+                                    </div>
+                                    <form method="POST" action="{{ admin_prefix|default('/admin') }}/repos/{{ repo.slug }}/collaborators/{{ collab.id }}/delete" style="margin:0;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="gh-btn gh-btn-sm" style="color:#f85149;">Remove</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p style="font-size:13px; color:var(--gh-fg-muted); margin-bottom:16px;">No collaborators added yet.</p>
+                    {% endif %}
+
+                    <form method="POST" action="{{ admin_prefix|default('/admin') }}/repos/{{ repo.slug }}/collaborators" style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input class="gh-form-control" type="text" name="username" required
+                               placeholder="Username or email" style="min-width:240px;"
+                               autocomplete="off">
+                        <select class="gh-form-control" name="role" aria-label="Access level" style="width:120px;">
+                            <option value="read">Read</option>
+                            <option value="write" selected>Write</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <button type="submit" class="gh-btn gh-btn-primary">Add Collaborator</button>
+                    </form>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

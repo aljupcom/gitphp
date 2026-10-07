@@ -1,0 +1,25 @@
+{% extends "pages/base.twig" %}
+
+{% block page_content %}
+<h2>About {{ app_name }}</h2>
+<p>{{ app_name }} is a self-hosted Git repository hosting platform that provides fast, secure version control over HTTP and SSH, together with collaboration features such as issues, pull requests, code review, releases, and a REST API.</p>
+<p>We are committed to keeping the platform open, transparent, and respectful of your data. This page summarizes your rights and the licensing of the software.</p>
+
+<h2>Rights &amp; Ownership</h2>
+<ul>
+    <li><strong>Your content</strong> — repositories, code, issues, and pull requests remain yours. We only act as a host.</li>
+    <li><strong>Your account</strong> — you control your profile, credentials, sessions, and privacy settings.</li>
+    <li><strong>Open source</strong> — the {{ app_name }} platform is built on open-source software. See the repository for its license.</li>
+</ul>
+
+<h2>Why Choose {{ app_name }}</h2>
+<ul>
+    <li>Self-hosted and fully under your control.</li>
+    <li>Built-in personal access tokens (PAT), branch protection, and webhooks.</li>
+    <li>Optional two-factor authentication and full audit logging.</li>
+    <li>Modern, responsive interface with a REST API v1 for automation.</li>
+</ul>
+
+<h2>Get in Touch</h2>
+<p>To learn more, read the <a href="/docs">documentation</a>, review our <a href="/privacy">privacy policy</a>, or <a href="/contact">contact us</a>.</p>
+{% endblock %}

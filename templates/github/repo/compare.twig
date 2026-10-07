@@ -1,0 +1,223 @@
+{% extends "layout.twig" %}
+
+{% block title %}Comparing {{ base }}...{{ head }} · {{ repo.name }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+        {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'pulls' } %}
+
+    <div style="margin: 16px 0 20px 0;">
+        <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M11.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm-2.25.75a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"/></svg>
+            Comparing changes
+        </h2>
+        <p style="color: var(--gh-fg-muted); font-size: 14px; margin: 0;">
+            Choose two branches to see what’s changed or to start a new pull request.
+        </p>
+
+        <!-- Branch Selector Bar -->
+        <form method="GET" action="/{{ owner }}/{{ repo.slug }}/compare" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: var(--gh-bg-subtle); padding: 12px 16px; border: 1px solid var(--gh-border-default); border-radius: var(--gh-radius); margin-top: 14px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 12px; font-weight: 600; color: var(--gh-fg-muted);">base:</span>
+                <select name="base" onchange="this.form.submit()" class="gh-form-control" style="padding: 4px 10px; font-family: var(--gh-font-mono); font-size: 13px; font-weight: 600;">
+                    {% for b in branches %}
+                        <option value="{{ b }}"{{ b == base ? ' selected' : '' }}>{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <span style="color: var(--gh-fg-muted); font-weight: bold; font-size: 14px;">&larr;</span>
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 12px; font-weight: 600; color: var(--gh-fg-muted);">compare:</span>
+                <select name="head" onchange="this.form.submit()" class="gh-form-control" style="padding: 4px 10px; font-family: var(--gh-font-mono); font-size: 13px; font-weight: 600;">
+                    {% for b in branches %}
+                        <option value="{{ b }}"{{ b == head ? ' selected' : '' }}>{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <noscript>
+                <button type="submit" class="gh-btn gh-btn-sm">Compare</button>
+            </noscript>
+        </form>
+    </div>
+
+    {% if error %}
+        <div class="gh-flash gh-flash-error" style="margin-bottom: 20px;">
+            {{ error }}
+        </div>
+    {% elseif comparison %}
+        {% if base == head %}
+            <div class="gh-empty" style="padding: 40px 20px; border: 1px solid var(--gh-border-default); border-radius: var(--gh-radius); text-align: center; background: var(--gh-bg-subtle);">
+                <h3 style="margin-top: 0;">Identical branches</h3>
+                <p style="color: var(--gh-fg-muted);">There isn’t anything to compare. Both selected branches are identical.</p>
+            </div>
+        {% else %}
+            <!-- Merge Capability Banner -->
+            <div style="border: 1px solid var(--gh-border-default); border-radius: var(--gh-radius); background: var(--gh-bg-subtle); padding: 16px 20px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        {% if comparison.can_merge %}
+                            <div style="display: flex; align-items: center; gap: 8px; color: var(--gh-success-fg); font-weight: 600; font-size: 14px;">
+                                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                                <span>Able to merge. These branches can be automatically merged.</span>
+                            </div>
+                        {% else %}
+                            <div style="display: flex; align-items: center; gap: 8px; color: var(--gh-danger-fg); font-weight: 600; font-size: 14px;">
+                                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+                                <span>Can’t automatically merge. Conflicts must be resolved manually.</span>
+                            </div>
+                        {% endif %}
+                        <div style="margin-top: 6px; font-size: 13px; color: var(--gh-fg-muted);">
+                            <strong>{{ comparison.ahead_count }}</strong> commit{{ comparison.ahead_count != 1 ? 's' : '' }} ahead,
+                            <strong>{{ comparison.behind_count }}</strong> commit{{ comparison.behind_count != 1 ? 's' : '' }} behind <code class="gh-mono">{{ base }}</code>.
+                        </div>
+                    </div>
+
+                    {% if can_write and comparison.can_merge and comparison.ahead_count > 0 %}
+                        <form method="POST" action="/{{ owner }}/{{ repo.slug }}/merge" style="display: flex; align-items: center; gap: 8px;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="base" value="{{ base }}">
+                            <input type="hidden" name="head" value="{{ head }}">
+                            <input type="hidden" name="message" value="Merge branch '{{ head }}' into {{ base }}">
+                            <button type="submit" class="gh-btn gh-btn-primary" onclick="return confirm('Merge branch {{ head }} into {{ base }}?')">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
+                                <span>Merge branch into {{ base }}</span>
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Commits list -->
+            {% if comparison.commits|length > 0 %}
+                <div style="margin-bottom: 24px;">
+                    <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 10px 0;">Commits ({{ comparison.commits|length }})</h3>
+                    <div class="gh-table-wrap">
+                        <table class="gh-table">
+                            <tbody>
+                                {% for c in comparison.commits %}
+                                    <tr>
+                                        <td style="width: 90px;">
+                                            <a class="gh-mono gh-hash-link" href="/{{ owner }}/{{ repo.slug }}/commit/{{ c.sha }}">{{ c.short_sha }}</a>
+                                        </td>
+                                        <td>
+                                            <a href="/{{ owner }}/{{ repo.slug }}/commit/{{ c.sha }}" style="font-weight: 600; color: var(--gh-fg-default); text-decoration: none;">{{ c.subject }}</a>
+                                        </td>
+                                        <td style="color: var(--gh-fg-muted); font-size: 13px;">{{ c.author_name }}</td>
+                                        <td style="color: var(--gh-fg-muted); font-size: 13px; text-align: right;">
+                                            <time datetime="{{ c.author_date }}">{{ c.author_date|time_ago }}</time>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Diff Section (GitHub Colored Line Diffs) -->
+            {% if diff_files|length > 0 %}
+                {% set diff_total = diff_stats.additions + diff_stats.deletions %}
+                {% set greenBlocks = diff_total > 0 ? ((diff_stats.additions * 5) / diff_total)|round(0, 'floor') : 0 %}
+                {% set redBlocks   = diff_total > 0 ? 5 - greenBlocks : 0 %}
+
+                {# Diff Summary Bar #}
+                <div class="gh-diff-summary" role="status" aria-label="Comparison change statistics">
+                    <div class="gh-ds-segment">
+                        <span class="gh-ds-num">{{ diff_stats.files }}</span>
+                        <span class="gh-ds-label">changed file{{ diff_stats.files != 1 ? 's' : '' }}</span>
+                    </div>
+                    <span class="gh-ds-separator" aria-hidden="true"></span>
+                    <div class="gh-ds-segment gh-ds-add">
+                        <span class="gh-ds-num">+{{ diff_stats.additions }}</span>
+                        <span class="gh-ds-label">addition{{ diff_stats.additions != 1 ? 's' : '' }}</span>
+                    </div>
+                    <span class="gh-ds-separator" aria-hidden="true"></span>
+                    <div class="gh-ds-segment gh-ds-del">
+                        <span class="gh-ds-num">&minus;{{ diff_stats.deletions }}</span>
+                        <span class="gh-ds-label">deletion{{ diff_stats.deletions != 1 ? 's' : '' }}</span>
+                    </div>
+                    <span class="gh-ds-spacer" aria-hidden="true"></span>
+                    {% if diff_total > 0 %}
+                        <span class="gh-diffstat" title="{{ diff_stats.additions }} addition{{ diff_stats.additions != 1 ? 's' : '' }}, {{ diff_stats.deletions }} deletion{{ diff_stats.deletions != 1 ? 's' : '' }}">
+                            {% for i in 1..5 %}
+                                <span class="gh-diffstat-block {{ i <= greenBlocks ? 'gh-db-add' : (i <= greenBlocks + redBlocks ? 'gh-db-del' : 'gh-db-muted') }}"></span>
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </div>
+
+                {# Changed Files Diff Cards #}
+                {% for file in diff_files %}
+                    <div class="gh-diff-file">
+                        <div class="gh-diff-file-head">
+                            <span class="gh-status gh-status-{{ file.status }}">
+                                {% if file.status == 'added' %}
+                                    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2Zm6.5 4.5v3h3a.75.75 0 0 1 0 1.5h-3v3a.75.75 0 0 1-1.5 0v-3h-3a.75.75 0 0 1 0-1.5h3v-3a.75.75 0 0 1 1.5 0Z"/></svg>
+                                {% elseif file.status == 'deleted' %}
+                                    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2Zm2.75 7.25h6.5a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1 0-1.5Z"/></svg>
+                                {% elseif file.status == 'renamed' %}
+                                    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.75 2.5h9.5a.75.75 0 0 1 0 1.5h-9.5a.75.75 0 0 1 0-1.5Zm5 10.25a.75.75 0 0 1 0-1.5h5.5a.75.75 0 0 1 0 1.5h-5.5ZM11.5 4.25a.75.75 0 0 1 .53.22l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L12.69 9.5 10.97 7.78a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734-.215Zm-7.75 3.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 0 1.5h-1.5Z"/></svg>
+                                {% else %}
+                                    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.75 1.5a.25.25 0 0 0-.25.25v11.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5H3.75Zm5.75.56v2.19c0 .138.112.25.25.25h2.19L9.5 2.06ZM2 1.75C2 .784 2.784 0 3.75 0h5.086c.464 0 .909.184 1.237.513l3.414 3.414c.329.328.513.773.513 1.237v8.086A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25Z"/></svg>
+                                {% endif %}
+                                <span>{{ file.status }}</span>
+                            </span>
+                            <span class="gh-diff-file-path">
+                                {%- if file.old_path %}<span class="gh-mono">{{ file.old_path }}</span> <svg class="gh-rename-arrow" width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="m11.28 3.22 4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L13.94 8l-3.72-3.72a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215Z"/></svg> {% endif -%}
+                                <span class="gh-mono" style="font-weight: 600;">{{ file.path }}</span>
+                            </span>
+                            <span class="gh-diff-file-counts">
+                                <span class="gh-stat-add">+{{ file.additions }}</span>
+                                <span class="gh-stat-del">&minus;{{ file.deletions }}</span>
+                            </span>
+                        </div>
+
+                        {% if file.binary %}
+                            <div class="gh-diff-note">Binary file not shown.</div>
+                        {% elseif file.lines|length == 0 and file.status == 'renamed' %}
+                            <div class="gh-diff-note">File renamed without content changes.</div>
+                        {% else %}
+                            <div class="gh-diff-scroll">
+                                <table class="gh-diff-table">
+                                    <tbody>
+                                    {% for line in file.lines %}
+                                        {% if line.type == 'hunk' %}
+                                            <tr class="gh-diff-hunk-row"><td colspan="4">{{ line.content }}</td></tr>
+                                        {% elseif line.type == 'meta' %}
+                                            <tr class="gh-diff-meta-row"><td colspan="4">{{ line.content }}</td></tr>
+                                        {% else %}
+                                            <tr class="gh-dl-{{ line.type }}">
+                                                <td class="gh-dl-num">{{ line.old ?? '' }}</td>
+                                                <td class="gh-dl-num">{{ line.new ?? '' }}</td>
+                                                <td class="gh-dl-mark">{{ line.type == 'add' ? '+' : (line.type == 'del' ? '&minus;' : '') }}</td>
+                                                <td class="gh-dl-code"><pre>{{ line.content }}</pre></td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% if file.truncated %}
+                                <div class="gh-diff-note">Large diffs are truncated — clone the repository to see the full change.</div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% elseif comparison.ahead_count == 0 %}
+                <div class="gh-empty" style="padding: 32px 20px; border: 1px solid var(--gh-border-default); border-radius: var(--gh-radius); text-align: center; background: var(--gh-bg-subtle);">
+                    <p style="color: var(--gh-fg-muted); margin: 0;">There are no code differences between <code class="gh-mono">{{ base }}</code> and <code class="gh-mono">{{ head }}</code>.</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    {% else %}
+        <div class="gh-empty" style="padding: 32px 20px; border: 1px solid var(--gh-border-default); border-radius: var(--gh-radius); text-align: center; background: var(--gh-bg-subtle);">
+            <p style="color: var(--gh-fg-muted); margin: 0;">Select two different branches above to compare.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

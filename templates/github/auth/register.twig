@@ -1,0 +1,106 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.auth.join_platform', { app: app_name })|default(t('ui.auth.register_title')) }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="gh-auth">
+    <div style="text-align: center; margin-bottom: 24px;">
+        <a href="/" aria-label="{{ app_name }}" style="display: inline-block; text-decoration: none;">
+            {% include "partials/logo.twig" with { size: 48 } %}
+        </a>
+    </div>
+
+    <h1 class="gh-auth-title">{{ t('ui.auth.join_platform', { app: app_name })|default(t('ui.auth.register_title')) }}</h1>
+    <p class="gh-auth-sub">{{ t('ui.auth.register_sub')|default('Star repositories, open issues and get notified about the projects you follow.') }}</p>
+
+    {% if error is defined and error %}
+        <div class="gh-flash gh-flash-error gh-auth-error" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <div class="gh-auth-card">
+        <form method="POST" action="/register" class="gh-auth-form">
+            {% if csrf_token is defined %}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            {% endif %}
+            <input type="hidden" name="_client_hints" class="gh-client-hints-input" value="">
+
+            <div class="gh-form-group">
+                <label class="gh-label" for="username">{{ t('ui.auth.username') }}</label>
+                <input class="gh-input" type="text" id="username" name="username"
+                       value="{{ old.username is defined ? old.username : '' }}"
+                       placeholder="{{ t_attr('ui.auth.register_username_placeholder')|default('Pick a username') }}" required autofocus
+                       minlength="3" maxlength="50" pattern="[a-zA-Z0-9][a-zA-Z0-9._-]*"
+                       autocomplete="username" spellcheck="false">
+                <p class="gh-form-hint">{{ t('ui.auth.username_rules_hint')|default('3–50 characters: letters, numbers, dots, dashes and underscores.') }}</p>
+            </div>
+
+            <div class="gh-form-group">
+                <label class="gh-label" for="email">{{ t('ui.auth.email') }}</label>
+                <input class="gh-input" type="email" id="email" name="email"
+                       value="{{ old.email is defined ? old.email : '' }}"
+                       placeholder="{{ t_attr('ui.auth.email_placeholder')|default('you@example.com') }}" required
+                       autocomplete="email">
+            </div>
+
+            <div class="gh-form-group">
+                <label class="gh-label" for="password">{{ t('ui.auth.password') }}</label>
+                <div class="gh-pass-wrap">
+                    <input class="gh-input" type="password" id="password" name="password"
+                           placeholder="{{ t_attr('ui.auth.password_min_placeholder')|default('At least 8 characters') }}" required
+                           minlength="8" autocomplete="new-password">
+                    <button type="button" class="gh-pass-toggle"
+                            data-toggle-password="#password"
+                            aria-label="{{ t_attr('ui.auth.toggle_password')|default('Show or hide password') }}" title="{{ t_attr('ui.auth.toggle_password')|default('Show or hide password') }}">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 0 1 0 1.798c-.45.678-1.367 1.932-2.637 3.023C11.67 13.008 9.981 14 8 14c-1.981 0-3.671-.992-4.933-2.078C1.797 10.83.88 9.576.43 8.898a1.62 1.62 0 0 1 0-1.798c.45-.677 1.367-1.931 2.637-3.022C4.33 2.992 6.019 2 8 2ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
+                    </button>
+                </div>
+                <p class="gh-form-hint">{{ t('ui.auth.password_rules_hint')|default('At least 8 characters with both letters and numbers.') }}</p>
+            </div>
+
+            <div class="gh-form-group">
+                <label class="gh-label" for="password_confirm">{{ t('ui.auth.confirm_password') }}</label>
+                <div class="gh-pass-wrap">
+                    <input class="gh-input" type="password" id="password_confirm" name="password_confirm"
+                           placeholder="{{ t_attr('ui.auth.confirm_password_placeholder')|default('Repeat your password') }}" required
+                           minlength="8" autocomplete="new-password">
+                    <button type="button" class="gh-pass-toggle"
+                            data-toggle-password="#password_confirm"
+                            aria-label="{{ t_attr('ui.auth.toggle_password')|default('Show or hide password') }}" title="{{ t_attr('ui.auth.toggle_password')|default('Show or hide password') }}">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 0 1 0 1.798c-.45.678-1.367 1.932-2.637 3.023C11.67 13.008 9.981 14 8 14c-1.981 0-3.671-.992-4.933-2.078C1.797 10.83.88 9.576.43 8.898a1.62 1.62 0 0 1 0-1.798c.45-.677 1.367-1.931 2.637-3.022C4.33 2.992 6.019 2 8 2ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="gh-btn gh-btn-primary gh-btn-block">{{ t('ui.auth.create_account_btn')|default(t('ui.auth.sign_up_btn')) }}</button>
+        </form>
+    </div>
+
+    <div class="gh-auth-alt">
+        {{ t('ui.auth.already_have_account') }} <a href="/login">{{ t('ui.auth.sign_in_link')|default(t('ui.auth.sign_in_btn')) }}</a>
+    </div>
+
+    <nav class="gh-auth-foot-links" aria-label="Footer">
+        <a href="/terms">{{ t('ui.footer.terms')|default('Terms') }}</a>
+        <a href="/privacy">{{ t('ui.footer.privacy')|default('Privacy') }}</a>
+        <a href="/docs">{{ t('ui.nav.docs')|default('Docs') }}</a>
+        <a href="/search">{{ t('ui.nav.explore')|default('Explore') }}</a>
+    </nav>
+</section>
+
+<script>
+(function() {
+    if (typeof navigator !== 'undefined' && navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+        navigator.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion', 'architecture', 'bitness'])
+            .then(function(hints) {
+                var json = JSON.stringify(hints);
+                document.querySelectorAll('.gh-client-hints-input').forEach(function(input) {
+                    input.value = json;
+                });
+            })
+            .catch(function() {});
+    }
+})();
+</script>
+{% endblock %}

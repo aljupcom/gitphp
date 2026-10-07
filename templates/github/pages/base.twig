@@ -1,0 +1,27 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ page_title }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" dir="ltr">
+    <nav class="gh-breadcrumb" aria-label="Breadcrumb">
+        <a href="/">{{ app_name }}</a>
+        <span class="sep">/</span>
+        <strong>{{ page_title }}</strong>
+    </nav>
+
+    <h1 class="gh-page-title" style="margin-top:0;">{{ page_title }}</h1>
+
+    <div class="gh-box gh-legal">
+        {% block page_content %}{% endblock %}
+    </div>
+
+    <nav class="gh-legal-nav" aria-label="Legal">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/about">About &amp; Rights</a>
+        <a href="/security">Security</a>
+        <a href="/contact">Contact</a>
+    </nav>
+</div>
+{% endblock %}

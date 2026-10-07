@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>{{ code }} · {{ app_name }}</title>
+    <script src="{{ asset('assets/js/theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('assets/css/wap.css') }}">
+    <style>
+        :root {
+            --eg-bg: var(--gh-bg-canvas, #0d1117);
+            --eg-panel: var(--gh-bg-overlay, #161b22);
+            --eg-border: var(--gh-border-default, #30363d);
+            --eg-fg: var(--gh-fg-default, #e6edf3);
+            --eg-muted: var(--gh-fg-muted, #8b949e);
+            --eg-accent: var(--gh-accent-fg, #58a6ff);
+            --eg-ok: var(--gh-success-fg, #3fb950);
+            --eg-danger: var(--gh-danger-fg, #f85149);
+            --eg-warn: var(--gh-attention-fg, #d29922);
+            --eg-mono: var(--gh-font-mono, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100%; }
+        body {
+            background: var(--eg-bg);
+            color: var(--eg-fg);
+            font-family: var(--gh-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            position: relative;
+        }
+        #eg-canvas {
+            position: fixed; inset: 0; width: 100%; height: 100%;
+            z-index: 0; opacity: .5; pointer-events: none;
+        }
+        .eg-main { position: relative; z-index: 1; width: 100%; max-width: 640px; text-align: center; }
+
+        .eg-terminal {
+            background: color-mix(in srgb, var(--eg-panel) 88%, transparent);
+            border: 1px solid var(--eg-border);
+            border-radius: 10px;
+            box-shadow: var(--gh-shadow-lg, 0 8px 24px rgba(1,4,9,.65));
+            text-align: left;
+            font-family: var(--eg-mono);
+            font-size: .84rem;
+            overflow: hidden;
+            backdrop-filter: blur(4px);
+            animation: eg-rise .55s cubic-bezier(.2,.7,.3,1) both;
+        }
+        @keyframes eg-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        .eg-term-bar {
+            display: flex; align-items: center; gap: .45rem;
+            padding: .55rem .85rem;
+            border-bottom: 1px solid var(--eg-border);
+            background: var(--gh-bg-inset, #010409);
+        }
+        .eg-dot { width: 11px; height: 11px; border-radius: 50%; }
+        .eg-dot:nth-child(1) { background: #ff5f56; } .eg-dot:nth-child(2) { background: #ffbd2e; } .eg-dot:nth-child(3) { background: #27c93f; }
+        .eg-term-title { margin-inline-start: auto; color: var(--eg-muted); font-size: .74rem; user-select: none; }
+        .eg-term-body { padding: .9rem 1rem 1.05rem; line-height: 1.75; min-height: 5.4em; }
+        .eg-line { white-space: pre-wrap; word-break: break-word; }
+        .eg-prompt { color: var(--eg-ok); font-weight: 700; }
+        .eg-cmd { color: var(--eg-fg); }
+        .eg-out { color: var(--eg-muted); }
+        .eg-out.bad { color: var(--eg-danger); }
+        .caret { display: inline-block; width: .55em; height: 1.15em; vertical-align: text-bottom; background: var(--eg-accent); animation: eg-blink 1s steps(1) infinite; border-radius: 1px; }
+        @keyframes eg-blink { 50% { opacity: 0; } }
+
+        .eg-code {
+            font-size: clamp(72px, 18vw, 128px);
+            font-weight: 800;
+            letter-spacing: -.04em;
+            line-height: 1.05;
+            margin-top: 1.35rem;
+            background: linear-gradient(120deg, var(--eg-accent), var(--eg-ok), var(--eg-accent));
+            background-size: 220% 220%;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: eg-shimmer 7s ease-in-out infinite, eg-rise .55s .12s cubic-bezier(.2,.7,.3,1) backwards;
+        }
+        @keyframes eg-shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+        .eg-pill {
+            display: inline-flex; align-items: center; gap: .45em;
+            margin-top: .55rem; padding: .28em .95em;
+            font-size: .78rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+            border-radius: 999px; border: 1px solid transparent;
+            animation: eg-rise .55s .2s cubic-bezier(.2,.7,.3,1) backwards;
+        }
+        .eg-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; animation: eg-pulse 2.2s ease-in-out infinite; }
+        @keyframes eg-pulse { 50% { opacity: .35; } }
+        .eg-pill.warn { color: var(--eg-warn); border-color: color-mix(in srgb, var(--eg-warn) 45%, transparent); background: color-mix(in srgb, var(--eg-warn) 12%, transparent); }
+        .eg-pill.danger { color: var(--eg-danger); border-color: color-mix(in srgb, var(--eg-danger) 45%, transparent); background: color-mix(in srgb, var(--eg-danger) 12%, transparent); }
+        .eg-pill.info { color: var(--eg-accent); border-color: color-mix(in srgb, var(--eg-accent) 45%, transparent); background: color-mix(in srgb, var(--eg-accent) 12%, transparent); }
+
+        .eg-msg { color: var(--eg-fg); font-size: 1.06rem; max-width: 480px; margin: 1rem auto 0; animation: eg-rise .55s .26s cubic-bezier(.2,.7,.3,1) backwards; }
+
+        .eg-tip {
+            display: none;
+            margin: 1.25rem auto 0; max-width: 520px; text-align: start;
+            border: 1px solid var(--eg-border);
+            background: var(--gh-bg-subtle, #151b23);
+            border-radius: 8px; padding: .8rem 1rem;
+            font-size: .88rem; color: var(--eg-muted);
+            gap: .65rem; align-items: flex-start;
+        }
+        .eg-tip.show { display: flex; animation: eg-rise .45s cubic-bezier(.2,.7,.3,1) both; }
+        .eg-tip svg { flex: none; margin-top: .12em; color: var(--eg-accent); }
+
+        .eg-actions {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem;
+            margin-top: 1.6rem;
+            animation: eg-rise .55s .32s cubic-bezier(.2,.7,.3,1) backwards;
+        }
+        .eg-btn {
+            display: inline-flex; align-items: center; gap: .5em;
+            padding: .55em 1.15em; border-radius: 6px; cursor: pointer;
+            font: inherit; font-weight: 600; font-size: .92rem;
+            border: 1px solid var(--eg-border);
+            background: var(--gh-btn-bg, #21262d); color: var(--eg-fg);
+            text-decoration: none;
+            transition: transform .12s ease, filter .12s ease, border-color .12s ease;
+        }
+        .eg-btn:hover { border-color: var(--eg-muted); transform: translateY(-1px); }
+        .eg-btn:active { transform: translateY(0); }
+        .eg-btn.primary { background: var(--gh-btn-primary-bg, #238636); border-color: rgba(240,246,252,.1); color: #fff; }
+        .eg-btn.primary:hover { filter: brightness(1.1); }
+        .eg-actions[hidden] .eg-btn { display: none; }
+
+        .eg-kbd-hints {
+            margin-top: 1.4rem; font-size: .76rem; color: var(--eg-muted);
+            display: flex; justify-content: center; gap: 1.1rem; flex-wrap: wrap;
+            animation: eg-rise .55s .4s cubic-bezier(.2,.7,.3,1) backwards;
+        }
+        kbd {
+            font-family: var(--eg-mono); font-size: .82em;
+            border: 1px solid var(--eg-border); border-bottom-width: 2px;
+            border-radius: 4px; padding: .08em .42em; background: var(--gh-bg-inset, #010409);
+        }
+        .eg-foot { position: relative; z-index: 1; margin-top: 2.2rem; font-size: .76rem; color: var(--eg-muted); }
+        .eg-foot a { color: var(--eg-muted); }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+            #eg-canvas { display: none; }
+        }
+        @media (max-width: 480px) { .eg-kbd-hints { display: none; } }
+    </style>
+</head>
+<body>
+    <canvas id="eg-canvas" aria-hidden="true"></canvas>
+
+    <main class="eg-main">
+        <div class="eg-terminal" role="img" aria-label="Terminal output">
+            <div class="eg-term-bar"><span class="eg-dot"></span><span class="eg-dot"></span><span class="eg-dot"></span><span class="eg-term-title">{{ app_name|lower|replace({' ': '-'}) }} — git shell</span></div>
+            <div class="eg-term-body" id="eg-term"></div>
+        </div>
+
+        <h1 class="eg-code">{{ code }}</h1>
+        <span class="eg-pill" id="eg-pill">&nbsp;</span>
+        <p class="eg-msg">{{ message }}</p>
+
+        <div class="eg-tip" id="eg-tip">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm6.5-.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 .75.75v3.75h.75a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1 0-1.5h.25V8.5h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>
+            <span id="eg-tip-text"></span>
+        </div>
+
+        <div class="eg-actions">
+            <button type="button" class="eg-btn" id="eg-back" hidden>← Go back</button>
+            <button type="button" class="eg-btn" id="eg-reload" hidden>↻ Try again</button>
+            <button type="button" class="eg-btn" id="eg-copy" hidden>⧉ Copy details</button>
+            {% if code == 401 or (code == 403 and not is_logged_in) %}
+            <a class="eg-btn primary" href="/login">Sign in</a>
+            {% endif %}
+            <a class="eg-btn primary" href="/">⌂ {{ app_name }} home</a>
+        </div>
+
+        <div class="eg-kbd-hints">
+            <span><kbd>B</kbd> back</span>
+            <span><kbd>H</kbd> home</span>
+            <span id="eg-kbd-r" style="display:none"><kbd>R</kbd> retry</span>
+        </div>
+    </main>
+
+    <footer class="eg-foot">{{ app_name }} · self-hosted Git platform</footer>
+
+<script>
+(function () {
+    "use strict";
+
+    var CODE = parseInt(document.title, 10) || parseInt((document.querySelector(".eg-code") || {}).textContent, 10) || 500;
+
+    var SCENES = {
+        400: { label: "Bad Request", sev: "warn",
+               cmd: 'git rev-parse --verify "<request>"',
+               out: ["fatal: malformed request — the server could not understand it."],
+               tip: "The request was malformed. Refresh the page or retrace your steps to reach this page again." },
+        401: { label: "Unauthorized", sev: "danger",
+               cmd: "git push origin main",
+               out: ["Username for '" + location.origin + "': _", "Password for '" + location.origin + "': ***", "fatal: Authentication failed — sign in and try again."],
+               tip: "You need to be signed in to view this page. Use the Sign in button below." },
+        403: { label: "Forbidden", sev: "danger",
+               cmd: "git push origin protected-branch",
+               out: ["remote: Permission denied.", "! [remote rejected] protected-branch (push declined by server)", "error: failed to push some refs"],
+               tip: "This resource exists but your account does not have permission to access it. If you believe this is a mistake, contact the repository owner." },
+        404: { label: "Not Found", sev: "warn",
+               cmd: 'git checkout "' + decodeURIComponent(location.pathname.split("/").filter(Boolean).slice(-1)[0] || "this-page") + '"',
+               out: ["error: pathspec did not match any file(s) known to git", "hint: the branch, tag or path may have been renamed or deleted."],
+               tip: "Check the URL for typos — the page may have been moved, renamed, deleted, or it may be inside a private repository." },
+        405: { label: "Method Not Allowed", sev: "warn",
+               cmd: 'curl -X WRONG /endpoint',
+               out: ["error: this endpoint does not accept that HTTP method."],
+               tip: "The address is valid but was called with an unsupported method — reload the page to continue normally." },
+        409: { label: "Conflict", sev: "warn",
+               cmd: "git merge origin/main",
+               out: ["CONFLICT (content): Merge conflict in workspace", "Automatic merge failed; fix conflicts and commit the result."],
+               tip: "Your request conflicts with the current state of the resource. Reload and try again." },
+        410: { label: "Gone", sev: "warn",
+               cmd: "git log --follow -- <path>",
+               out: ["fatal: bad object — this resource has been permanently removed."],
+               tip: "What you are looking for was deliberately removed and is no longer available here." },
+        429: { label: "Too Many Requests", sev: "info",
+               cmd: "git fetch --all",
+               out: ["fatal: rate limit exceeded — too many requests from your address.", "hint: wait a minute, then try again."],
+               tip: "Slow down a little — the server is protecting itself from bursts of activity. Wait a short moment and retry." },
+        500: { label: "Internal Server Error", sev: "danger", copy: true,
+               cmd: "git fsck --full",
+               out: ["fatal: internal error detected while serving your request.", "The incident was logged for the administrators."],
+               tip: "Something went wrong on our side — not yours. Try again, and if it keeps happening use Copy details to report it." },
+        502: { label: "Bad Gateway", sev: "danger", copy: true,
+               cmd: "git ls-remote origin",
+               out: ["fatal: unable to access — upstream returned an invalid response."],
+               tip: "An upstream service answered incorrectly. This is usually temporary — try again shortly." },
+        503: { label: "Service Unavailable", sev: "warn", copy: true,
+               cmd: "git status",
+               out: ["warning: maintenance mode — the service is temporarily unavailable."],
+               tip: "The server is briefly offline for maintenance or overload. Give it a moment and reload." },
+        504: { label: "Gateway Timeout", sev: "danger", copy: true,
+               cmd: "git pull --rebase",
+               out: ["fatal: the upstream server timed out before responding."],
+               tip: "A backend service took too long to answer. Retry in a few seconds." }
+    };
+
+    function sceneFor(code) {
+        if (SCENES[code]) return SCENES[code];
+        return code >= 500
+            ? { label: "Server Error", sev: "danger", copy: true,
+                cmd: "git fsck", out: ["fatal: unexpected server error (" + code + ")."],
+                tip: "An unexpected server error occurred. Try again later." }
+            : { label: "Request Error", sev: "warn",
+                cmd: "git status", out: ["error: request failed with status " + code + "."],
+                tip: "The request could not be completed. Check the address and try again." };
+    }
+
+    var scene = sceneFor(CODE);
+
+    var pill = document.getElementById("eg-pill");
+    pill.className = "eg-pill " + scene.sev;
+    pill.appendChild(document.createTextNode(scene.label));
+
+    if (scene.copy) document.getElementById("eg-copy").hidden = false;
+    if (CODE >= 500 || CODE === 429 || CODE === 503) {
+        document.getElementById("eg-reload").hidden = false;
+        document.getElementById("eg-kbd-r").style.display = "";
+    } else {
+        document.getElementById("eg-kbd-r").style.display = "none";
+    }
+    if (window.history.length > 1 && document.referrer.indexOf(location.host) !== -1) {
+        document.getElementById("eg-back").hidden = false;
+    }
+
+    var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function typeTerm() {
+        var term = document.getElementById("eg-term");
+        var promptSpan = document.createElement("span");
+        promptSpan.className = "eg-prompt";
+        promptSpan.textContent = "$ ";
+        var cmdSpan = document.createElement("span");
+        cmdSpan.className = "eg-cmd";
+        var line = document.createElement("div");
+        line.className = "eg-line";
+        line.appendChild(promptSpan);
+        line.appendChild(cmdSpan);
+        term.appendChild(line);
+
+        var i = 0;
+        function typeCmd() {
+            if (i <= scene.cmd.length) {
+                cmdSpan.textContent = scene.cmd.slice(0, i);
+                i++;
+                setTimeout(typeCmd, 22 + Math.random() * 34);
+                return;
+            }
+            printOut();
+        }
+
+        function printOut() {
+            var caret = document.createElement("span");
+            caret.className = "caret";
+            line.appendChild(caret);
+            var k = 0;
+            function next() {
+                caret.remove();
+                if (k >= scene.out.length) return;
+                var o = document.createElement("div");
+                o.className = "eg-line eg-out" + (/fatal|error|denied|failed/i.test(scene.out[k]) ? " bad" : "");
+                o.textContent = scene.out[k];
+                term.appendChild(o);
+                k++;
+                setTimeout(next, 260);
+            }
+            next();
+
+            var tail = document.createElement("div");
+            tail.className = "eg-line";
+            tail.innerHTML = '<span class="eg-prompt">$ </span>';
+            var c = document.createElement("span");
+            c.className = "caret";
+            tail.appendChild(c);
+            term.appendChild(tail);
+        }
+
+        if (reduceMotion) { cmdSpan.textContent = scene.cmd; printOut(); }
+        else typeCmd();
+    }
+
+    setTimeout(function () {
+        typeTerm();
+        setTimeout(function () {
+            var tip = document.getElementById("eg-tip");
+            document.getElementById("eg-tip-text").textContent = scene.tip;
+            tip.classList.add("show");
+        }, reduceMotion ? 60 : 900);
+    }, reduceMotion ? 60 : 420);
+
+    document.getElementById("eg-back").addEventListener("click", function () { history.back(); });
+    document.getElementById("eg-reload").addEventListener("click", function () { location.reload(); });
+
+    document.getElementById("eg-copy").addEventListener("click", function () {
+        var btn = this;
+        var details = [
+            "Error report — " + (document.querySelector(".eg-pill").textContent.trim()),
+            "Status: " + CODE,
+            "URL: " + location.href,
+            "Message: " + document.querySelector(".eg-msg").textContent.trim(),
+            "Time: " + new Date().toISOString(),
+            "Agent: " + navigator.userAgent
+        ].join("\n");
+        function done() { btn.textContent = "✓ Copied"; setTimeout(function () { btn.textContent = "⧉ Copy details"; }, 1800); }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(details).then(done, done);
+        } else {
+            var ta = document.createElement("textarea");
+            ta.value = details;
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand("copy"); } catch (e) {}
+            ta.remove();
+            done();
+        }
+    });
+
+    document.addEventListener("keydown", function (e) {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        var t = e.target.tagName;
+        if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT") return;
+        var k = e.key.toLowerCase();
+        if (k === "b" && !document.getElementById("eg-back").hidden) history.back();
+        else if (k === "h") location.href = "/";
+        else if (k === "r" && !document.getElementById("eg-reload").hidden) location.reload();
+    });
+
+    (function graph() {
+        if (reduceMotion) return;
+        var canvas = document.getElementById("eg-canvas");
+        var ctx = canvas.getContext("2d");
+        var nodes = [], mouse = { x: -9999, y: -9999 };
+        var accent = getComputedStyle(document.documentElement).getPropertyValue("--eg-accent").trim() || "#58a6ff";
+
+        function resize() {
+            canvas.width = window.innerWidth * devicePixelRatio;
+            canvas.height = window.innerHeight * devicePixelRatio;
+            ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+        }
+        resize();
+        window.addEventListener("resize", resize);
+
+        var count = Math.min(30, Math.max(14, Math.floor(window.innerWidth / 48)));
+        for (var n = 0; n < count; n++) {
+            nodes.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                vx: (Math.random() - .5) * .28,
+                vy: (Math.random() - .5) * .28,
+                r: 1.6 + Math.random() * 2.2
+            });
+        }
+
+        window.addEventListener("pointermove", function (e) { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+        function tick() {
+            if (document.hidden) { requestAnimationFrame(tick); return; }
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+            for (var i = 0; i < nodes.length; i++) {
+                var p = nodes[i];
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < -20) p.x = window.innerWidth + 20;
+                if (p.x > window.innerWidth + 20) p.x = -20;
+                if (p.y < -20) p.y = window.innerHeight + 20;
+                if (p.y > window.innerHeight + 20) p.y = -20;
+
+                var dxm = mouse.x - p.x, dym = mouse.y - p.y;
+                var dm = Math.sqrt(dxm * dxm + dym * dym);
+                if (dm < 140) { p.x -= dxm / dm * .5; p.y -= dym / dm * .5; }
+            }
+
+            ctx.strokeStyle = accent;
+            ctx.globalAlpha = .07;
+            for (var a = 0; a < nodes.length; a++) {
+                for (var b = a + 1; b < nodes.length; b++) {
+                    var q = nodes[a], w = nodes[b];
+                    var dx = q.x - w.x, dy = q.y - w.y, d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(q.x, q.y);
+                        ctx.lineTo(w.x, w.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            ctx.fillStyle = accent;
+            for (var j = 0; j < nodes.length; j++) {
+                ctx.globalAlpha = .16;
+                ctx.beginPath();
+                ctx.arc(nodes[j].x, nodes[j].y, nodes[j].r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    })();
+})();
+</script>
+</body>
+</html>

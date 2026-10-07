@@ -1,0 +1,485 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.nav.dashboard')|default('Dashboard') }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-home-container" style="max-width: 1360px; margin: 0 auto; padding: 16px 14px; box-sizing: border-box; width: 100%; overflow-x: hidden;">
+
+    {# ── HERO STATS BAR ────────────────────────────────────────────── #}
+    <section class="gh-hero-banner" style="background: linear-gradient(135deg, rgba(31, 111, 235, 0.08) 0%, rgba(56, 139, 253, 0.03) 100%); border: 1px solid var(--gh-border-default); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; box-sizing: border-box; width: 100%;">
+        <div style="min-width: 0; flex: 1 1 260px;">
+            <h1 style="font-size: 17px; font-weight: 700; color: var(--gh-fg-default); margin: 0 0 3px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span>{{ t('ui.nav.dashboard') }}</span>
+                <span style="font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.3);">
+                    {{ stats.repos|default(0) }} {{ t('ui.nav.repositories') }}
+                </span>
+            </h1>
+            <p style="font-size: 12.5px; color: var(--gh-fg-muted); margin: 0; line-height: 1.4;">
+                {{ t('ui.dashboard.subtitle') }}
+            </p>
+        </div>
+
+        {# Platform Quick Metrics Badges #}
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; background: var(--gh-bg-canvas); border: 1px solid var(--gh-border-default); border-radius: 6px; font-size: 12px;">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="#58a6ff"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z"/></svg>
+                <span style="color: var(--gh-fg-muted);">{{ t('ui.nav.repositories') }}:</span>
+                <strong style="color: var(--gh-fg-default); font-weight: 600;">{{ stats.repos|default(0) }}</strong>
+            </div>
+
+            <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; background: var(--gh-bg-canvas); border: 1px solid var(--gh-border-default); border-radius: 6px; font-size: 12px;">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="#e3b341"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+                <span style="color: var(--gh-fg-muted);">{{ t('ui.repo.stars') }}:</span>
+                <strong style="color: var(--gh-fg-default); font-weight: 600;">{{ stats.stars|default(0) }}</strong>
+            </div>
+
+            <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; background: var(--gh-bg-canvas); border: 1px solid var(--gh-border-default); border-radius: 6px; font-size: 12px;">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="#2ea043"><path d="M10.5 7.75a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm1.43.75a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 1 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 1 1 0 1.5h-3.32Z"/></svg>
+                <span style="color: var(--gh-fg-muted);">{{ t('ui.repo.commits') }}:</span>
+                <strong style="color: var(--gh-fg-default); font-weight: 600;">{{ stats.commits|default(0) }}</strong>
+            </div>
+        </div>
+    </section>
+
+    {# ── MAIN RESPONSIVE DASHBOARD LAYOUT ────────────────────────────── #}
+    <div class="gh-dashboard-layout">
+
+        {# ── LEFT SIDEBAR (Recent Projects & Quick Actions) ─────────────── #}
+        <aside class="gh-dashboard-sidebar">
+            <div class="gh-box" style="margin-bottom: 16px; background: var(--gh-bg-canvas);">
+                <div class="gh-box-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px;">
+                    <h2 class="gh-box-title" style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z"/></svg>
+                        <span>{{ t('ui.nav.repositories') }}</span>
+                    </h2>
+                    {% if is_logged_in %}
+                        <a href="/repos/new" class="gh-btn gh-btn-primary gh-btn-sm" style="font-size: 11.5px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px; text-decoration: none;">
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+                            <span>{{ t('ui.dashboard.new_repo') }}</span>
+                        </a>
+                    {% endif %}
+                </div>
+
+                {# Quick Sidebar Repository Filter #}
+                <div style="padding: 8px 12px; border-bottom: 1px solid var(--gh-border-muted);">
+                    <input type="search" id="sidebar-repo-search" placeholder="{{ t_attr('ui.dashboard.find_repo') }}"
+                           autocomplete="off"
+                           style="width: 100%; box-sizing: border-box; padding: 5px 10px; font-size: 12px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none;" />
+                </div>
+
+                {# List of Repositories #}
+                <div id="sidebar-repo-list" style="max-height: 380px; overflow-y: auto;">
+                    {% if repos is not empty %}
+                        <ul style="list-style: none; margin: 0; padding: 0;">
+                            {% for r in repos %}
+                                <li class="gh-sidebar-repo-item" data-name="{{ r.name|lower }}" data-slug="{{ r.slug|lower }}" data-owner="{{ r.owner|lower }}" style="border-bottom: 1px solid var(--gh-border-muted);">
+                                    <a href="/{{ r.owner }}/{{ r.slug }}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; text-decoration: none; color: var(--gh-fg-default); transition: background 0.15s ease;">
+                                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; background: rgba(56, 139, 253, 0.1); color: #58a6ff; font-size: 11px; font-weight: 700; flex-shrink: 0;">
+                                                {{ r.owner|slice(0, 1)|upper }}
+                                            </span>
+                                            <span style="font-size: 12.5px; font-weight: 600; color: var(--gh-accent-fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                {{ r.owner }}/<span style="color: var(--gh-fg-default);">{{ r.name }}</span>
+                                            </span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 6px; margin-left: 8px; flex-shrink: 0;">
+                                            {% if r.primary_lang %}
+                                                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: {{ r.lang_color }};" title="{{ r.primary_lang }}"></span>
+                                            {% endif %}
+                                            {% if r.stars_count > 0 %}
+                                                <span style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--gh-fg-muted);">
+                                                    ★ {{ r.stars_count }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div style="padding: 16px; text-align: center; color: var(--gh-fg-muted); font-size: 12px;">
+                            {{ t('ui.dashboard.no_repos') }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Recent Releases Sidebar Card #}
+            {% if recent_releases is not empty %}
+                <div class="gh-box" style="margin-bottom: 16px; background: var(--gh-bg-canvas);">
+                    <div class="gh-box-header" style="padding: 10px 14px;">
+                        <h2 class="gh-box-title" style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="m8.878.392 5.25 3.045c.54.314.872.89.872 1.514v6.098a1.75 1.75 0 0 1-.872 1.514l-5.25 3.045a1.75 1.75 0 0 1-1.756 0l-5.25-3.045A1.75 1.75 0 0 1 1 11.049V4.951c0-.624.332-1.201.872-1.514L7.122.392a1.75 1.75 0 0 1 1.756 0ZM7.875 1.69l-4.63 2.685L8 7.133l4.755-2.758-4.63-2.685a.248.248 0 0 0-.25 0ZM2.5 5.677v5.372c0 .09.047.171.125.216l4.625 2.683V8.413L2.5 5.677Zm11 0-4.75 2.736v5.535l4.625-2.683a.25.25 0 0 0 .125-.216V5.677Z"/></svg>
+                            <span>{{ t('ui.dashboard.latest_releases') }}</span>
+                        </h2>
+                    </div>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        {% for rel in recent_releases %}
+                            <li style="padding: 8px 12px; border-bottom: 1px solid var(--gh-border-muted); display: flex; flex-direction: column; gap: 2px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                                    <a href="/{{ rel.owner_username }}/{{ rel.repo_slug }}/releases/tag/{{ rel.tag_name }}" style="font-weight: 600; color: var(--gh-accent-fg); text-decoration: none;">
+                                        {{ rel.repo_name }} <span class="gh-tag-pill" style="font-size: 11px; padding: 1px 5px; background: rgba(56, 139, 253, 0.15); border-radius: 4px; margin-left: 4px;">{{ rel.tag_name }}</span>
+                                    </a>
+                                    <span style="font-size: 11px; color: var(--gh-fg-muted);">{{ rel.created_at|time_ago }}</span>
+                                </div>
+                                {% if rel.name and rel.name != rel.tag_name %}
+                                    <span style="font-size: 11.5px; color: var(--gh-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ rel.name }}</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+        </aside>
+
+        {# ── MAIN CONTENT (Interactive Activity & Commits Stream + All Repos) ── #}
+        <main class="gh-dashboard-main" style="min-width: 0; flex: 1;">
+
+            {# ── GitHub-Authentic Underline Navigation Tabs ─────────── #}
+            <nav class="gh-tabs" id="home-feed-tabs" style="border-bottom: 1px solid var(--gh-border-default); margin-bottom: 18px; margin-top: 0; padding: 0 4px; background: transparent;">
+                <button type="button" class="gh-tab active" data-target="feed-commits" style="background: none; border-top: none; border-left: none; border-right: none; cursor: pointer; font-family: inherit;">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 7.75a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm1.43.75a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 1 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 1 1 0 1.5h-3.32Z"/></svg>
+                    <span>{{ t('ui.dashboard.latest_commits') }}</span>
+                    <span class="gh-tab-count">{{ latest_commits|length }}</span>
+                </button>
+                <button type="button" class="gh-tab" data-target="feed-activities" style="background: none; border-top: none; border-left: none; border-right: none; cursor: pointer; font-family: inherit;">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1.5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0V8.5h-.75a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>
+                    <span>{{ t('ui.dashboard.recent_activity') }}</span>
+                    <span class="gh-tab-count">{{ recent_activities|length }}</span>
+                </button>
+                <button type="button" class="gh-tab" data-target="feed-explore" style="background: none; border-top: none; border-left: none; border-right: none; cursor: pointer; font-family: inherit;">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z"/></svg>
+                    <span>{{ t('ui.dashboard.all_repos') }}</span>
+                    <span class="gh-tab-count">{{ repos|length }}</span>
+                </button>
+            </nav>
+
+            {# ── TAB 1: LATEST COMMITS STREAM ──────────────────────────── #}
+            <div id="tab-feed-commits" class="gh-feed-tab-pane">
+                <div class="gh-box" style="margin-bottom: 24px; background: var(--gh-bg-canvas);">
+                    <div class="gh-box-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px;">
+                        <h2 class="gh-box-title" style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 7.75a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm1.43.75a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 1 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 1 1 0 1.5h-3.32Z"/></svg>
+                            <span>{{ t('ui.dashboard.latest_code_changes') }}</span>
+                        </h2>
+                    </div>
+
+                    {% if latest_commits is not empty %}
+                        <div class="gh-commits-stream">
+                            {% for c in latest_commits %}
+                                <div class="gh-commit-stream-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--gh-border-muted); gap: 12px; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: flex-start; gap: 10px; min-width: 0; flex: 1 1 300px;">
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--gh-fg-default); flex-shrink: 0; margin-top: 2px;">
+                                            {{ c.author_name|slice(0, 1)|upper }}
+                                        </div>
+                                        <div style="min-width: 0; flex: 1;">
+                                            <div style="font-size: 13px; font-weight: 600; color: var(--gh-fg-default); line-height: 1.4; word-break: break-word;">
+                                                <a href="/{{ c.owner }}/{{ c.repo_slug }}/commit/{{ c.hash }}" style="color: var(--gh-fg-default); text-decoration: none;" class="gh-commit-subject-link">
+                                                    {{ c.subject }}
+                                                </a>
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--gh-fg-muted); margin-top: 3px; flex-wrap: wrap;">
+                                                <a href="/{{ c.owner }}/{{ c.repo_slug }}" style="color: var(--gh-accent-fg); text-decoration: none; font-weight: 600; background: rgba(56, 139, 253, 0.1); padding: 1px 6px; border-radius: 4px;">
+                                                    {{ c.repo_name }}
+                                                </a>
+                                                <span>{{ c.author_name }}</span>
+                                                <span>•</span>
+                                                <span>{{ c.date|time_ago }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                                        <a href="/{{ c.owner }}/{{ c.repo_slug }}/commit/{{ c.hash }}" class="gh-btn gh-btn-sm" style="font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; padding: 2px 8px; color: var(--gh-accent-fg); background: var(--gh-bg-subtle);">
+                                            {{ c.short_hash }}
+                                        </a>
+                                        <a href="/{{ c.owner }}/{{ c.repo_slug }}/tree/{{ c.hash }}" class="gh-btn gh-btn-sm" style="padding: 2px 6px;" title="Browse code at this commit">
+                                            &lt;/&gt;
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div style="padding: 32px 16px; text-align: center; color: var(--gh-fg-muted); font-size: 13px;">
+                            {{ t('ui.dashboard.no_commits') }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ── TAB 2: RECENT ACTIVITIES FEED ─────────────────────────── #}
+            <div id="tab-feed-activities" class="gh-feed-tab-pane" style="display: none;">
+                <div class="gh-box" style="margin-bottom: 24px; background: var(--gh-bg-canvas);">
+                    <div class="gh-box-header" style="padding: 10px 14px;">
+                        <h2 class="gh-box-title" style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1.5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0V8.5h-.75a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>
+                            <span>{{ t('ui.dashboard.recent_events') }}</span>
+                        </h2>
+                    </div>
+
+                    {% if recent_activities is not empty %}
+                        <div class="gh-activities-stream">
+                            {% for act in recent_activities %}
+                                <div style="display: flex; align-items: flex-start; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--gh-border-muted); gap: 12px;">
+                                    <div style="display: flex; align-items: flex-start; gap: 10px; min-width: 0; flex: 1;">
+                                        <div style="width: 26px; height: 26px; border-radius: 50%; background: rgba(56, 139, 253, 0.15); color: #58a6ff; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                                            {% if act.action == 'push' %}
+                                                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 7.75a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm1.43.75a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 1 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 1 1 0 1.5h-3.32Z"/></svg>
+                                            {% elseif act.action == 'imported' or act.action == 'created' %}
+                                                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Z"/></svg>
+                                            {% else %}
+                                                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Z"/></svg>
+                                            {% endif %}
+                                        </div>
+                                        <div style="min-width: 0; flex: 1;">
+                                            <div style="font-size: 13px; color: var(--gh-fg-default); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                                {% if act.repo_slug %}
+                                                    <a href="/{{ act.owner_username }}/{{ act.repo_slug }}" style="font-weight: 600; color: var(--gh-accent-fg); text-decoration: none;">
+                                                        {{ act.repo_name|default(act.repo_slug) }}
+                                                    </a>
+                                                {% else %}
+                                                    <strong>{{ t('ui.common.system')|default('System') }}</strong>
+                                                {% endif %}
+                                                <span class="gh-tag-pill" style="font-size: 11px; padding: 1px 7px; background: var(--gh-bg-subtle); color: var(--gh-fg-muted); border-radius: 10px; border: 1px solid var(--gh-border-default);">
+                                                    {{ act.action_label|default(act.action|capitalize) }}
+                                                </span>
+                                            </div>
+                                            {% if act.details_html or act.details %}
+                                                <div style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 4px; line-height: 1.5; word-break: break-word;">
+                                                    {{ act.details_html|default(act.details)|raw }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--gh-fg-muted); flex-shrink: 0; white-space: nowrap;">
+                                        {{ act.created_at|time_ago }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div style="padding: 32px 16px; text-align: center; color: var(--gh-fg-muted); font-size: 13px;">
+                            {{ t('ui.dashboard.no_activity') }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ── TAB 3: ALL REPOSITORIES GRID & SEARCH ────────────────── #}
+            <div id="tab-feed-explore" class="gh-feed-tab-pane" style="display: none;">
+                {# Controls & Filter Bar #}
+                <div class="gh-home-controls" style="display: flex; gap: 10px; margin-bottom: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; width: 100%; box-sizing: border-box;">
+                    {# Live Search Filter #}
+                    <div style="position: relative; flex: 1 1 220px; max-width: 440px; min-width: 0; width: 100%;">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="var(--gh-fg-muted)" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg>
+                        <input type="search" id="home-repo-search" placeholder="{{ t_attr('ui.dashboard.search_public_repos') }}"
+                               autocomplete="off"
+                               style="width: 100%; box-sizing: border-box; padding: 6px 12px 6px 32px; font-size: 13px; background: var(--gh-bg-canvas); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none;" />
+                    </div>
+
+                    {# Filter Dropdowns #}
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <select id="home-lang-filter" style="padding: 5px 10px; font-size: 12.5px; background: var(--gh-bg-canvas); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none; cursor: pointer;">
+                            <option value="all">{{ t('ui.repo.lang_all') }}</option>
+                            {% for lang in languages %}
+                                <option value="{{ lang.name }}">{{ lang.name }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <select id="home-sort-filter" style="padding: 5px 10px; font-size: 12.5px; background: var(--gh-bg-canvas); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none; cursor: pointer;">
+                            <option value="updated">{{ t('ui.repo.sort_updated') }}</option>
+                            <option value="stars">{{ t('ui.repo.sort_stars') }}</option>
+                            <option value="commits">{{ t('ui.repo.sort_commits') }}</option>
+                            <option value="name">{{ t('ui.repo.sort_name') }}</option>
+                        </select>
+
+                        {% if is_logged_in %}
+                            <a href="/repos/new" class="gh-btn gh-btn-primary" style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; font-size: 12.5px; text-decoration: none;">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+                                <span>{{ t('ui.dashboard.new_repo') }}</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Repository Grid #}
+                {% if repos is not empty %}
+                    <div id="home-repo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-top: 14px;">
+                        {% for r in repos %}
+                            <article class="gh-home-card"
+                                     data-name="{{ r.name|lower }}"
+                                     data-owner="{{ r.owner|lower }}"
+                                     data-slug="{{ r.slug|lower }}"
+                                     data-desc="{{ r.description|lower }}"
+                                     data-lang="{{ r.primary_lang|default('') }}"
+                                     data-stars="{{ r.stars_count|default(0) }}"
+                                     data-commits="{{ r.commit_count|default(0) }}"
+                                     data-updated="{{ r.updated_at }}"
+                                     style="background: var(--gh-bg-canvas); border: 1px solid var(--gh-border-default); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; transition: border-color 0.15s ease, box-shadow 0.15s ease; position: relative;">
+                                
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+                                        <h3 style="font-size: 14px; font-weight: 600; margin: 0; line-height: 1.35; word-break: break-word;">
+                                            <a href="/{{ r.owner }}/{{ r.slug }}" style="color: var(--gh-accent-fg); text-decoration: none;">
+                                                <span style="color: var(--gh-fg-muted); font-weight: 400;">{{ r.owner }} /</span> {{ r.name }}
+                                            </a>
+                                        </h3>
+                                        <span class="gh-badge gh-badge-secondary" style="font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--gh-border-default); color: var(--gh-fg-muted); flex-shrink: 0;">
+                                            {{ r.is_private ? t('ui.repo.private') : t('ui.repo.public') }}
+                                        </span>
+                                    </div>
+
+                                    <p style="font-size: 12px; color: var(--gh-fg-muted); margin: 0 0 12px 0; line-height: 1.45; min-height: 34px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                        {{ r.description ?: t('ui.repo.no_description') }}
+                                    </p>
+                                </div>
+
+                                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--gh-fg-muted); border-top: 1px solid var(--gh-border-muted); padding-top: 10px; margin-top: auto; flex-wrap: wrap; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        {% if r.primary_lang %}
+                                            <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: {{ r.lang_color }};"></span>
+                                                <span style="color: var(--gh-fg-default);">{{ r.primary_lang }}</span>
+                                            </span>
+                                        {% endif %}
+
+                                        <span style="display: inline-flex; align-items: center; gap: 3px;" title="{{ r.stars_count }} stars">
+                                            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+                                            <span>{{ r.stars_count }}</span>
+                                        </span>
+
+                                        {% if r.commit_count > 0 %}
+                                            <span style="display: inline-flex; align-items: center; gap: 3px;" title="{{ r.commit_count }} commits">
+                                                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 7.75a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm1.43.75a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 1 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 1 1 0 1.5h-3.32Z"/></svg>
+                                                <span>{{ r.commit_count }}</span>
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div style="font-size: 11px;">
+                                        <span>{{ r.updated_at|time_ago }}</span>
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+
+                    {# No search results fallback #}
+                    <div id="home-no-results" style="display: none; padding: 48px 16px; text-align: center; color: var(--gh-fg-muted); border: 1px dashed var(--gh-border-default); border-radius: 8px; margin-top: 16px;">
+                        <svg width="36" height="36" viewBox="0 0 16 16" fill="currentColor" style="margin-bottom: 10px; opacity: 0.6;"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg>
+                        <h3 style="font-size: 15px; color: var(--gh-fg-default); margin: 0 0 4px 0;">No matching repositories</h3>
+                        <p style="font-size: 12.5px; margin: 0;">Try adjusting your search query or language filter.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+        </main>
+    </div>
+
+</div>
+
+{# Instant Tabs & Search Scripts #}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Dashboard Feed Tab Switcher (Underline Nav Tabs)
+    const tabButtons = document.querySelectorAll('#home-feed-tabs .gh-tab');
+    const panes = {
+        'feed-commits': document.getElementById('tab-feed-commits'),
+        'feed-activities': document.getElementById('tab-feed-activities'),
+        'feed-explore': document.getElementById('tab-feed-explore'),
+    };
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const target = btn.getAttribute('data-target');
+            Object.keys(panes).forEach(k => {
+                if (panes[k]) panes[k].style.display = (k === target) ? 'block' : 'none';
+            });
+        });
+    });
+
+    // 2. Sidebar Repo Search Filter
+    const sidebarSearch = document.getElementById('sidebar-repo-search');
+    const sidebarItems  = document.querySelectorAll('.gh-sidebar-repo-item');
+
+    if (sidebarSearch && sidebarItems.length > 0) {
+        sidebarSearch.addEventListener('input', () => {
+            const q = sidebarSearch.value.trim().toLowerCase();
+            sidebarItems.forEach(item => {
+                const name  = item.getAttribute('data-name') || '';
+                const slug  = item.getAttribute('data-slug') || '';
+                const owner = item.getAttribute('data-owner') || '';
+                const match = !q || name.includes(q) || slug.includes(q) || owner.includes(q);
+                item.style.display = match ? 'block' : 'none';
+            });
+        });
+    }
+
+    // 3. Main Repo Grid Search, Filter & Sort
+    const searchInput = document.getElementById('home-repo-search');
+    const langFilter  = document.getElementById('home-lang-filter');
+    const sortFilter  = document.getElementById('home-sort-filter');
+    const grid        = document.getElementById('home-repo-grid');
+    const noResults   = document.getElementById('home-no-results');
+
+    if (grid) {
+        function getCards() {
+            return Array.from(grid.querySelectorAll('.gh-home-card'));
+        }
+
+        function applyFilterAndSort() {
+            const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+            const lang  = langFilter ? langFilter.value : 'all';
+            const sort  = sortFilter ? sortFilter.value : 'updated';
+
+            let cards = getCards();
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const name  = card.getAttribute('data-name') || '';
+                const owner = card.getAttribute('data-owner') || '';
+                const slug  = card.getAttribute('data-slug') || '';
+                const desc  = card.getAttribute('data-desc') || '';
+                const rLang = card.getAttribute('data-lang') || '';
+
+                const matchesQuery = !query || name.includes(query) || owner.includes(query) || slug.includes(query) || desc.includes(query);
+                const matchesLang  = (lang === 'all') || (rLang === lang);
+
+                if (matchesQuery && matchesLang) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (noResults) {
+                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+
+            cards.sort((a, b) => {
+                if (sort === 'stars') {
+                    return (parseInt(b.getAttribute('data-stars'), 10) || 0) - (parseInt(a.getAttribute('data-stars'), 10) || 0);
+                }
+                if (sort === 'commits') {
+                    return (parseInt(b.getAttribute('data-commits'), 10) || 0) - (parseInt(a.getAttribute('data-commits'), 10) || 0);
+                }
+                if (sort === 'name') {
+                    return (a.getAttribute('data-name') || '').localeCompare(b.getAttribute('data-name') || '');
+                }
+                return (b.getAttribute('data-updated') || '').localeCompare(a.getAttribute('data-updated') || '');
+            });
+
+            cards.forEach(c => grid.appendChild(c));
+        }
+
+        if (searchInput) searchInput.addEventListener('input', applyFilterAndSort);
+        if (langFilter)  langFilter.addEventListener('change', applyFilterAndSort);
+        if (sortFilter)  sortFilter.addEventListener('change', applyFilterAndSort);
+    }
+});
+</script>
+{% endblock %}

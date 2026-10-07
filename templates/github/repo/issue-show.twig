@@ -1,0 +1,163 @@
+{% extends "layout.twig" %}
+
+{% block title %}#{{ issue.id }} {{ issue.title }} — {{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+        {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'issues' } %}
+
+    <div class="gh-issue-show">
+        <header class="gh-issue-show-head">
+            <span class="gh-issue-icon gh-issue-open" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 16 16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg>
+            </span>
+            <div class="gh-issue-show-titles">
+                <h1 class="gh-issue-show-title">{{ issue.title }} <span class="gh-issue-id">#{{ issue.id }}</span></h1>
+                <div class="gh-issue-meta">
+                    <span class="gh-issue-status gh-status-{{ issue.status }}">{{ issue.status }}</span>
+                    <span>
+                        {% if issue.reporter %}
+                            <strong>{{ issue.reporter }}</strong>
+                        {% else %}
+                            Anonymous
+                        {% endif %}
+                        opened this bug report <time datetime="{{ issue.created_at }}">{{ issue.created_at|time_ago }}</time>
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <div class="gh-issue-show-body">
+            <div class="gh-issue-section">
+                <h2>Description</h2>
+                <div class="markdown-body">
+                    {% if description_html %}{{ description_html|raw }}{% else %}<p class="gh-muted">No description provided.</p>{% endif %}
+                </div>
+            </div>
+
+            {% if issue.environment %}
+                <div class="gh-issue-section">
+                    <h2>Environment</h2>
+                    <pre class="gh-issue-pre">{{ issue.environment }}</pre>
+                </div>
+            {% endif %}
+
+            {% if steps_html %}
+                <div class="gh-issue-section">
+                    <h2>Steps to reproduce</h2>
+                    <div class="markdown-body">{{ steps_html|raw }}</div>
+                </div>
+            {% endif %}
+
+            {% if can_manage %}
+                <div class="gh-issue-section gh-issue-admin">
+                    <h2>Manager review</h2>
+                    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/issues/{{ issue.id }}/status" class="gh-issue-status-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <label class="gh-label" for="issue-status">Mark this report as</label>
+                        <div class="gh-status-actions">
+                            {% for status in ['open', 'resolved', 'closed'] %}
+                                <button type="submit" name="status" value="{{ status }}"
+                                        class="gh-btn gh-btn-sm gh-status-btn-{{ status }}{{ issue.status == status ? ' active' : '' }}">
+                                    {{ status == 'open' ? 'Open' : (status == 'closed' ? 'Closed' : status) }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </form>
+
+                    {# Labels / Milestone / Assignee management #}
+                    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/issues/{{ issue.id }}/metadata" style="margin-top: 14px; border-top: 1px solid var(--gh-border-muted); padding-top: 12px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                            <div>
+                                <label class="gh-label">{{ t('ui.issues.add_labels')|default('Add labels') }}</label>
+                                {% if repo_labels|length %}
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        {% for l in repo_labels %}
+                                            {% set attached = issue_labels|filter(v => v.id == l.id)|length > 0 %}
+                                            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;">
+                                                <input type="checkbox" name="labels[]" value="{{ l.id }}"{{ attached ? ' checked' : '' }}>
+                                                <span style="width: 10px; height: 10px; border-radius: 50%; background: {{ l.color }}; display: inline-block;"></span>
+                                                {{ l.name }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span style="font-size: 12px; color: var(--gh-fg-muted);">No labels defined.</span>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label class="gh-label" for="milestone_id">{{ t('ui.issues.set_milestone')|default('Set milestone') }}</label>
+                                <select id="milestone_id" name="milestone_id" class="gh-form-control" style="font-size: 13px;">
+                                    <option value="0">—</option>
+                                    {% for m in milestones %}
+                                        <option value="{{ m.id }}"{{ issue.milestone_id == m.id ? ' selected' : '' }}>{{ m.title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="gh-label" for="assigned_to">{{ t('ui.issues.assign_to')|default('Assign to') }}</label>
+                                <select id="assigned_to" name="assigned_to" class="gh-form-control" style="font-size: 13px;">
+                                    <option value="0">—</option>
+                                    {% for c in collaborators %}
+                                        <option value="{{ c.id }}"{{ issue.assigned_to == c.id ? ' selected' : '' }}>@{{ c.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="gh-btn gh-btn-sm gh-btn-primary" style="margin-top: 10px;">{{ t('ui.issues.save')|default('Save') }}</button>
+                    </form>
+                </div>
+            {% elseif is_reporter and issue.status != 'resolved' %}
+                {# Reporters manage their own report: close / reopen only #}
+                <div class="gh-issue-section">
+                    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/issues/{{ issue.id }}/status"
+                          onsubmit="return confirm('{{ issue.status == 'open' ? 'Close' : 'Reopen' }} this report?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="status" value="{{ issue.status == 'open' ? 'closed' : 'open' }}">
+                        <button type="submit" class="gh-btn gh-btn-sm">
+                            {{ issue.status == 'open' ? 'Close my report' : 'Reopen my report' }}
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+
+            {# ── Conversation ──────────────────────────────────────── #}
+            <div class="gh-issue-section" id="comments">
+                <h2>{{ comments|length }} comment{{ comments|length == 1 ? '' : 's' }}</h2>
+
+                {% for c in comments %}
+                    <div style="border: 1px solid var(--gh-border-default); border-radius: 6px; margin-bottom: 10px;">
+                        <div style="padding: 8px 12px; border-bottom: 1px solid var(--gh-border-default); font-size: 13px; background: var(--gh-bg-subtle); border-radius: 6px 6px 0 0;">
+                            <strong>{{ c.author_name }}</strong>
+                            <span style="color: var(--gh-fg-muted);">commented {{ c.created_at|time_ago }}</span>
+                        </div>
+                        <div class="markdown-body" style="padding: 10px 12px; font-size: 14px;">
+                            {{ c.body_html|raw }}
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="gh-muted">No comments yet.</p>
+                {% endfor %}
+
+                {% if is_logged_in %}
+                    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/issues/{{ issue.id }}/comment" style="margin-top: 12px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <textarea name="body" rows="4" required placeholder="Leave a comment…"
+                                  style="width:100%; background: var(--gh-bg-canvas, #0d1117); color: var(--gh-fg-default); border:1px solid var(--gh-border-default); border-radius:6px; padding:10px;"></textarea>
+                        <button type="submit" class="gh-btn gh-btn-primary" style="margin-top:8px;">Comment</button>
+                    </form>
+                {% else %}
+                    <p class="gh-muted" style="margin-top:8px;"><a href="/login">Sign in</a> to join the conversation.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

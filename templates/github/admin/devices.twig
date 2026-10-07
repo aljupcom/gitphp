@@ -1,0 +1,296 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('adm.devices.title')|default('Device Database & Services') }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600; color: var(--gh-fg-default);">{{ t('adm.devices.title')|default('Device Database & Services') }}</h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                {{ t('adm.devices.description')|default('Certified Google Play Android hardware catalog (53,400+ models) and Apple hardware matrix. Check updates and sync locally.') }}
+            </p>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'devices', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; max-width: 880px; flex: 1; width: 100%;">
+            
+            {% if flash_success %}
+                <div class="gh-flash gh-flash-success" role="status" style="margin-bottom: 16px; padding: 10px 14px; border-radius: 6px; background: rgba(46,160,67,0.12); border: 1px solid rgba(46,160,67,0.35); color: #2ea043; font-size: 13.5px;">
+                    {{ flash_success }}
+                </div>
+            {% endif %}
+            {% if flash_error %}
+                <div class="gh-flash gh-flash-error" role="alert" style="margin-bottom: 16px; padding: 10px 14px; border-radius: 6px; background: rgba(248,81,73,0.12); border: 1px solid rgba(248,81,73,0.35); color: #f85149; font-size: 13.5px;">
+                    {{ flash_error }}
+                </div>
+            {% endif %}
+
+            {# ── OVERVIEW STATS CARDS ────────────────────────────────────────── #}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 12px 14px;">
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); font-weight: 600;">{{ t('adm.devices.google_play_devices')|default('Google Play Devices') }}</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #3fb950; margin-top: 4px;">{{ meta.google_count|number_format }}</div>
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); margin-top: 2px;">{{ t('adm.devices.certified_models')|default('Certified Android Models') }}</div>
+                </div>
+
+                <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 12px 14px;">
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); font-weight: 600;">{{ t('adm.devices.apple_matrix')|default('Apple Matrix') }}</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #a371f7; margin-top: 4px;">{{ meta.apple_count }}</div>
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); margin-top: 2px;">{{ t('adm.devices.apple_devices_desc')|default('iPhone · iPad · Watch · Mac') }}</div>
+                </div>
+
+                <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 12px 14px;">
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); font-weight: 600;">{{ t('adm.devices.local_db_size')|default('Local DB Size') }}</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #58a6ff; margin-top: 4px;">{{ meta.file_size|default('5.33 MB') }}</div>
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); margin-top: 2px;">{{ t('adm.devices.indexed_storage')|default('Indexed SQLite Storage') }}</div>
+                </div>
+
+                <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 12px 14px;">
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); font-weight: 600;">{{ t('adm.devices.last_synced')|default('Last Synced') }}</div>
+                    <div style="font-size: 13.5px; font-weight: 600; color: var(--gh-fg-default); margin-top: 6px;">{{ meta.last_updated|default('Never') }}</div>
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); margin-top: 2px;">{{ t('adm.devices.direct_feed')|default('Direct Google Feed') }}</div>
+                </div>
+            </div>
+
+            {# ── GOOGLE PLAY SYNC & UPDATE CONTROL ───────────────────────────── #}
+            <div class="gh-box" style="padding: 18px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); margin-bottom: 20px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+                    <div>
+                        <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 6px; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                            <span>{{ t('adm.devices.source_title')|default('Google Play Certified Devices Source') }}</span>
+                            {% if update_check.update_available %}
+                                <span class="gh-badge" style="background: rgba(227,179,65,0.15); color: #e3b341; border: 1px solid rgba(227,179,65,0.4); font-size: 11px;">
+                                    {{ t('adm.devices.update_available')|default('Update Available') }}
+                                </span>
+                            {% else %}
+                                <span class="gh-badge" style="background: rgba(46,160,67,0.15); color: #3fb950; border: 1px solid rgba(46,160,67,0.4); font-size: 11px;">
+                                    {{ t('adm.devices.up_to_date')|default('Up to Date') }}
+                                </span>
+                            {% endif %}
+                        </h2>
+                        <p style="font-size: 12.5px; color: var(--gh-fg-muted); margin: 0 0 6px;">
+                            {{ t('adm.devices.source_label')|default('Source:') }} <a href="{{ meta.source_url }}" target="_blank" rel="noopener noreferrer" style="color: #58a6ff; text-decoration: none; word-break: break-all;">{{ meta.source_url }}</a>
+                        </p>
+                        <div style="margin: 4px 0 10px; display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3); border-radius: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="#58a6ff"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm6.5-5a.75.75 0 0 1 .75.75v3.69l2.28 2.28a.75.75 0 1 1-1.06 1.06l-2.5-2.5a.75.75 0 0 1-.22-.53V3.75A.75.75 0 0 1 8 3Z"/></svg>
+                            <span style="font-size: 12.5px; font-weight: 600; color: #58a6ff;">
+                                {{ meta.google_release_date|default(update_check.remote_google_date|default('Last updated on 2026-08-31')) }}
+                            </span>
+                        </div>
+                        <div style="font-size: 11.5px; color: var(--gh-fg-muted); display: flex; gap: 12px; flex-wrap: wrap;">
+                            <span>ETag: <code class="gh-mono">{{ meta.etag|default(update_check.remote_etag|default('N/A')) }}</code></span>
+                            {% if update_check.remote_modified %}
+                                <span>Google Modified: <code class="gh-mono">{{ update_check.remote_modified }}</code></span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# Interactive Update Button #}
+                    <form method="post" action="{{ admin_prefix|default('/admin') }}/devices/update" id="device-sync-form" style="flex-shrink: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" id="btn-sync-devices" class="gh-btn gh-btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" id="sync-icon"><path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .655-.835ZM14.295 7.995a.75.75 0 0 1-.834-.656 5.5 5.5 0 0 0-9.592-2.97l1.204 1.204a.25.25 0 0 1-.177.427H1.25a.25.25 0 0 1-.25-.25V2.054a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-.655.835Z"/></svg>
+                            <span id="sync-btn-text">{{ t('adm.devices.sync_btn')|default('Sync & Update Database') }}</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {# ── LIVE DEVICE LOOKUP & TESTING SANDBOX ────────────────────────── #}
+            <div class="gh-box" style="padding: 18px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); margin-bottom: 20px;">
+                <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 6px; color: var(--gh-fg-default);">
+                    {{ t('adm.devices.tester_title')|default('Interactive Device Model Tester') }}
+                </h2>
+                <p style="font-size: 12.5px; color: var(--gh-fg-muted); margin: 0 0 12px;">
+                    {{ t('adm.devices.tester_desc')|default('Test any raw Client Hints model or hardware code against Google Play SQLite catalog and Apple Matrix.') }}
+                </p>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" id="test-model-input" placeholder="{{ t('adm.devices.tester_placeholder')|default('e.g. SM-S928B, Pixel 9 Pro, iPhone16,2, 23127PN0CG, Mac14,2...') }}" 
+                           style="flex: 1 1 260px; padding: 6px 12px; font-size: 13px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none;">
+                    <button type="button" id="btn-test-lookup" class="gh-btn" style="padding: 6px 14px;">{{ t('adm.devices.test_btn')|default('Test Resolution') }}</button>
+                </div>
+
+                {# Results Box #}
+                <div id="lookup-result-box" style="display: none; margin-top: 12px; padding: 12px 14px; background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="res-badge" class="gh-badge" style="font-size: 11px;"></span>
+                        <strong id="res-title" style="font-size: 14px; color: var(--gh-fg-default);"></strong>
+                    </div>
+                    <div id="res-details" style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 4px;"></div>
+                </div>
+            </div>
+
+            {# ── REAL USER DEVICES & ACTIVE SESSIONS ─────────────────────────── #}
+            <div class="gh-box" style="padding: 16px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 4px; color: var(--gh-fg-default);">
+                            {{ t('adm.devices.active_users_title')|default('Registered Users Hardware & Active Logins') }}
+                        </h3>
+                        <p style="font-size: 12.5px; color: var(--gh-fg-muted); margin: 0;">
+                            {{ t('adm.devices.active_users_desc')|default('Real user logins and hardware models resolved via Google Play certified catalog and Apple matrix.') }}
+                        </p>
+                    </div>
+                    <span class="gh-badge" style="font-size: 11px;">
+                        {{ t('adm.devices.active_devices_count', {count: user_devices|length})|default(user_devices|length ~ ' Active Devices') }}
+                    </span>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="gh-table" style="width: 100%; font-size: 12.5px; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--gh-bg-subtle); border-bottom: 1px solid var(--gh-border-default);">
+                                <th style="padding: 8px 10px; text-align: left;">{{ t('adm.devices.th_user')|default('User') }}</th>
+                                <th style="padding: 8px 10px; text-align: left;">{{ t('adm.devices.th_device')|default('Device & Model') }}</th>
+                                <th style="padding: 8px 10px; text-align: left;">{{ t('adm.devices.th_os')|default('Operating System') }}</th>
+                                <th style="padding: 8px 10px; text-align: left;">{{ t('adm.devices.th_browser')|default('Browser') }}</th>
+                                <th style="padding: 8px 10px; text-align: left;">{{ t('adm.devices.th_ip')|default('IP Address') }}</th>
+                                <th style="padding: 8px 10px; text-align: right;">{{ t('adm.devices.th_activity')|default('Last Active') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in user_devices %}
+                                <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                    <td style="padding: 10px 8px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--gh-border-default); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: var(--gh-fg-default);">
+                                                {{ u.username|slice(0, 1)|upper }}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 600; color: var(--gh-fg-default);">
+                                                    {% if u.user_id == 0 %}
+                                                        <span style="color: #e3b341;">👑 {{ u.username }}</span>
+                                                    {% else %}
+                                                        <a href="/{{ u.username }}" style="color: #58a6ff; text-decoration: none;">{{ u.username }}</a>
+                                                    {% endif %}
+                                                </div>
+                                                {% if u.email %}
+                                                    <div style="font-size: 11px; color: var(--gh-fg-muted);">{{ u.email }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 10px 8px;">
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            {% if u.device_type == 'mobile' %}
+                                                <svg width="15" height="15" viewBox="0 0 16 16" fill="#58a6ff"><path d="M4 1.75C4 .784 4.784 0 5.75 0h4.5C11.216 0 12 .784 12 1.75v12.5A1.75 1.75 0 0 1 10.25 16h-4.5A1.75 1.75 0 0 1 4 14.25ZM5.75 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h4.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25ZM8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>
+                                            {% elseif u.device_type == 'tablet' %}
+                                                <svg width="15" height="15" viewBox="0 0 16 16" fill="#a371f7"><path d="M3 1.75C3 .784 3.784 0 4.75 0h6.5C12.216 0 13 .784 13 1.75v12.5A1.75 1.75 0 0 1 11.25 16h-6.5A1.75 1.75 0 0 1 3 14.25ZM4.75 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h6.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25ZM8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>
+                                            {% else %}
+                                                <svg width="15" height="15" viewBox="0 0 16 16" fill="#3fb950"><path d="M1.75 2.5h12.5a.25.25 0 0 1 .25.25v7.5a.25.25 0 0 1-.25.25H1.75a.25.25 0 0 1-.25-.25v-7.5a.25.25 0 0 1 .25-.25ZM0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 14.25 12H9v1.5h2.25a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1 0-1.5H7V12H1.75A1.75 1.75 0 0 1 0 10.25Zm6 10.75h4v-1.5H6Z"/></svg>
+                                            {% endif %}
+                                            <strong style="color: var(--gh-fg-default);">{{ u.device_model }}</strong>
+                                        </div>
+                                        <div style="margin-top: 3px; display: flex; gap: 6px; align-items: center;">
+                                            <span class="gh-badge" style="font-size: 10.5px;">{{ u.device_brand }}</span>
+                                            {% if u.device_code and u.device_code != u.device_model and u.device_code != 'N/A' %}
+                                                <code class="gh-mono" style="font-size: 11px;">{{ u.device_code }}</code>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td style="padding: 10px 8px;">
+                                        <span style="font-weight: 500;">{{ u.os_name }}</span>
+                                        {% if u.os_version %}
+                                            <span style="color: var(--gh-fg-muted); font-size: 11.5px;">{{ u.os_version }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 10px 8px;">
+                                        <span>{{ u.browser_name }}</span>
+                                        {% if u.browser_version %}
+                                            <span style="color: var(--gh-fg-muted); font-size: 11.5px;">{{ u.browser_version }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 10px 8px;">
+                                        <code class="gh-mono" style="font-size: 11.5px;">{{ u.ip_address }}</code>
+                                    </td>
+                                    <td style="padding: 10px 8px; text-align: right; color: var(--gh-fg-muted); font-size: 12px; white-space: nowrap;">
+                                        {{ u.last_activity }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" style="padding: 24px; text-align: center; color: var(--gh-fg-muted);">
+                                        {{ t('adm.devices.no_devices')|default('No active user devices recorded yet.') }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('device-sync-form');
+    var btn = document.getElementById('btn-sync-devices');
+    var btnText = document.getElementById('sync-btn-text');
+    var testBtn = document.getElementById('btn-test-lookup');
+    var testInput = document.getElementById('test-model-input');
+    var resultBox = document.getElementById('lookup-result-box');
+    var resTitle = document.getElementById('res-title');
+    var resBadge = document.getElementById('res-badge');
+    var resDetails = document.getElementById('res-details');
+
+    if (form) {
+        form.addEventListener('submit', function() {
+            btn.disabled = true;
+            btnText.textContent = "{{ t('adm.devices.syncing_btn')|default('Downloading & Indexing Google Play Catalog...')|e('js') }}";
+        });
+    }
+
+    if (testBtn && testInput) {
+        function runTest() {
+            var q = testInput.value.trim();
+            if (!q) return;
+
+            testBtn.disabled = true;
+            testBtn.textContent = "{{ t('adm.devices.testing_btn')|default('Checking...')|e('js') }}";
+
+            var formData = new FormData();
+            formData.append('query', q);
+            formData.append('csrf_token', '{{ csrf_token }}');
+
+            fetch('{{ admin_prefix|default("/admin") }}/devices/lookup', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                testBtn.disabled = false;
+                testBtn.textContent = "{{ t('adm.devices.test_btn')|default('Test Resolution')|e('js') }}";
+
+                if (data.success && data.result) {
+                    var r = data.result;
+                    resultBox.style.display = 'block';
+                    resTitle.textContent = r.full_name || r.model || 'Unknown';
+                    resBadge.textContent = (r.brand || 'Device') + ' · ' + (r.type || 'Hardware');
+                    resBadge.style.color = r.brand === 'Apple' ? '#a371f7' : (r.brand === 'Samsung' ? '#58a6ff' : '#3fb950');
+                    resDetails.innerHTML = 'Brand: <strong>' + (r.brand || 'N/A') + '</strong> · Model: <strong>' + (r.model || 'N/A') + '</strong> · Hardware Code: <code>' + (r.code || q) + '</code>';
+                }
+            })
+            .catch(function(err) {
+                testBtn.disabled = false;
+                testBtn.textContent = "{{ t('adm.devices.test_btn')|default('Test Resolution')|e('js') }}";
+                alert('Error: ' + err.message);
+            });
+        }
+
+        testBtn.addEventListener('click', runTest);
+        testInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') runTest();
+        });
+    }
+});
+</script>
+{% endblock %}

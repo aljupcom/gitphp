@@ -1,0 +1,315 @@
+{% extends "layout.twig" %}
+
+{% block title %}Global Limits & Quotas · Site Administration · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-container" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+
+    {# Breadcrumb #}
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 16px; color: var(--gh-fg-muted);">
+        <a href="{{ admin_prefix|default('/admin') }}" style="color: var(--gh-accent); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            <svg class="ti ti-dashboard" style="font-size: 16px;"><use href="#ti-dashboard"/></svg>
+            <span>Site Admin</span>
+        </a>
+        <span>/</span>
+        <span style="font-weight: 600; color: var(--gh-fg-default);">Global Limits &amp; Quotas</span>
+    </div>
+
+    {# Flash Alerts #}
+    {% if flash_success %}
+        <div class="gh-alert gh-alert-success" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 6px; background: rgba(46,160,67,0.15); border: 1px solid rgba(46,160,67,0.4); color: #3fb950;">
+            <svg class="ti ti-check" style="font-size: 18px;"><use href="#ti-check"/></svg>
+            <span>{{ flash_success }}</span>
+        </div>
+    {% endif %}
+    {% if flash_error %}
+        <div class="gh-alert gh-alert-danger" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 6px; background: rgba(248,81,73,0.15); border: 1px solid rgba(248,81,73,0.4); color: #f85149;">
+            <svg class="ti ti-alert-circle" style="font-size: 18px;"><use href="#ti-alert-circle"/></svg>
+            <span>{{ flash_error }}</span>
+        </div>
+    {% endif %}
+
+    {# Layout Grid: Left Navigation Sidebar + Right Settings Form #}
+    <div class="gh-admin-layout" style="display: grid; grid-template-columns: 240px 1fr; gap: 24px;">
+
+        {# Admin Navigation Sidebar #}
+        <div>
+            {% include "partials/admin-nav.twig" with { active: 'limits', counts: nav_counts|default({}) } %}
+        </div>
+
+        {# Main Content Area #}
+        <div style="min-width: 0;">
+
+            {# Header Title Box #}
+            <div class="gh-box" style="padding: 20px; border-radius: 8px; margin-bottom: 20px; background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default);">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 6px 0; color: var(--gh-fg-default); display: flex; align-items: center; gap: 10px;">
+                            <svg class="ti ti-adjustments" style="font-size: 22px; color: var(--gh-accent);"><use href="#ti-adjustments"/></svg>
+                            <span>{{ t('adm.limits.title')|default('Global Limits & Quotas Policy') }}</span>
+                        </h1>
+                        <p style="font-size: 13px; color: var(--gh-fg-muted); margin: 0;">
+                            Configure enterprise-wide resource quotas, member repository allowances, storage caps, and operational constraints.
+                        </p>
+                    </div>
+                    <button type="submit" form="limits-form" class="gh-btn gh-btn-primary" style="font-size: 13px; padding: 6px 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                        <svg class="ti ti-check" style="font-size: 15px;"><use href="#ti-check"/></svg>
+                        <span>Save Policy Changes</span>
+                    </button>
+                </div>
+            </div>
+
+            <form id="limits-form" method="POST" action="{{ admin_prefix|default('/admin') }}/limits">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                {# ── SECTION 1: REPOSITORY POLICIES & ALLOWANCES ── #}
+                <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; margin-bottom: 24px; background: var(--gh-bg-subtle); overflow: hidden;">
+                    <div style="padding: 14px 18px; background: var(--gh-bg-muted); border-bottom: 1px solid var(--gh-border-default); font-weight: 600; font-size: 14.5px; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                        <svg class="ti ti-box" style="font-size: 18px; color: var(--gh-accent);"><use href="#ti-box"/></svg>
+                        <span>1. Repository Creation &amp; Collaboration Limits</span>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 20px;">
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max Total Repositories per User
+                                </label>
+                                <input type="number" name="max_repos_per_user" value="{{ limits.max_repos_per_user }}" min="0" max="10000" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Set to <code>0</code> for unlimited repositories.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max Private Repositories per User
+                                </label>
+                                <input type="number" name="max_private_repos_per_user" value="{{ limits.max_private_repos_per_user }}" min="0" max="10000" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Private repos quota cap. Set to <code>0</code> for unlimited.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max Collaborators per Repository
+                                </label>
+                                <input type="number" name="max_collaborators_per_repo" value="{{ limits.max_collaborators_per_repo }}" min="0" max="1000" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Maximum collaborators per repo. Set to <code>0</code> for unlimited.</span>
+                            </div>
+                        </div>
+
+                        <div style="border-top: 1px solid var(--gh-border-muted); padding-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                            <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--gh-fg-default); cursor: pointer;">
+                                <input type="checkbox" name="allow_public_repo_creation" value="1" {{ limits.allow_public_repo_creation ? 'checked' : '' }} style="margin-top: 2px;">
+                                <div>
+                                    <span style="font-weight: 600;">Allow Public Repository Creation</span>
+                                    <div style="font-size: 11.5px; color: var(--gh-fg-muted);">Users can make repositories visible to the world.</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--gh-fg-default); cursor: pointer;">
+                                <input type="checkbox" name="allow_private_repo_creation" value="1" {{ limits.allow_private_repo_creation ? 'checked' : '' }} style="margin-top: 2px;">
+                                <div>
+                                    <span style="font-weight: 600;">Allow Private Repository Creation</span>
+                                    <div style="font-size: 11.5px; color: var(--gh-fg-muted);">Users can create private repositories with restricted access.</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--gh-fg-default); cursor: pointer;">
+                                <input type="checkbox" name="allow_repo_deletion" value="1" {{ limits.allow_repo_deletion ? 'checked' : '' }} style="margin-top: 2px;">
+                                <div>
+                                    <span style="font-weight: 600;">Allow Repository Deletion</span>
+                                    <div style="font-size: 11.5px; color: var(--gh-fg-muted);">When disabled, only Site Admins can permanently delete repositories.</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--gh-fg-default); cursor: pointer;">
+                                <input type="checkbox" name="allow_repo_forking" value="1" {{ limits.allow_repo_forking ? 'checked' : '' }} style="margin-top: 2px;">
+                                <div>
+                                    <span style="font-weight: 600;">Allow Repository Forking</span>
+                                    <div style="font-size: 11.5px; color: var(--gh-fg-muted);">Enable members to fork public repositories into their personal namespaces.</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── SECTION 2: STORAGE & DISK SPACE QUOTAS ── #}
+                <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; margin-bottom: 24px; background: var(--gh-bg-subtle); overflow: hidden;">
+                    <div style="padding: 14px 18px; background: var(--gh-bg-muted); border-bottom: 1px solid var(--gh-border-default); font-weight: 600; font-size: 14.5px; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                        <svg class="ti ti-database" style="font-size: 18px; color: var(--gh-accent);"><use href="#ti-database"/></svg>
+                        <span>2. Storage Capacity &amp; Object Quotas</span>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    User Total Storage Quota (MB)
+                                </label>
+                                <input type="number" name="user_storage_quota_mb" value="{{ limits.user_storage_quota_mb }}" min="0" max="1000000" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">e.g. <code>5120</code> MB = 5 GB. Set to <code>0</code> for unlimited.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max Single Repository Size (MB)
+                                </label>
+                                <input type="number" name="repo_max_size_mb" value="{{ limits.repo_max_size_mb }}" min="0" max="1000000" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">e.g. <code>2048</code> MB = 2 GB. Set to <code>0</code> for unlimited.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max File Upload / Attachment (MB)
+                                </label>
+                                <input type="number" name="max_upload_mb" value="{{ limits.max_upload_mb }}" min="1" max="5000" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Max size for issue attachments and files.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max Release Binary Asset (MB)
+                                </label>
+                                <input type="number" name="max_release_asset_mb" value="{{ limits.max_release_asset_mb }}" min="1" max="10000" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Max compiled binary/asset size per release.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── SECTION 3: USER ACCOUNTS & SECURITY RESTRICTIONS ── #}
+                <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; margin-bottom: 24px; background: var(--gh-bg-subtle); overflow: hidden;">
+                    <div style="padding: 14px 18px; background: var(--gh-bg-muted); border-bottom: 1px solid var(--gh-border-default); font-weight: 600; font-size: 14.5px; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                        <svg class="ti ti-shield-lock" style="font-size: 18px; color: var(--gh-accent);"><use href="#ti-shield-lock"/></svg>
+                        <span>3. Member Accounts &amp; Security Restrictions</span>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 18px;">
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max Concurrent Active Sessions
+                                </label>
+                                <input type="number" name="max_active_sessions_per_user" value="{{ limits.max_active_sessions_per_user }}" min="0" max="100" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Max devices logged in at once. <code>0</code> = unlimited.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Session Idle Timeout (Hours)
+                                </label>
+                                <input type="number" name="session_idle_timeout_hours" value="{{ limits.session_idle_timeout_hours }}" min="1" max="720" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Inactivity period before requiring re-login.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max Personal Access Tokens (PATs)
+                                </label>
+                                <input type="number" name="max_pats_per_user" value="{{ limits.max_pats_per_user }}" min="0" max="200" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Max active tokens per account. <code>0</code> = unlimited.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max Deploy &amp; SSH Keys per User
+                                </label>
+                                <input type="number" name="max_ssh_keys_per_user" value="{{ limits.max_ssh_keys_per_user }}" min="0" max="100" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Max SSH public keys per user. <code>0</code> = unlimited.</span>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; border-top: 1px solid var(--gh-border-muted); padding-top: 16px;">
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Default New User Role
+                                </label>
+                                <select name="default_user_role" class="gh-select" style="width: 100%; height: 36px; padding: 0 10px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default);">
+                                    <option value="user" {{ limits.default_user_role == 'user' ? 'selected' : '' }}>💻 Standard Member (Full developer features)</option>
+                                    <option value="restricted" {{ limits.default_user_role == 'restricted' ? 'selected' : '' }}>🔒 Restricted User (Invited repos only)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Enforce Two-Factor Authentication (2FA)
+                                </label>
+                                <select name="enforce_2fa_policy" class="gh-select" style="width: 100%; height: 36px; padding: 0 10px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default);">
+                                    <option value="none" {{ limits.enforce_2fa_policy == 'none' ? 'selected' : '' }}>Optional for all users</option>
+                                    <option value="admins_only" {{ limits.enforce_2fa_policy == 'admins_only' ? 'selected' : '' }}>Mandatory for Site Admins &amp; Staff</option>
+                                    <option value="all_users" {{ limits.enforce_2fa_policy == 'all_users' ? 'selected' : '' }}>Mandatory for all registered users</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-top: 16px;">
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Allowed Email Domains Whitelist
+                                </label>
+                                <input type="text" name="email_domain_whitelist" value="{{ limits.email_domain_whitelist }}" placeholder="e.g. company.com, edu.sa (comma separated, blank for all)" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Only emails from these domains will be permitted to register.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Blocked Email Domains Blacklist
+                                </label>
+                                <input type="text" name="email_domain_blacklist" value="{{ limits.email_domain_blacklist }}" placeholder="e.g. tempmail.com, 10minutemail.com" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Block disposable or temporary email providers.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── SECTION 4: NETWORK, PUSH & RATE LIMITS ── #}
+                <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; margin-bottom: 24px; background: var(--gh-bg-subtle); overflow: hidden;">
+                    <div style="padding: 14px 18px; background: var(--gh-bg-muted); border-bottom: 1px solid var(--gh-border-default); font-weight: 600; font-size: 14.5px; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                        <svg class="ti ti-activity" style="font-size: 18px; color: var(--gh-accent);"><use href="#ti-activity"/></svg>
+                        <span>4. Network Rate Limits &amp; Webhooks</span>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Git Push Rate Limit (per minute)
+                                </label>
+                                <input type="number" name="git_push_rate_limit_per_minute" value="{{ limits.git_push_rate_limit_per_minute }}" min="1" max="1000" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Max Git push commands per minute per user/IP.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    REST API Rate Limit (per hour)
+                                </label>
+                                <input type="number" name="api_rate_limit_per_hour" value="{{ limits.api_rate_limit_per_hour }}" min="100" max="100000" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Standard GitHub rate limit is 5000 requests/hr.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max Webhooks per Repository
+                                </label>
+                                <input type="number" name="max_webhooks_per_repo" value="{{ limits.max_webhooks_per_repo }}" min="0" max="100" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Cap on external integration endpoints per repo.</span>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">
+                                    Max Webhook Deliveries / Hour
+                                </label>
+                                <input type="number" name="webhook_max_deliveries_per_hour" value="{{ limits.webhook_max_deliveries_per_hour }}" min="50" max="50000" class="gh-input" style="width: 100%; height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                <span style="font-size: 11.5px; color: var(--gh-fg-muted); display: block; margin-top: 4px;">Protects background delivery queue from spam.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                    <button type="submit" class="gh-btn gh-btn-primary" style="font-size: 14px; padding: 8px 24px; font-weight: 600;">
+                        Save Policy Changes
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

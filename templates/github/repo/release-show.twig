@@ -1,0 +1,155 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ release.name|default(release.tag_name) }} · {{ t('ui.releases.releases')|default('Releases') }} · {{ repo.name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+    {% include "partials/repo-nav.twig" with { active_tab: 'releases' } %}
+
+    <div style="max-width: 900px; margin: 20px auto 0;">
+        <div class="gh-box" style="margin-bottom: 24px; border-radius: 6px;">
+            <div style="padding: 20px 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <h1 style="font-size: 22px; font-weight: 600; margin: 0; line-height: 1.25;">
+                                {{ release.name|default(release.tag_name) }}
+                            </h1>
+                            <span class="gh-badge" style="font-family: monospace; font-size: 13px;">{{ release.tag_name }}</span>
+                            {% if release.is_latest %}
+                                <span class="gh-badge" style="background: var(--gh-success-subtle); color: var(--gh-success-fg); border: 1px solid var(--gh-success-fg); font-weight: 600;">{{ t('ui.releases.latest') }}</span>
+                            {% endif %}
+                            {% if release.is_draft %}
+                                <span class="gh-badge" style="background: var(--gh-danger-subtle); color: var(--gh-danger-fg); border: 1px solid var(--gh-danger-fg);">{{ t('ui.releases.draft') }}</span>
+                            {% endif %}
+                            {% if release.is_prerelease %}
+                                <span class="gh-badge" style="background: var(--gh-attention-subtle); color: var(--gh-attention-fg); border: 1px solid var(--gh-attention-fg);">{{ t('ui.releases.pre_release') }}</span>
+                            {% endif %}
+                            {% if release.is_tag_only %}
+                                <span class="gh-badge" style="background: var(--gh-bg-subtle); color: var(--gh-fg-muted); border: 1px solid var(--gh-border-default);">Tag release</span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 8px;">
+                            <span style="font-weight: 600; color: var(--gh-fg-default);">{{ owner }}</span>
+                            {{ t('ui.releases.released_this', {'time': (release.published_at ?: release.created_at)|time_ago}) }}
+                        </div>
+                    </div>
+
+                    {% if can_write %}
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            {% if release.is_tag_only %}
+                                <a class="gh-btn gh-btn-primary" href="/{{ owner }}/{{ repo.slug }}/releases/new?tag={{ release.tag_name|url_encode }}" style="font-weight: 600;">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+                                    {{ t('ui.releases.draft_release') }}
+                                </a>
+                            {% else %}
+                                {% if release.is_draft %}
+                                    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/releases/{{ release.id }}/publish" style="margin: 0;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="gh-btn gh-btn-primary" style="font-weight: 600;">{{ t('ui.releases.publish') }}</button>
+                                    </form>
+                                {% endif %}
+                                <a class="gh-btn" href="/{{ owner }}/{{ repo.slug }}/releases/{{ release.id }}/edit">{{ t('ui.releases.edit_release') }}</a>
+                                <form method="POST" action="/{{ owner }}/{{ repo.slug }}/releases/{{ release.id }}/delete" onsubmit="return confirm('{{ t_attr('ui.releases.delete_confirm') }}');" style="margin: 0;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <button type="submit" class="gh-btn" style="color: var(--gh-danger-fg);">{{ t('common.delete')|default('Delete') }}</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if body_html %}
+                    <div class="gh-release-body markdown-body" style="margin-top: 20px;">
+                        {{ body_html|raw }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="gh-release-assets-box" style="border-top: 1px solid var(--gh-border-default); padding: 16px 24px; background: var(--gh-bg-subtle);">
+                <div class="gh-release-assets-header" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; margin-bottom: 12px;">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+                    <span>{{ t('ui.releases.assets') }}</span>
+                    <span class="gh-tab-count">{{ (assets|default([]))|length + 2 }}</span>
+                </div>
+
+                <div style="background: var(--gh-bg-canvas); border: 1px solid var(--gh-border-default); border-radius: 6px; overflow: hidden;">
+                    <!-- Source Code ZIP -->
+                    <div class="gh-release-asset-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--gh-border-muted);">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-accent-fg);"><path d="M3.5 1.75v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25ZM2 1.75C2 .784 2.784 0 3.75 0h8.5C13.216 0 14 .784 14 1.75v12.5A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25Z"/></svg>
+                            <a href="/{{ owner }}/{{ repo.slug }}/archive/{{ release.tag_name }}.zip" style="font-weight: 600; color: var(--gh-accent-fg); text-decoration: none;">{{ t('ui.releases.source_code_zip') }}</a>
+                        </div>
+                        <a href="/{{ owner }}/{{ repo.slug }}/archive/{{ release.tag_name }}.zip" class="gh-btn gh-btn-sm">{{ t('ui.releases.direct_download') }} (zip)</a>
+                    </div>
+
+                    <!-- Source Code TAR.GZ -->
+                    <div class="gh-release-asset-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; {% if assets|length > 0 %}border-bottom: 1px solid var(--gh-border-muted);{% endif %}">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-accent-fg);"><path d="M3.5 1.75v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25ZM2 1.75C2 .784 2.784 0 3.75 0h8.5C13.216 0 14 .784 14 1.75v12.5A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25Z"/></svg>
+                            <a href="/{{ owner }}/{{ repo.slug }}/archive/{{ release.tag_name }}.tar.gz" style="font-weight: 600; color: var(--gh-accent-fg); text-decoration: none;">{{ t('ui.releases.source_code_tar') }}</a>
+                        </div>
+                        <a href="/{{ owner }}/{{ repo.slug }}/archive/{{ release.tag_name }}.tar.gz" class="gh-btn gh-btn-sm">{{ t('ui.releases.direct_download') }} (tar.gz)</a>
+                    </div>
+
+                    <!-- Binary Attachments -->
+                    {% if assets %}
+                        {% for a in assets %}
+                            <div class="gh-release-asset-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--gh-border-muted);">
+                                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                                    {% set ext = a.name|split(".")|last|lower %}
+                                    {% if ext in ["deb", "rpm", "pkg", "appimage", "apk"] %}
+                                        <span class="gh-badge" style="background: rgba(46, 160, 67, 0.15); color: #3fb950; font-weight: 600; font-size: 10px; padding: 1px 6px; border: 1px solid rgba(46, 160, 67, 0.3);">{{ ext|upper }}</span>
+                                    {% elseif ext in ["exe", "msi"] %}
+                                        <span class="gh-badge" style="background: rgba(88, 166, 255, 0.15); color: #58a6ff; font-weight: 600; font-size: 10px; padding: 1px 6px; border: 1px solid rgba(88, 166, 255, 0.3);">WIN</span>
+                                    {% elseif ext in ["dmg"] %}
+                                        <span class="gh-badge" style="background: rgba(163, 113, 247, 0.15); color: #bc8cff; font-weight: 600; font-size: 10px; padding: 1px 6px; border: 1px solid rgba(163, 113, 247, 0.3);">macOS</span>
+                                    {% elseif ext in ["zip", "tar", "gz", "tgz", "xz", "bz2", "7z"] %}
+                                        <span class="gh-badge" style="background: rgba(210, 153, 34, 0.15); color: #d29922; font-weight: 600; font-size: 10px; padding: 1px 6px; border: 1px solid rgba(210, 153, 34, 0.3);">ARCHIVE</span>
+                                    {% else %}
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-accent-fg);"><path d="M3.5 1.75v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25ZM2 1.75C2 .784 2.784 0 3.75 0h8.5C13.216 0 14 .784 14 1.75v12.5A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25Z"/></svg>
+                                    {% endif %}
+                                    <a href="{{ a.short_url|default('/d/' ~ a.short_code)|default('/' ~ owner ~ '/' ~ repo.slug ~ '/releases/download/' ~ (r.tag_name|default(release.tag_name)) ~ '/' ~ (a.name|url_encode)) }}" style="font-weight: 600; color: var(--gh-accent-fg); text-decoration: none;" title="sha256: {{ a.sha256 }}">{{ a.name }}</a>
+                                    <span style="font-size: 11px; color: var(--gh-fg-muted);">{{ a.size_formatted|default((a.size_bytes / 1048576)|round(1) ~ ' MB') }} · {{ a.download_count }} {{ t('ui.releases.downloads')|default('downloads') }}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    {% if a.short_code %}
+                                        <button type="button" class="gh-btn gh-btn-sm" style="display: inline-flex; align-items: center; gap: 4px; font-family: monospace; font-size: 11px;" onclick="copyShortLink('{{ a.short_url|default('/d/' ~ a.short_code) }}', this)" title="{{ t_attr('ui.releases.copy_short_link') }}">
+                                            <span>/d/{{ a.short_code }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+                                        </button>
+                                    {% endif %}
+                                    <a href="{{ a.short_url|default('/d/' ~ a.short_code)|default('/' ~ owner ~ '/' ~ repo.slug ~ '/releases/download/' ~ (r.tag_name|default(release.tag_name)) ~ '/' ~ (a.name|url_encode)) }}" class="gh-btn gh-btn-sm gh-btn-primary" style="display: inline-flex; align-items: center; gap: 4px;">
+                                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+                                        <span>تنزيل الملف (بوابة آمنة)</span>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <a href="/{{ owner }}/{{ repo.slug }}/releases" class="gh-btn">← {{ t('ui.releases.all_releases')|default('All releases') }}</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyShortLink(url, btn) {
+    if (!url.startsWith('http')) {
+        url = window.location.origin + url;
+    }
+    navigator.clipboard.writeText(url).then(function() {
+        var originalText = btn.innerHTML;
+        btn.innerText = '{{ t('ui.releases.link_copied') }}';
+        setTimeout(function() { btn.innerHTML = originalText; }, 2000);
+    }).catch(function() {
+        prompt('Copy link:', url);
+    });
+}
+</script>
+{% endblock %}

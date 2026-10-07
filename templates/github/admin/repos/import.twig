@@ -1,0 +1,115 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.repo_import.title') }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    <div class="gh-admin-layout">
+        {% include "partials/user-nav.twig" with { active: 'import' } %}
+
+        <div style="min-width: 0; max-width: 820px; width: 100%;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600; color: var(--gh-fg-default);">{{ t('ui.repo_import.header') }}</h1>
+                    <p style="color: var(--gh-fg-muted); font-size: 13px; margin:0;">
+                        {{ t('ui.repo_import.desc', {'owner': owner}) }}
+                    </p>
+                </div>
+                <a href="/repos/new" class="gh-btn" style="display:inline-flex; align-items:center; gap:6px; font-weight:500; font-size: 13px;">
+                    <svg class="ti ti-plus"><use href="#ti-plus"/></svg>
+                    <span>{{ t('ui.repo_import.create_blank_btn') }}</span>
+                </a>
+            </div>
+
+            {# Sub-nav tabs #}
+            <div style="display:flex; border-bottom:1px solid var(--gh-border-default); margin-bottom:20px; gap:4px;">
+                <a href="/repos/new" style="padding:8px 16px; font-size:14px; font-weight:500; text-decoration:none; color:var(--gh-fg-muted); display:inline-flex; align-items:center; gap:6px;">
+                    <svg class="ti ti-plus"><use href="#ti-plus"/></svg> {{ t('ui.repo_import.tab_blank') }}
+                </a>
+                <a href="/repos/import" style="padding:8px 16px; font-size:14px; font-weight:600; text-decoration:none; color:var(--gh-fg-default); border-bottom:2px solid #58a6ff; display:inline-flex; align-items:center; gap:6px;">
+                    <svg class="ti ti-download"><use href="#ti-download"/></svg> {{ t('ui.repo_import.tab_import') }}
+                </a>
+            </div>
+
+            {% if error is defined and error %}
+                <div class="gh-flash gh-flash-error" role="alert" style="margin-bottom:16px;">{{ error }}</div>
+            {% endif %}
+
+            <div class="gh-form-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 20px; background: var(--gh-bg-default);">
+                <form method="POST" action="/repos/import" id="import-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                    {# Clone URL #}
+                    <div class="gh-form-group" style="margin-bottom:16px;">
+                        <label class="gh-label" for="source_url" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{{ t('ui.repo_import.clone_url_label') }} <span style="color:#cf222e;">*</span></label>
+                        <input class="gh-input gh-mono gh-form-control" type="url" id="source_url" name="source_url" required
+                               value="{{ old_url }}"
+                               style="width:100%; font-size:14px;"
+                               placeholder="{{ t_attr('ui.repo_import.clone_url_placeholder') }}"
+                               autocomplete="off" dir="ltr">
+                        <p class="gh-hint" style="color:var(--gh-fg-muted); font-size:12px; margin-top:4px;">
+                            {{ t('ui.repo_import.clone_url_hint') }}
+                        </p>
+                        <div id="lookup-status" style="display:none;" hidden></div>
+                    </div>
+
+                    {# Access token #}
+                    <div class="gh-form-group" style="margin-bottom:16px;">
+                        <label class="gh-label" for="access_token" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{{ t('ui.repo_import.token_label') }}</label>
+                        <input class="gh-input gh-mono gh-form-control" type="password" id="access_token" name="access_token"
+                               style="width:100%; font-size:14px;"
+                               placeholder="{{ t_attr('ui.repo_import.token_placeholder') }}"
+                               autocomplete="new-password" dir="ltr">
+                        <p class="gh-hint" style="color:var(--gh-fg-muted); font-size:12px; margin-top:4px;">
+                            {{ t('ui.repo_import.token_hint') }}
+                        </p>
+                    </div>
+
+                    {# Target repo name and slug #}
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="name" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{{ t('ui.repo_import.display_name') }}</label>
+                            <input class="gh-input gh-form-control" type="text" id="name" name="name"
+                                   placeholder="{{ t_attr('ui.repo_import.display_name_placeholder') }}" style="width:100%;">
+                        </div>
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="slug" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{{ t('ui.repo_import.slug_label') }} <span style="color:#cf222e;">*</span></label>
+                            <input class="gh-input gh-mono gh-form-control" type="text" id="slug" name="slug" required
+                                   placeholder="{{ t_attr('ui.repo_import.slug_placeholder') }}" style="width:100%;" dir="ltr">
+                        </div>
+                    </div>
+
+                    {# Description #}
+                    <div class="gh-form-group" style="margin-bottom:16px;">
+                        <label class="gh-label" for="description" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{{ t('ui.repo_import.desc_label') }}</label>
+                        <input class="gh-input gh-form-control" type="text" id="description" name="description"
+                               placeholder="{{ t_attr('ui.repo_import.desc_placeholder') }}" style="width:100%;">
+                    </div>
+
+                    {# Visibility #}
+                    <div class="gh-form-group" style="margin-bottom:16px;">
+                        <span style="font-weight:600; font-size:13px; display:block; margin-bottom:6px;">{{ t('ui.repo_import.visibility') }}</span>
+                        <div style="display:flex; gap:16px;">
+                            <label style="display:inline-flex; align-items:center; gap:6px; font-size:14px; cursor:pointer;">
+                                <input type="radio" name="visibility" value="public" checked>
+                                <strong>{{ t('ui.repo_import.public') }}</strong>
+                            </label>
+                            <label style="display:inline-flex; align-items:center; gap:6px; font-size:14px; cursor:pointer;">
+                                <input type="radio" name="visibility" value="private">
+                                <strong>{{ t('ui.repo_import.private') }}</strong>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:10px; align-items:center; border-top:1px solid var(--gh-border-default); padding-top:16px; margin-top:16px;">
+                        <button type="submit" class="gh-btn gh-btn-primary" id="import-submit-btn" style="font-weight:600;">
+                            <svg class="ti ti-download"><use href="#ti-download"/></svg> {{ t('ui.repo_import.begin_import') }}
+                        </button>
+                        <a href="/repos/new" class="gh-btn">{{ t('ui.repo_import.cancel') }}</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

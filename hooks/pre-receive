@@ -1,0 +1,187 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * GitPHP — pre-receive hook: branch & tag protection enforcement.
+ *
+ * Reads ref updates from stdin ("<old-sha> <new-sha> <refname>") and
+ * rejects pushes that violate branch_protections rules:
+ *   - prevent_delete:     refusing branch/tag deletion (new = 000…0)
+ *   - prevent_force_push: refusing non-fast-forward updates
+ *   - allow_admin:        the repository owner bypasses both rules
+ *
+ * Rules match by ref_pattern: an exact name (legacy branch behavior) or a
+ * shell-style wildcard ("v*", "release-*", "*") applied to both
+ * refs/heads/<name> and refs/tags/<name> — so a rule can protect tags
+ * against deletion and re-pointing.
+ *
+ * The pushing identity arrives via the GITPHP_PUSH_USER environment
+ * variable, set by GitHttpController for HTTP pushes. SSH pushes via
+ * bin/git-shell-wrapper.php are treated as admin (keys are owner-managed).
+ *
+ * This hook REJECTS by exiting non-zero — a failing hook must never be
+ * ignored, but infrastructure errors (no DB) fail OPEN with a warning
+ * so bookkeeping outages never block legitimate work.
+ */
+
+$repoDir = dirname(__DIR__);
+$slug    = basename($repoDir);
+if (str_ends_with($slug, '.git')) {
+    $slug = substr($slug, 0, -4);
+}
+
+// ── Locate project root (.env lives there) ──────────────────────────
+$basePath = '{{BASE_PATH}}';
+
+if ($basePath === '{{BASE_PATH}}' || !is_file($basePath . '/.env')) {
+    $basePath = null;
+    for ($dir = dirname($repoDir), $i = 0; $i < 6 && $dir !== dirname($dir); $dir = dirname($dir), $i++) {
+        if (is_file($dir . '/.env')) { $basePath = $dir; break; }
+    }
+}
+
+if ($basePath === null || !is_file($basePath . '/.env')) {
+    exit(0); // No configuration — fail open.
+}
+
+// ── DB credentials ───────────────────────────────────────────────────
+$env = [];
+foreach (file($basePath . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+    $line = trim($line);
+    if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) continue;
+    [$key, $value] = explode('=', $line, 2);
+    $env[trim($key)] = trim($value, " \t\"'");
+}
+
+try {
+    $dsn = sprintf(
+        'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+        $env['DB_HOST'] ?? '127.0.0.1',
+        $env['DB_PORT'] ?? '3306',
+        $env['DB_NAME'] ?? 'gitphp',
+    );
+
+    $pdo = new PDO($dsn, $env['DB_USER'] ?? '', $env['DB_PASS'] ?? '', [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_TIMEOUT => 5,
+    ]);
+} catch (Throwable $e) {
+    fwrite(STDERR, "pre-receive: warning — cannot reach database, protections not enforced\n");
+    exit(0); // Fail open on infrastructure errors.
+}
+
+// ── Repo + protection rules ──────────────────────────────────────────
+$stmt = $pdo->prepare('SELECT `id` FROM `repositories` WHERE `slug` = :slug LIMIT 1');
+$stmt->execute(['slug' => $slug]);
+$repoId = $stmt->fetchColumn();
+
+if ($repoId === false) {
+    exit(0); // Unknown repo in DB — nothing to protect.
+}
+$repoId = (int) $repoId;
+
+// Load rules; ref_pattern (wildcard-capable) with exact-name fallback.
+$rules = [];
+foreach ($pdo->query(
+    'SELECT `branch_name`, `ref_pattern`, `prevent_force_push`, `prevent_delete`, `allow_admin`
+     FROM `branch_protections` WHERE `repo_id` = ' . $repoId,
+) as $row) {
+    $row['pattern'] = trim((string) ($row['ref_pattern'] ?? ''));
+    if ($row['pattern'] === '') {
+        $row['pattern'] = (string) $row['branch_name']; // legacy exact match
+    }
+    $rules[] = $row;
+}
+
+if ($rules === []) {
+    exit(0); // No protections configured.
+}
+
+/** Shell-style wildcard match (fnmatch) with a full-string anchor. */
+$matchesPattern = static function (string $pattern, string $name): bool {
+    if ($pattern === '' || $pattern === '/') return false;
+    return fnmatch($pattern, $name, FNM_NOESCAPE | FNM_CASEFOLD | FNM_PERIOD);
+};
+
+/** Find the first protection rule matching a ref (branch or tag) name. */
+$findRule = static function (string $shortName) use ($rules, $matchesPattern): ?array {
+    foreach ($rules as $rule) {
+        if ($matchesPattern((string) $rule['pattern'], $shortName)) return $rule;
+    }
+    return null;
+};
+
+// ── Pusher identity & admin bypass ───────────────────────────────────
+$pushUser = getenv('GITPHP_PUSH_USER') ?: ($_ENV['GITPHP_PUSH_USER'] ?? '');
+$ownerName = $env['APP_OWNER'] ?? 'admin';
+$isAdmin   = ($pushUser !== '' && hash_equals($ownerName, $pushUser));
+
+// ── Evaluate each pushed ref ─────────────────────────────────────────
+while (($line = fgets(STDIN)) !== false) {
+    $parts = preg_split('/\s+/', trim($line));
+    if ($parts === false || count($parts) !== 3) continue;
+
+    [$oldRev, $newRev, $refName] = $parts;
+
+    $shortName = null;
+    $refKind  = '';
+
+    if (str_starts_with($refName, 'refs/heads/')) {
+        $shortName = substr($refName, strlen('refs/heads/'));
+        $refKind = 'branch';
+    } elseif (str_starts_with($refName, 'refs/tags/')) {
+        $shortName = substr($refName, strlen('refs/tags/'));
+        $refKind = 'tag';
+    }
+
+    if ($shortName === null || $shortName === '') continue;
+
+    $rule = $findRule($shortName);
+    if ($rule === null) continue;
+
+    $bypassable = ((int) $rule['allow_admin'] === 1) && $isAdmin;
+    if ($bypassable) continue;
+
+    $isDelete = (bool) preg_match('/^0{7,40}$/', $newRev);
+    $isCreate = (bool) preg_match('/^0{7,40}$/', $oldRev);
+
+    if ($isDelete && (int) $rule['prevent_delete'] === 1) {
+        fwrite(STDERR,
+            "GITPHP: {$refKind} '{$shortName}' is protected — deletion is not allowed.\n" .
+            "Ask an administrator to remove the protection rule first.\n");
+        exit(1);
+    }
+
+    // Tags: re-pointing an EXISTING tag (not create, not delete) is the
+    // tag equivalent of a force push — protect it with prevent_force_push.
+    if (!$isDelete && !$isCreate && (int) $rule['prevent_force_push'] === 1) {
+        if ($refKind === 'tag') {
+            fwrite(STDERR,
+                "GITPHP: tag '{$shortName}' is protected — re-pointing an existing tag is not allowed.\n");
+            exit(1);
+        }
+
+        // Branches: non-fast-forward when old is NOT an ancestor of new.
+        $check = proc_open(
+            ['git', 'merge-base', '--is-ancestor', $oldRev, $newRev],
+            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            $repoDir,
+        );
+        if (is_resource($check)) {
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $code = proc_close($check);
+
+            if ($code !== 0) {
+                fwrite(STDERR,
+                    "GITPHP: branch '{$shortName}' is protected — force pushes are not allowed.\n");
+                exit(1);
+            }
+        }
+    }
+}
+
+exit(0);

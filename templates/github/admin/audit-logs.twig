@@ -1,0 +1,89 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('adm.audit.title')|default('Audit Log') }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600;">{{ t('adm.audit.title')|default('Security Audit Log') }}</h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                {{ t('adm.audit.description')|default('Immutable historical trail of administrative mutations, configuration updates, and repository access events.') }}
+            </p>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'audit', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; flex:1;">
+            
+            <div class="gh-box">
+                <div class="gh-box-header" style="padding:12px 16px;">
+                    <h2 style="font-size:14px; margin:0; font-weight:600; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                        <svg class="ti ti-history"><use href="#ti-history"/></svg>
+                        <span>{{ t('adm.audit.stream_title', {count: total_logs})|default('Audit Stream Events (' ~ total_logs ~ ')') }}</span>
+                    </h2>
+                </div>
+
+                {% if logs is empty %}
+                    <div style="padding:40px 20px; text-align:center; color:var(--gh-fg-muted);">
+                        <svg class="ti ti-history-off" style="font-size:36px; margin-bottom:8px; opacity:0.6;"><use href="#ti-history"/></svg>
+                        <p style="font-size:14px; margin:0 0 4px;">{{ t('adm.audit.no_logs')|default('No security audit events recorded yet') }}</p>
+                        <p style="font-size:12px; margin:0;">{{ t('adm.audit.no_logs_sub')|default('Administrative changes and security events will be logged here automatically.') }}</p>
+                    </div>
+                {% else %}
+                    <div style="overflow-x:auto;">
+                        <table class="gh-table" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>{{ t('adm.audit.th_time')|default('Timestamp') }}</th>
+                                    <th>{{ t('adm.audit.th_user')|default('Actor') }}</th>
+                                    <th>{{ t('adm.audit.th_action')|default('Action') }}</th>
+                                    <th>{{ t('adm.audit.th_scope')|default('Target Scope') }}</th>
+                                    <th>{{ t('adm.audit.th_details')|default('Details') }}</th>
+                                    <th style="text-align:right;">{{ t('adm.audit.th_ip')|default('Origin IP') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for l in logs %}
+                                    <tr>
+                                        <td style="font-size:12px; color:var(--gh-fg-muted); white-space:nowrap;">
+                                            {{ l.created_at|time_ago }}
+                                        </td>
+                                        <td>
+                                            <strong style="color:var(--gh-fg-default); font-size:13px;">{{ l.user_name }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="gh-badge" style="font-family:var(--gh-font-mono, monospace); font-size:11px;">
+                                                {{ l.action }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if l.repo_slug %}
+                                                <a href="/{{ owner }}/{{ l.repo_slug }}" style="color:var(--gh-accent-fg, #58a6ff); font-size:13px; font-weight:500; text-decoration:none;">
+                                                    {{ l.repo_name|default(l.repo_slug) }}
+                                                </a>
+                                            {% else %}
+                                                <span style="color:var(--gh-fg-muted); font-size:12px;">{{ t('adm.audit.global_system')|default('Global System') }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="font-size:13px; color:var(--gh-fg-default); word-break:break-word;">
+                                            {{ l.details }}
+                                        </td>
+                                        <td style="font-family:var(--gh-font-mono, monospace); font-size:11px; color:var(--gh-fg-muted); text-align:right; white-space:nowrap;">
+                                            {{ l.ip_address|default('127.0.0.1') }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

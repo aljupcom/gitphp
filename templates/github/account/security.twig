@@ -1,0 +1,120 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.account_security.security_title') }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 820px; margin: 0 auto;">
+    <h1 style="font-size: 20px; margin-bottom: 4px;">{{ t('ui.account_security.security_title') }}</h1>
+    <p style="color: var(--gh-fg-muted); font-size: 13px; margin-bottom: 20px;">
+        {{ t('ui.account_security.security_desc') }}
+    </p>
+
+    {# ── Two-Factor Authentication ─────────────────────────────────── #}
+    <div class="gh-box" style="padding: 18px; margin-bottom: 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+            <h2 style="font-size: 15px; margin:0;">{{ t('ui.account_security.two_factor') }}</h2>
+            {% if user.twofa_secret %}
+                <span class="gh-badge" style="background:#238636; color:#fff;">{{ t('ui.account_security.enabled_badge') }}</span>
+            {% endif %}
+        </div>
+        <p style="font-size: 13px; color: var(--gh-fg-muted); margin-bottom: 12px;">
+            {{ t('ui.account_security.two_factor_desc') }}
+        </p>
+
+        {% if not user.twofa_secret %}
+            {% if totp_provisioning %}
+                <div style="background: var(--gh-bg-subtle, #161b22); padding: 14px; border-radius: 6px; margin-top: 12px;">
+                    <p style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                        {{ t('ui.account_security.step_1_scan') }}
+                    </p>
+                    <div style="background:#fff; padding:10px; display:inline-block; border-radius:4px; margin-bottom: 10px;">
+                        <img src="{{ totp_qr_url }}" alt="2FA QR Code" style="display:block; width:180px; height:180px;">
+                    </div>
+                    <p style="font-size: 12px; color: var(--gh-fg-muted); margin-bottom: 6px;">{{ t('ui.account_security.step_1_manual') }}</p>
+                    <code class="gh-mono" dir="ltr" style="display:inline-block; background: var(--gh-bg-canvas, #0d1117); padding: 6px 10px; border-radius: 4px; font-size: 13px; user-select: all; margin-bottom: 14px;">{{ totp_secret }}</code>
+
+                    <form method="post" action="/settings/security/2fa/confirm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">{{ t('ui.account_security.step_2_code') }}</label>
+                            <input name="code" class="gh-form-control gh-mono" pattern="[0-9]{6}" maxlength="6" required
+                                   placeholder="123456" inputmode="numeric" style="width:140px; font-size:16px; letter-spacing:4px; text-align:center;" dir="ltr">
+                        </div>
+                        <button type="submit" class="gh-btn gh-btn-primary">{{ t('ui.account_security.confirm_enable') }}</button>
+                    </form>
+                    <form method="post" action="/settings/security/2fa/enable" style="margin-top:8px; display:inline-block;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="gh-btn gh-btn-sm">{{ t('ui.account_security.regenerate_secret') }}</button>
+                    </form>
+                </div>
+            {% else %}
+                <form method="post" action="/settings/security/2fa/enable" style="margin-top: 10px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="gh-btn gh-btn-primary">{{ t('ui.account_security.enable_2fa') }}</button>
+                </form>
+            {% endif %}
+
+        {% else %}
+            <div style="margin-top: 10px;">
+                <p style="font-size: 13px; color: var(--gh-fg-muted);">
+                    {{ t('ui.account_security.disable_2fa_desc') }}
+                </p>
+                <form method="post" action="/settings/security/2fa/disable" style="display:flex; gap:8px; align-items:end; margin-top: 10px; flex-wrap: wrap;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div>
+                        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">{{ t('ui.account_security.current_code') }}</label>
+                        <input name="code" class="gh-form-control gh-mono" pattern="[0-9]{6}" maxlength="6" required
+                               placeholder="123456" inputmode="numeric" style="width:140px; font-size:16px; letter-spacing:4px; text-align:center;" dir="ltr">
+                    </div>
+                    <button type="submit" class="gh-btn">{{ t('ui.account_security.disable_2fa') }}</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    {# ── Sessions ──────────────────────────────────────────────────── #}
+    <div class="gh-box" style="padding: 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h2 style="font-size: 15px; margin:0;">{{ t('ui.account_security.active_sessions') }}</h2>
+            <form method="post" action="/settings/security/sessions/revoke-others">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="gh-btn gh-btn-sm">{{ t('ui.account_security.sign_out_others') }}</button>
+            </form>
+        </div>
+
+        {% if sessions is empty %}
+            <p style="font-size: 13px; color: var(--gh-fg-muted);">{{ t('ui.account_security.no_sessions') }}</p>
+        {% else %}
+            <table class="gh-table">
+                <tbody>
+                {% for s in sessions %}
+                    <tr>
+                        <td style="width:16px;">
+                            {% if s.is_current %}
+                                <span class="gh-badge" style="color:#3fb950;">{{ t('ui.account_security.this_device') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-size:13px;">
+                                <strong>{{ s.user_agent ?: t('ui.account_security.unknown_device') }}</strong>
+                            </div>
+                            <div style="font-size:11px; color: var(--gh-fg-muted);">
+                                {{ t('ui.account_security.session_meta', {'ip': s.ip_address, 'started': s.created_at|time_ago, 'active': s.last_activity|time_ago}) }}
+                            </div>
+                        </td>
+                        <td style="text-align:right;">
+                            {% if not s.is_current %}
+                                <form method="post" action="/settings/security/sessions/revoke/{{ s.token }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <button type="submit" class="gh-btn gh-btn-sm">{{ t('ui.account_security.revoke') }}</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

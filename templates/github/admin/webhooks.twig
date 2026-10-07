@@ -1,0 +1,146 @@
+{% extends "layout.twig" %}
+
+{% block title %}System Webhooks & Integrations — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Page Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600; color: var(--gh-fg-default);">Webhooks &amp; Global Integrations</h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                Monitor event dispatching hooks across all repositories and examine real-time delivery payloads and HTTP status responses.
+            </p>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'webhooks', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; max-width: 860px; flex: 1; width: 100%;">
+            
+            {% if flash_success %}
+                <div class="gh-flash gh-flash-success" role="status" style="margin-bottom: 16px; padding: 10px 14px; border-radius: 6px; background: rgba(46,160,67,0.12); border: 1px solid rgba(46,160,67,0.35); color: #2ea043; font-size: 13.5px;">
+                    {{ flash_success }}
+                </div>
+            {% endif %}
+            {% if flash_error %}
+                <div class="gh-flash gh-flash-error" role="alert" style="margin-bottom: 16px; padding: 10px 14px; border-radius: 6px; background: rgba(248,81,73,0.12); border: 1px solid rgba(248,81,73,0.35); color: #f85149; font-size: 13.5px;">
+                    {{ flash_error }}
+                </div>
+            {% endif %}
+
+            {# ── CONFIGURED WEBHOOKS ──────────────────────────────────────────── #}
+            <div class="gh-box" style="padding: 16px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); margin-bottom: 20px;">
+                <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 12px; color: var(--gh-fg-default);">
+                    Configured Webhooks ({{ webhooks|length }})
+                </h3>
+
+                <div style="overflow-x: auto;">
+                    <table class="gh-table" style="width: 100%; font-size: 12.5px; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--gh-bg-subtle); border-bottom: 1px solid var(--gh-border-default);">
+                                <th style="padding: 8px 10px; text-align: left;">Payload URL &amp; Repository</th>
+                                <th style="padding: 8px 10px; text-align: left;">Events</th>
+                                <th style="padding: 8px 10px; text-align: center;">Deliveries</th>
+                                <th style="padding: 8px 10px; text-align: left;">Status</th>
+                                <th style="padding: 8px 10px; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for w in webhooks %}
+                                <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                    <td style="padding: 10px 8px;">
+                                        <div style="font-weight: 600; color: var(--gh-fg-default); word-break: break-all;">{{ w.url }}</div>
+                                        <div style="font-size: 11px; color: var(--gh-fg-muted); margin-top: 2px;">
+                                            Repository: {% if w.repo_slug %}<a href="/{{ w.repo_slug }}" style="color: #58a6ff;">{{ w.repo_slug }}</a>{% else %}Global / System{% endif %}
+                                        </div>
+                                    </td>
+                                    <td style="padding: 10px 8px;">
+                                        <span class="gh-badge" style="font-size: 11px;">{{ w.events|default('push') }}</span>
+                                    </td>
+                                    <td style="padding: 10px 8px; text-align: center; font-weight: 600;">
+                                        {{ w.delivery_count|default(0) }}
+                                    </td>
+                                    <td style="padding: 10px 8px;">
+                                        {% if w.is_active %}
+                                            <span class="gh-badge" style="background: rgba(46,160,67,0.15); color: #3fb950; border: 1px solid rgba(46,160,67,0.4); font-size: 11px;">Active</span>
+                                        {% else %}
+                                            <span class="gh-badge" style="background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.4); font-size: 11px;">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 10px 8px; text-align: right; white-space: nowrap;">
+                                        <form method="post" action="{{ admin_prefix|default('/admin') }}/webhooks/{{ w.id }}/toggle" style="display:inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="submit" class="gh-btn" style="padding: 3px 8px; font-size: 11px;">
+                                                {% if w.is_active %}Disable{% else %}Enable{% endif %}
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{{ admin_prefix|default('/admin') }}/webhooks/{{ w.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this webhook?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="submit" class="gh-btn gh-btn-danger" style="padding: 3px 8px; font-size: 11px;">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" style="padding: 24px; text-align: center; color: var(--gh-fg-muted);">
+                                        No webhooks configured yet.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# ── RECENT DELIVERIES ────────────────────────────────────────────── #}
+            <div class="gh-box" style="padding: 16px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); margin-bottom: 20px;">
+                <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 12px; color: var(--gh-fg-default);">
+                    Recent Deliveries &amp; Payloads (Last 30)
+                </h3>
+
+                {% if recent_deliveries %}
+                    <div style="overflow-x: auto;">
+                        <table class="gh-table" style="width: 100%; font-size: 12.5px; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: var(--gh-bg-subtle); border-bottom: 1px solid var(--gh-border-default);">
+                                    <th style="padding: 8px 10px; text-align: left;">Event</th>
+                                    <th style="padding: 8px 10px; text-align: left;">Status Code</th>
+                                    <th style="padding: 8px 10px; text-align: left;">Target URL</th>
+                                    <th style="padding: 8px 10px; text-align: right;">Delivered At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for d in recent_deliveries %}
+                                    <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                        <td style="padding: 8px 10px;">
+                                            <span class="gh-badge" style="font-size: 10.5px;">{{ d.event|default('push') }}</span>
+                                        </td>
+                                        <td style="padding: 8px 10px;">
+                                            {% if d.response_code >= 200 and d.response_code < 300 %}
+                                                <span class="gh-badge" style="background: rgba(46,160,67,0.15); color: #3fb950; font-size: 11px;">{{ d.response_code }} OK</span>
+                                            {% else %}
+                                                <span class="gh-badge" style="background: rgba(248,81,73,0.15); color: #f85149; font-size: 11px;">{{ d.response_code|default('Error') }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 8px 10px; font-family: monospace; font-size: 11px;">
+                                            {{ d.webhook_url }}
+                                        </td>
+                                        <td style="padding: 8px 10px; text-align: right; color: var(--gh-fg-muted); font-size: 11.5px;">
+                                            {{ d.created_at }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p style="font-size: 13px; color: var(--gh-fg-muted); margin: 0;">No recent delivery logs found.</p>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

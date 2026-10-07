@@ -1,0 +1,145 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ repo.name }}/{{ current_path }} at {{ current_ref }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+        {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'code' } %}
+
+    {# Tree Toolbar with Branch Selector & Breadcrumb #}
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            {% include "partials/ref-selector.twig" with {
+                type: 'branch',
+                current: current_ref,
+                options: branches,
+                repo_slug: repo.slug,
+                owner: owner,
+                tags: tags,
+                branches: branches,
+                base_url: '/' ~ owner ~ '/' ~ repo.slug ~ '/tree'
+            } %}
+
+            <nav class="gh-breadcrumb" aria-label="Breadcrumb" style="margin: 0; padding: 0;">
+                <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}">{{ repo.slug }}</a>
+                {% for seg in segments %}
+                    <span class="sep">/</span>
+                    {% if not loop.last %}
+                        {% set seg_path = segments[0:loop.index]|join('/') %}
+                        <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}/{{ seg_path }}">{{ seg }}</a>
+                    {% else %}
+                        <strong>{{ seg }}</strong>
+                    {% endif %}
+                {% endfor %}
+            </nav>
+        </div>
+    </div>
+
+    {# Tag & Release Banner if current_ref is a tag #}
+    {% set is_current_tag = false %}
+    {% for t in tags %}
+        {% set t_name = t.name is defined ? t.name : t %}
+        {% if t_name == current_ref %}
+            {% set is_current_tag = true %}
+        {% endif %}
+    {% endfor %}
+
+    {% if is_current_tag %}
+        <div class="gh-tag-banner" style="display: flex; align-items: center; justify-content: space-between; background: var(--gh-bg-subtle, #161b22); border: 1px solid var(--gh-border-default, #30363d); border-radius: 6px; padding: 10px 16px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gh-fg-default);">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--gh-accent-fg, #58a6ff)"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25v5.025ZM6 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+                <span>You are browsing repository files at tag <strong style="font-family: var(--gh-font-mono); color: var(--gh-accent-fg);">{{ current_ref }}</strong>.</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <a href="/{{ owner }}/{{ repo.slug }}/releases/tag/{{ current_ref|url_encode }}" class="gh-btn gh-btn-sm" style="color: var(--gh-accent-fg, #58a6ff); font-weight: 600;">
+                    View release / downloads
+                </a>
+                <a href="/{{ owner }}/{{ repo.slug }}/archive/{{ current_ref }}.zip" class="gh-btn gh-btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+                    Download ZIP
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    {# File table #}
+    <div class="gh-table-wrap" dir="ltr">
+        <table class="gh-table gh-file-table" dir="ltr">
+            <thead>
+                <tr>
+                    <th style="width:1%"></th>
+                    <th>{{ t('ui.repo.name') }}</th>
+                    <th>{{ t('ui.repo.last_commit_msg') }}</th>
+                    <th style="width:1%">{{ t('ui.repo.commit_time') }}</th>
+                    {% if can_write %}<th style="width:1%"></th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {# Back link #}
+                {% if segments|length > 0 %}
+                    {% set parent_path = segments[0:-1]|join('/') %}
+                    <tr>
+                        <td class="gh-file-icon-cell">
+                            {{ file_icon('.', 'tree') }}
+                        </td>
+                        <td class="gh-file-name">
+                            {% if parent_path %}
+                                <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}/{{ parent_path }}">..</a>
+                            {% else %}
+                                <a href="/{{ owner }}/{{ repo.slug }}">..</a>
+                            {% endif %}
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                {% endif %}
+
+                {% for file in files %}
+                    <tr>
+                        <td class="gh-file-icon-cell">
+                            {{ file_icon(file.name, file.type) }}
+                        </td>
+                        <td class="gh-file-name">
+                            {% set file_path = current_path ? current_path ~ '/' ~ file.name : file.name %}
+                            {% if file.type == 'tree' %}
+                                <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}/{{ file_path }}" dir="ltr" class="gh-mono">{{ file.name }}</a>
+                            {% else %}
+                                <a href="/{{ owner }}/{{ repo.slug }}/blob/{{ current_ref }}/{{ file_path }}" dir="ltr" class="gh-mono">{{ file.name }}</a>
+                            {% endif %}
+                        </td>
+                        <td class="gh-file-msg">
+                            {% if file.last_commit %}
+                                <a href="/{{ owner }}/{{ repo.slug }}/commit/{{ file.last_commit.hash }}" title="{{ file.last_commit.message }}">
+                                    {{ file.last_commit.message }}
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td class="gh-file-time">
+                            {% if file.last_commit %}
+                                <time datetime="{{ file.last_commit.date }}">{{ file.last_commit.date|time_ago }}</time>
+                            {% endif %}
+                        </td>
+                        {% if can_write %}
+                        <td class="gh-file-actions">
+                            {% if file.type == 'blob' %}
+                                <button type="button" class="gh-btn gh-btn-sm gh-file-delete"
+                                        title="Delete {{ file.name }} (creates a revertible commit)"
+                                        onclick="openDeleteModal('{{ current_ref|e('js') }}', '{{ (current_path ? current_path ~ '/' ~ file.name : file.name)|e('js') }}', '{{ file.name|e('js') }}')">
+                                    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>
+                                </button>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if can_write %}
+        {% include "partials/delete-file-modal.twig" %}
+    {% endif %}
+</div>
+{% endblock %}

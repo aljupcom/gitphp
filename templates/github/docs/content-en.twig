@@ -1,0 +1,786 @@
+{# ── English guide content (included by guide.twig) ───────────────── #}
+
+{% set allowed = categories[current_cat].sections %}
+
+{# ── 0. Installation & Self-Hosting 📦 ── #}
+{# ── 0.1 Dedicated Section: Remote Updaters & upd_* Tokens 🚀 ── #}
+{% if current_cat == 'all' or 'remote-updates' in allowed %}
+<section id="remote-updates" class="gh-docs-section" style="border: 2px solid rgba(31,111,235,0.45); background: linear-gradient(180deg, rgba(31,111,235,0.04) 0%, transparent 100%); border-radius:12px; padding:1.75rem; margin-bottom:2rem; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.85rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0; border:none; padding:0; display:flex; align-items:center; gap:8px;">
+            <span class="gh-docs-num" style="background:#1f6feb; color:#fff;">🚀</span>
+            Remote Updaters &amp; CI/CD Token Architecture (upd_*)
+        </h2>
+        <span class="gh-docs-badge-new">
+            <span class="gh-docs-pulse-dot"></span>
+            NEW
+        </span>
+    </div>
+    
+    <p style="font-size:14px; line-height:1.6; margin-bottom:1rem;">
+        Authorizes automated CLI installers (such as <code class="gh-docs-inline-code">antigravity-installer-linux</code>), headless servers, and CI/CD pipelines to download repository releases and source code archives directly without interactive browser prompts.
+    </p>
+
+    <div class="gh-docs-grid" style="margin:1.25rem 0; display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-key" style="color:#1f6feb;"><use href="#ti-key"/></svg>
+                Personal Account upd_* Token
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                Every member gets an isolated permanent token starting with <code class="gh-docs-inline-code">upd_...</code> that can be copied or regenerated at any time.
+            </p>
+        </div>
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-terminal-2" style="color:#2ea043;"><use href="#ti-terminal-2"/></svg>
+                Full cURL &amp; Wget Compatibility
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                Pass the token via the <code class="gh-docs-inline-code">X-Update-Token</code> header or the query parameter <code class="gh-docs-inline-code">?token=upd_*</code>.
+            </p>
+        </div>
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-shield-check" style="color:#a371f7;"><use href="#ti-shield-check"/></svg>
+                Short-Link Anti-Scraping Shield
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                Unauthorized raw download requests automatically redirect to the verified short-link download gateway.
+            </p>
+        </div>
+    </div>
+
+    <h3>Automation &amp; Shell Examples:</h3>
+<pre class="gh-docs-code" dir="ltr"><code># 1. Download release assets via X-Update-Token header (Recommended):
+curl -sSL -H "X-Update-Token: upd_YOUR_PERSONAL_TOKEN" \
+     "{{ app_url }}/username/repository/releases/download/v1.0.0/app.tar.gz" -o app.tar.gz
+
+# 2. Download repository source archives directly:
+curl -sSL -H "X-Update-Token: upd_YOUR_PERSONAL_TOKEN" \
+     "{{ app_url }}/username/repository/archive/main.zip" -o source.zip
+
+# 3. Using direct query token with Wget:
+wget "{{ app_url }}/d/SHORT_CODE/get?token=upd_YOUR_PERSONAL_TOKEN" -O package.zip</code></pre>
+
+    <div class="gh-docs-callout ok" style="background:rgba(31,111,235,0.08); border-left:3px solid #1f6feb; padding:10px 14px; border-radius:6px; margin-top:1rem;">
+        🚀 <strong>Get Your Token:</strong> Navigate to <strong>Settings → Remote Updates</strong> or open <a href="/settings/updates" target="_blank" style="color:#1f6feb; font-weight:600;"><code class="gh-docs-inline-code">/settings/updates</code></a>.
+    </div>
+</section>
+{% endif %}
+
+{# ── 0.2 Dedicated Section: Unified Download Gateway & Broken Link Reports (/d/*) ☁️ ── #}
+{% if current_cat == 'all' or 'downloads-gateway' in allowed %}
+<section id="downloads-gateway" class="gh-docs-section" style="border: 2px solid rgba(46,160,67,0.45); background: linear-gradient(180deg, rgba(46,160,67,0.04) 0%, transparent 100%); border-radius:12px; padding:1.75rem; margin-bottom:2rem; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.85rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0; border:none; padding:0; display:flex; align-items:center; gap:8px;">
+            <span class="gh-docs-num" style="background:#2ea043; color:#fff;">☁️</span>
+            Unified Download Portal &amp; Broken Link Reporting (/d/* Gateway)
+        </h2>
+        <span class="gh-docs-badge-new">
+            <span class="gh-docs-pulse-dot"></span>
+            NEW
+        </span>
+    </div>
+    
+    <p style="font-size:14px; line-height:1.6; margin-bottom:1rem;">
+        An ultra-fast, security-audited portal for all shared platform assets, binaries, and repository archives with real-time integrity verification.
+    </p>
+
+    <div class="gh-docs-grid" style="margin:1.25rem 0; display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-shield-check" style="color:#2ea043;"><use href="#ti-shield-check"/></svg>
+                Automated SHA-256 Checksum
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                Automatic cryptographic hash computation with one-click copy to verify file integrity prior to installation.
+            </p>
+        </div>
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-flag" style="color:#cf222e;"><use href="#ti-flag"/></svg>
+                Broken Link Reporting System
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                Visitors can immediately report corrupt, missing, or slow downloads with automatic logging to the admin dashboard.
+            </p>
+        </div>
+        <div class="gh-docs-card" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:1rem; background:var(--gh-bg);">
+            <h4 style="margin:0 0 .5rem 0; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                <svg class="ti ti-device-desktop" style="color:#1f6feb;"><use href="#ti-device-desktop"/></svg>
+                Responsive Large-Screen Sidebar
+            </h4>
+            <p style="margin:0; font-size:13px; color:var(--gh-fg-muted);">
+                Desktop-optimized sidebar presenting live cluster activity, verification badges, and file specifications.
+            </p>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if current_cat == 'all' or 'installation' in allowed %}
+<section id="installation" class="gh-docs-section" style="border: 2px solid rgba(31,111,235,0.4); background: linear-gradient(180deg, rgba(31,111,235,0.03) 0%, transparent 100%); border-radius:10px; padding:1.75rem; margin-bottom:2rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0;"><span class="gh-docs-num" style="background:#1f6feb; color:#fff;">📦</span> Installation &amp; Self-Hosting Guide</h2>
+        <span style="background:rgba(31,111,235,0.15); color:var(--gh-accent-fg); border:1px solid rgba(31,111,235,0.4); font-size:.78rem; font-weight:700; padding:.2rem .6rem; border-radius:12px;">Open Source</span>
+    </div>
+    
+    <p>
+        <strong>GitPHP</strong> is completely open-source and engineered to be lightweight, high-performance, and trivial to install on any shared Linux hosting or dedicated VPS without requiring Docker or bloated runtime services.
+    </p>
+
+    <h3>📋 System Requirements:</h3>
+    <ul style="padding-left:1.4rem; line-height:1.8;">
+        <li><strong>Operating System:</strong> Modern Linux (Ubuntu 20.04+, Debian 11+, AlmaLinux 9+, Rocky Linux, RHEL).</li>
+        <li><strong>PHP Version:</strong> PHP 8.1 or newer (PHP 8.2 / 8.3 recommended) with extensions: <code class="gh-docs-inline-code">pdo_mysql</code>, <code class="gh-docs-inline-code">mbstring</code>, <code class="gh-docs-inline-code">curl</code>, <code class="gh-docs-inline-code">intl</code>, <code class="gh-docs-inline-code">sodium</code>, <code class="gh-docs-inline-code">fileinfo</code>.</li>
+        <li><strong>Database:</strong> MariaDB 10.6+ or MySQL 8.0+.</li>
+        <li><strong>Git Engine:</strong> Git 2.30+ installed server-wide and available in <code class="gh-docs-inline-code">$PATH</code>.</li>
+        <li><strong>Package Manager:</strong> Composer 2.x.</li>
+        <li><strong>Web Server:</strong> OpenLiteSpeed / LiteSpeed, Nginx, or Apache.</li>
+    </ul>
+
+    <hr style="border:0; border-top:1px solid var(--gh-border-default); margin:1.5rem 0;">
+
+    <h3>🚀 Quick Command-Line (CLI) Installation:</h3>
+
+    <h4>1. Clone Repository &amp; Install Dependencies:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># Clone repository into web directory
+git clone https://github.com/ysnapp/gitphp.git /var/www/gitphp
+cd /var/www/gitphp
+
+# Install production dependencies
+composer install --no-dev --optimize-autoloader</code></pre>
+
+    <h4>2. Configure Environment &amp; Database:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># Copy configuration template
+cp config/config.example.php config/config.php
+
+# Edit database credentials and application settings
+nano config/config.php</code></pre>
+
+    <h4>3. Run the Automated Installer:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># Execute the interactive CLI installer
+php bin/install.php
+
+# Or run the browser installer wizard by navigating to:
+# https://your-domain.com/install.php</code></pre>
+
+    <h4>4. Set Permissions &amp; Run Diagnostic:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># Grant ownership to your web user (www-data / nobody / site user)
+chown -R www-data:www-data /var/www/gitphp/
+chmod -R 755 /var/www/gitphp/
+chmod -R 775 /var/www/gitphp/data/ /var/www/gitphp/storage/
+
+# Run the health & push verification script
+php bin/fix-push.php</code></pre>
+
+    <div class="gh-docs-callout ok">✅ After completing setup, remove <code class="gh-docs-inline-code">public_html/install.php</code> or the application will automatically block access for security.</div>
+</section>
+{% endif %}
+
+{# ── 0.1 Web Server Setup ⚙️ ── #}
+{% if current_cat == 'all' or 'deploy-server' in allowed %}
+<section id="deploy-server" class="gh-docs-section">
+    <h2><span class="gh-docs-num">⚙️</span> Web Server Configuration (OpenLiteSpeed / Nginx / Apache)</h2>
+    <p>Point your <strong>Document Root</strong> to the <code class="gh-docs-inline-code">public_html</code> directory and ensure URL rewrites and <code class="gh-docs-inline-code">Authorization</code> headers are passed:</p>
+
+    <h3>a) OpenLiteSpeed / CyberPanel:</h3>
+    <p>In CyberPanel → Websites → Manage → vHost Conf, set the document root and rewrite rules:</p>
+<pre class="gh-docs-code" dir="ltr"><code># In vHost Configuration:
+docRoot                   /home/git.ysnapp.com/public_html
+vhssl {
+  enableContextRewrite    1
+}
+
+# .htaccess rules in public_html/.htaccess:
+RewriteEngine On
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]</code></pre>
+
+    <h3>b) Nginx Server Block:</h3>
+<pre class="gh-docs-code" dir="ltr"><code>server {
+    listen 80;
+    server_name git.example.com;
+    root /var/www/gitphp/public_html;
+    index index.php;
+
+    client_max_body_size 500M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param HTTP_AUTHORIZATION $http_authorization;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}</code></pre>
+
+    <h3>c) Background Cron Job:</h3>
+    <p>Add the recurring task in crontab to execute repository synchronizations, dispatch webhooks, and purge expired sessions:</p>
+<pre class="gh-docs-code" dir="ltr"><code># Edit crontab for web user
+crontab -u www-data -e
+
+# Add one-minute background trigger:
+* * * * * php /var/www/gitphp/bin/cron.php >/dev/null 2>&1</code></pre>
+
+    <div class="gh-docs-callout info">📖 For in-depth technical deployment guides, check: <code class="gh-docs-inline-code">docs/installation.md</code> and <code class="gh-docs-inline-code">docs/deploy.md</code>.</div>
+</section>
+{% endif %}
+
+{# ── 1. Overview ── #}
+{% if current_cat == 'all' or 'overview' in allowed %}
+<section id="overview" class="gh-docs-section">
+    <h2><span class="gh-docs-num">1</span> Overview</h2>
+    <p>
+        {{ app_name }} is a self-hosted Git repository management platform with a modern GitHub-like interface. It provides high-performance Git hosting over HTTP (Personal Access Tokens & Basic auth) and guarded SSH, coupled with an integrated collaboration layer: Pull Requests, inline code review, branch protection, webhooks, and a REST API.
+    </p>
+    <div class="gh-docs-grid">
+        <div class="gh-docs-card"><h4>Multi-Protocol Git Hosting</h4><p>Clone / Fetch / Push over HTTP with Personal Tokens or password, plus guarded SSH.</p></div>
+        <div class="gh-docs-card"><h4>Pull Requests & Merging</h4><p>Sequential numbering, discussion, changed files view, and one-click merges.</p></div>
+        <div class="gh-docs-card"><h4>Inline Code Review</h4><p>Comment on any diff line; approve or request changes.</p></div>
+        <div class="gh-docs-card"><h4>Webhooks</h4><p>HMAC-SHA256 signed event payloads for push, issues, PRs, and releases.</p></div>
+        <div class="gh-docs-card"><h4>Branch Protection</h4><p>Block deletion, prevent force-pushes, and require approved reviews before merge.</p></div>
+        <div class="gh-docs-card"><h4>REST API & Tokens</h4><p>Full read/write capabilities authenticated by personal <code class="gh-docs-inline-code">gtp_…</code> tokens.</p></div>
+    </div>
+</section>
+{% endif %}
+
+{# ── 2. Quick Start ── #}
+{% if current_cat == 'all' or 'quick-start' in allowed %}
+<section id="quick-start" class="gh-docs-section">
+    <h2><span class="gh-docs-num">2</span> Quick Start — Create Your First Repository</h2>
+    <p>Create a new repository from <strong>New repository</strong> in the top navigation or your account menu, then set the name, description, and visibility (Public / Private).</p>
+    <div class="gh-docs-callout info">💡 <strong>Example repository URL:</strong> <code class="gh-docs-inline-code">{{ app_url }}/{{ owner }}/my-project.git</code></div>
+    <div class="gh-docs-callout ok">✅ Every new repository is automatically configured on creation to accept HTTP push and run server hooks out-of-the-box.</div>
+</section>
+{% endif %}
+
+{# ── 3. Dedicated Card: Token Push (PAT) ⭐️ ── #}
+{% if current_cat == 'all' or 'token-push' in allowed %}
+<section id="token-push" class="gh-docs-section" style="border: 2px solid rgba(56,139,253,0.4); background: linear-gradient(180deg, rgba(56,139,253,0.03) 0%, transparent 100%); border-radius:10px; padding:1.75rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0;"><span class="gh-docs-num" style="background:#238636; color:#fff;">⭐️</span> Personal Access Token Push (PAT)</h2>
+        <span style="background:rgba(56,139,253,0.15); color:var(--gh-accent-fg); border:1px solid rgba(56,139,253,0.4); font-size:.78rem; font-weight:700; padding:.2rem .6rem; border-radius:12px;">Recommended for Security & CI/CD</span>
+    </div>
+    
+    <p>
+        <strong>Personal Access Tokens (PAT)</strong> let you authenticate and push to your repositories securely without exposing or entering your primary account password.
+        Tokens are generated as <code class="gh-docs-inline-code">gtp_…</code> strings and stored safely hashed (SHA-256) in the database.
+    </p>
+
+    <div class="gh-docs-grid" style="margin:1.25rem 0;">
+        <div class="gh-docs-card">
+            <h4>1. Generate Token</h4>
+            <p>Under <strong>Settings → Access Tokens</strong> (or direct URL <code>/settings/tokens</code>), choose a name, select <code>write</code> scope, and copy your token.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>2. Use with Git</h4>
+            <p>Paste the token in place of your password whenever running <code>git push</code> or <code>git clone</code>.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>3. Instant Revocation</h4>
+            <p>If a token is leaked or no longer needed, revoke it in one click without altering your account credentials.</p>
+        </div>
+    </div>
+
+    <h3>Practical Usage Examples:</h3>
+    
+    <h4>1. Cache locally via Git Credential Store:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># Enable local credential caching
+git config --global credential.helper store
+
+# Push and input credentials once
+git push https://{{ app_url|replace({'https://':'', 'http://':''}) }}/{{ owner }}/my-project.git main
+# Username: {{ owner }}
+# Password: gtp_your_token_here</code></pre>
+
+    <h4>2. Direct Remote URL with Token:</h4>
+<pre class="gh-docs-code" dir="ltr"><code>git remote set-url origin https://{{ owner }}:gtp_your_token_here@{{ app_url|replace({'https://':'', 'http://':''}) }}/{{ owner }}/my-project.git
+git push origin main</code></pre>
+
+    <h4>3. Continuous Integration (CI/CD) — GitHub Actions & GitLab CI:</h4>
+<pre class="gh-docs-code" dir="ltr"><code># In GitHub Actions:
+- name: Push to GitPHP
+  env:
+    GIT_TOKEN: ${{ '{{' }} secrets.GITPHP_TOKEN {{ '}}' }}
+  run: |
+    git remote set-url origin https://{{ owner }}:${GIT_TOKEN}@{{ app_url|replace({'https://':'', 'http://':''}) }}/{{ owner }}/my-project.git
+    git push origin main</code></pre>
+
+    <div class="gh-docs-callout ok">💡 <strong>Token Scopes:</strong> The <code class="gh-docs-inline-code">write</code> scope allows pushing, cloning, and full API access, while the <code class="gh-docs-inline-code">read</code> scope is restricted to cloning and reading API data only.</div>
+</section>
+{% endif %}
+
+{# ── 3.1 Time-Limited Signed Capability Signatures ── DEPRECATED NOTICE ── #}
+{% if current_cat == 'all' or 'token-push' in allowed %}
+<section id="signed-tokens" class="gh-docs-section" style="border: 2px solid rgba(207,34,46,0.4); background: linear-gradient(180deg, rgba(207,34,46,0.03) 0%, transparent 100%); border-radius:12px; padding:1.75rem; margin-top:2rem; position:relative;">
+    
+    <!-- Transparent Deprecation Notice -->
+    <div style="background: rgba(207,34,46,0.1); border: 1px solid rgba(207,34,46,0.35); border-radius: 8px; padding: 12px 16px; margin-bottom: 1.25rem; display: flex; align-items: flex-start; gap: 12px;">
+        <svg class="ti ti-alert-triangle" style="width: 22px; height: 22px; color: #cf222e; flex-shrink: 0; margin-top: 2px;"><use href="#ti-alert-triangle"/></svg>
+        <div style="font-size: 13.5px; line-height: 1.55; color: var(--gh-fg-default);">
+            <strong style="color: #cf222e; font-size: 14px; display: block; margin-bottom: 2px;">⚠️ Official Notice: Feature Deprecated</strong>
+            Temporary push signatures (<code class="gh-docs-inline-code">gitsig_*</code>) are <strong>deprecated and no longer recommended for new workflows</strong>. Please migrate to official supported methods:
+            <ul style="margin: 6px 0 0 0; padding-left: 20px;">
+                <li><strong>Interactive Push / CLI:</strong> Use standard <strong>Personal Access Tokens (PAT)</strong> (<code class="gh-docs-inline-code">pat_*</code>) or <strong>SSH Keys</strong>.</li>
+                <li><strong>CI/CD & Headless Updaters:</strong> Use the modern <strong>Remote Updates Architecture</strong> (<code class="gh-docs-inline-code">upd_*</code>) via <a href="/settings/updates" style="color:var(--gh-accent-fg); font-weight:600;"><code class="gh-docs-inline-code">/settings/updates</code></a>.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0; opacity:0.85;"><span class="gh-docs-num" style="background:#cf222e; color:#fff;"><svg class="ti ti-history"><use href="#ti-history"/></svg></span> Signed Push Signatures <span style="font-size:12px; color:#cf222e; font-weight:600;">[Deprecated]</span></h2>
+        <span style="background:rgba(207,34,46,0.15); color:#cf222e; border:1px solid rgba(207,34,46,0.4); font-size:.78rem; font-weight:700; padding:.2rem .6rem; border-radius:12px;">Deprecated Feature</span>
+    </div>
+    
+    <p style="opacity:0.85;">
+        This legacy capability generated temporary capability tokens formatted as <code class="gh-docs-inline-code">gitsig_…</code>. <strong>Please refrain from configuring new automation with this method and switch to the supported upd_* or PAT mechanisms.</strong>
+    </p>
+
+    <div class="gh-docs-grid" style="margin:1.25rem 0; opacity:0.75;">
+        <div class="gh-docs-card">
+            <h4><svg class="ti ti-flame" style="color:#d29922;"><use href="#ti-flame"/></svg> Single-Use Burn Mode</h4>
+            <p>Legacy single-use token burn upon completion.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4><svg class="ti ti-clock" style="color:#58a6ff;"><use href="#ti-clock"/></svg> Expiration Scope</h4>
+            <p>Short-lived duration enforcement.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4><svg class="ti ti-shield-lock" style="color:#cf222e;"><use href="#ti-shield-lock"/></svg> Repository & IP Scoping</h4>
+            <p>Strict network binding.</p>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+
+{# ── 4. Git HTTP ── #}
+{% if current_cat == 'all' or 'git-http' in allowed %}
+<section id="git-http" class="gh-docs-section">
+    <h2><span class="gh-docs-num">4</span> Pushing and Cloning over HTTP (Standard Password)</h2>
+    <h3>a) Push an existing local project</h3>
+<pre class="gh-docs-code" dir="ltr"><code>cd my-project
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin {{ app_url }}/{{ owner }}/my-project.git
+git push -u origin main</code></pre>
+
+    <h3>b) Clone and Pull</h3>
+<pre class="gh-docs-code" dir="ltr"><code>git clone {{ app_url }}/{{ owner }}/my-project.git
+cd my-project
+git pull origin main</code></pre>
+
+    <div class="gh-docs-callout info">💡 <strong>Authentication:</strong> when Git asks for credentials, use your account password or a <a href="/docs?cat=token-push#token-push">Personal Access Token</a>. Private repositories require collaborator access (read or write).</div>
+</section>
+{% endif %}
+
+{# ── 5. Git SSH ── #}
+{% if current_cat == 'all' or 'git-ssh' in allowed %}
+<section id="git-ssh" class="gh-docs-section">
+    <h2><span class="gh-docs-num">5</span> Pushing and Cloning over SSH</h2>
+    <p>SSH keys allow passwordless, encrypted Git operations via port 22:</p>
+    <ol style="padding-left:1.4rem;">
+        <li>Generate a new SSH key (Ed25519 recommended):<pre class="gh-docs-code" dir="ltr"><code>ssh-keygen -t ed25519 -C "you@example.com"</code></pre></li>
+        <li>Copy your public key:<pre class="gh-docs-code" dir="ltr"><code>cat ~/.ssh/id_ed25519.pub</code></pre></li>
+        <li>Add the key under <strong>Settings → SSH keys</strong> in your account.</li>
+        <li>Test the server connection:<pre class="gh-docs-code" dir="ltr"><code>ssh -T git@{{ app_url|replace({'https://':'', 'http://':''}) }}</code></pre></li>
+        <li>Use the SSH clone URL:<pre class="gh-docs-code" dir="ltr"><code>git clone git@{{ app_url|replace({'https://':'', 'http://':''}) }}:{{ owner }}/my-project.git
+git push origin main</code></pre></li>
+    </ol>
+    <div class="gh-docs-callout warn">⚙️ For server-level SSH daemon setup and permissions, see: <code class="gh-docs-inline-code">docs/ssh-setup.md</code>.</div>
+</section>
+{% endif %}
+
+{# ── 6. Branches ── #}
+{% if current_cat == 'all' or 'branches' in allowed %}
+<section id="branches" class="gh-docs-section">
+    <h2><span class="gh-docs-num">6</span> Branches, Compare &amp; Merge</h2>
+    <div class="gh-docs-grid">
+        <div class="gh-docs-card"><h4>Create a Branch</h4><p>From the Branches page → New branch; pick the base branch and your new branch name.</p></div>
+        <div class="gh-docs-card"><h4>Compare</h4><p>Inspect commits ahead/behind, unified diffs, and automatic merge conflict detection.</p></div>
+        <div class="gh-docs-card"><h4>Direct Merge</h4><p>Merge branches directly while preserving the full commit history.</p></div>
+    </div>
+    <div class="gh-docs-callout info">For collaborative workflows and code review prior to merging, use a <a href="#pull-requests">Pull Request</a>.</div>
+</section>
+{% endif %}
+
+{# ── 7. Pull Requests ── #}
+{% if current_cat == 'all' or 'pull-requests' in allowed %}
+<section id="pull-requests" class="gh-docs-section">
+    <h2><span class="gh-docs-num">7</span> Pull Requests</h2>
+    <p>From the <strong>Pull requests</strong> tab → <strong>New pull request</strong>, select your source and target branches:</p>
+    <ol style="padding-left:1.4rem;">
+        <li>Review the commit list, diff summary, and automatic mergeability.</li>
+        <li>Enter a title and description, then open the PR (numbered sequentially #1, #2…).</li>
+        <li>Collaborate via conversation comments and inspect the <strong>Files changed</strong> tab.</li>
+        <li>When ready, click <strong>Merge pull request</strong> to execute the merge.</li>
+    </ol>
+    <div class="gh-docs-callout ok">✅ Merging is powered by the real Git engine (<code class="gh-docs-inline-code">git merge-tree</code>) with automatic conflict detection.</div>
+</section>
+{% endif %}
+
+{# ── 8. Code Review ── #}
+{% if current_cat == 'all' or 'code-review' in allowed %}
+<section id="code-review" class="gh-docs-section">
+    <h2><span class="gh-docs-num">8</span> Code Review</h2>
+    <p>Open the <strong>Files changed</strong> tab inside any PR, then <strong>click any line</strong> in the diff to leave an inline review comment pinned to that exact code line.</p>
+    <div class="gh-docs-callout info">
+        Reviewers can use <strong>Approve</strong> or <strong>Request changes</strong> to record decisions. If branch protection is enabled, unapproved PRs cannot be merged.
+    </div>
+</section>
+{% endif %}
+
+{# ── 9. Branch Protection ── #}
+{% if current_cat == 'all' or 'protections' in allowed %}
+<section id="protections" class="gh-docs-section">
+    <h2><span class="gh-docs-num">9</span> Branch Protection</h2>
+    <p>From repository settings → <strong>Branch protection</strong>, configure strict rules for main branches (e.g. <code>main</code>):</p>
+    <ul style="padding-left:1.4rem;">
+        <li>Block <strong>deletion</strong> of protected branches.</li>
+        <li>Block <strong>force-pushes</strong> (non-fast-forward updates).</li>
+        <li>Require an <strong>approved review</strong> before merging.</li>
+        <li>Optional admin bypass (allow admins to push directly).</li>
+    </ul>
+    <div class="gh-docs-callout warn">🛡️ Rules are enforced server-side via <code class="gh-docs-inline-code">pre-receive</code> hooks for both Web and Git CLI operations.</div>
+</section>
+{% endif %}
+
+{# ── 10. Webhooks ── #}
+{% if current_cat == 'all' or 'webhooks' in allowed %}
+<section id="webhooks" class="gh-docs-section">
+    <h2><span class="gh-docs-num">10</span> Webhooks</h2>
+    <p>Under repository settings → <strong>Webhooks</strong>, register HTTP endpoints to receive real-time JSON payloads for events:</p>
+    <ul style="padding-left:1.4rem;">
+        <li><code class="gh-docs-inline-code">push</code> — Pushes and branch creations/deletions.</li>
+        <li><code class="gh-docs-inline-code">issues</code> — Issue creation, comments, and state changes.</li>
+        <li><code class="gh-docs-inline-code">pull_request</code> — PR opening, review approvals, and merges.</li>
+        <li><code class="gh-docs-inline-code">release</code> — Release publications.</li>
+    </ul>
+    <p>When configured with a <strong>Secret Key</strong>, payloads are HMAC-SHA256 signed in the <code class="gh-docs-inline-code">X-GitPHP-Signature</code> header.</p>
+</section>
+{% endif %}
+
+{# ── 11. REST API Full Documentation ── #}
+{% if current_cat == 'all' or 'api' in allowed %}
+<div class="gh-docs-api-divider" id="api-docs">
+    ⚡️ {{ is_rtl ? 'دليل REST API' : 'REST API Documentation' }}
+    <span class="gh-docs-api-version">
+        <span class="gh-mono">{{ api_version|default('v1') }}</span>
+    </span>
+</div>
+<section id="api" class="gh-docs-section">
+    <h2><span class="gh-docs-num">11</span> REST API {{ api_version|default('v1') }} Documentation ⚡️</h2>
+    <p>
+        A comprehensive RESTful API is provided for automation and integrations. Authenticate using personal access tokens (<code class="gh-docs-inline-code">gtp_…</code>) via <code class="gh-docs-inline-code">Authorization: Bearer</code> or <code class="gh-docs-inline-code">X-GitPHP-Token</code> headers.
+    </p>
+
+    <h3>1. Request Headers</h3>
+<pre class="gh-docs-code" dir="ltr"><code># Standard Bearer Authentication:
+Authorization: Bearer gtp_your_token_here
+
+# Or custom header:
+X-GitPHP-Token: gtp_your_token_here</code></pre>
+
+    <h3>2. Authenticated User Identity (Whoami)</h3>
+<pre class="gh-docs-code" dir="ltr"><code>curl -H "Authorization: Bearer gtp_your_token" \
+  {{ app_url }}/api/v1/user</code></pre>
+
+    <h3>3. Repository Metadata</h3>
+<pre class="gh-docs-code" dir="ltr"><code>curl -H "Authorization: Bearer gtp_your_token" \
+  {{ app_url }}/api/v1/repos/my-project</code></pre>
+
+    <h3>4. Commits History (Paginated)</h3>
+<pre class="gh-docs-code" dir="ltr"><code>curl -H "Authorization: Bearer gtp_your_token" \
+  "{{ app_url }}/api/v1/repos/my-project/commits?ref=main&amp;page=1&amp;per_page=10"</code></pre>
+
+    <h3>5. Tree Browsing &amp; Blob Content (Base64)</h3>
+<pre class="gh-docs-code" dir="ltr"><code># Directory Tree
+curl -H "Authorization: Bearer gtp_your_token" \
+  "{{ app_url }}/api/v1/repos/my-project/tree?ref=main&amp;path=src"
+
+# File Blob Content
+curl -H "Authorization: Bearer gtp_your_token" \
+  "{{ app_url }}/api/v1/repos/my-project/blob?ref=main&amp;path=README.md"</code></pre>
+
+    <div style="overflow-x:auto; margin-top:1rem;">
+    <table class="gh-docs-table">
+        <thead><tr><th>Endpoint</th><th>Description</th><th>Query Parameters</th></tr></thead>
+        <tbody>
+            <tr><td><code>GET /api/v1/user</code></td><td>Token owner identity &amp; scopes</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}</code></td><td>Repository metadata</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/branches</code></td><td>Branch list with commit SHAs</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/tags</code></td><td>Tags and releases list</td><td>—</td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/commits</code></td><td>Paginated commit log</td><td><code>ref</code>, <code>page</code>, <code>per_page</code></td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/tree</code></td><td>Directory tree browsing</td><td><code>ref</code>, <code>path</code></td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/blob</code></td><td>File contents (Base64)</td><td><code>ref</code>, <code>path</code></td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/issues</code></td><td>Issues list and state</td><td><code>state=open|closed|all</code></td></tr>
+            <tr><td><code>GET /api/v1/repos/{slug}/pulls</code></td><td>Pull requests and review status</td><td><code>state=open|closed|all</code></td></tr>
+        </tbody>
+    </table>
+    </div>
+    <div class="gh-docs-callout info">📖 Full markdown documentation is available at: <code class="gh-docs-inline-code">docs/api.md</code>.</div>
+</section>
+{% endif %}
+
+{# ── 12. Issues & Wiki ── #}
+{% if current_cat == 'all' or 'issues-wiki' in allowed %}
+<section id="issues-wiki" class="gh-docs-section">
+    <h2><span class="gh-docs-num">12</span> Issues &amp; Wiki</h2>
+    <p><strong>Issues:</strong> Track bugs and features with Markdown support, status labels, assignees, and threaded discussion comments.</p>
+    <p><strong>Wiki:</strong> Built-in per-repository documentation in Markdown with automatic navigation.</p>
+</section>
+{% endif %}
+
+{# ── 13. Releases ── #}
+{% if current_cat == 'all' or 'releases' in allowed %}
+<section id="releases" class="gh-docs-section">
+    <h2><span class="gh-docs-num">13</span> Releases &amp; Downloads</h2>
+    <ul style="padding-left:1.4rem;">
+        <li>Publish tagged <strong>Releases</strong> with release notes, assets, and <strong>Pre-release</strong> or <strong>Draft</strong> flags.</li>
+        <li>Automatic source code archives in both <code class="gh-docs-inline-code">.zip</code> and <code class="gh-docs-inline-code">.tar.gz</code>.</li>
+        <li><strong>Download Center</strong> (<code class="gh-docs-inline-code">/d/{code}</code>) for password-protected short download links with expiration limits.</li>
+    </ul>
+</section>
+{% endif %}
+
+{# ── 14. Files & Web Editor ── #}
+{% if current_cat == 'all' or 'files' in allowed %}
+<section id="files" class="gh-docs-section">
+    <h2><span class="gh-docs-num">14</span> File Management &amp; Web Editor</h2>
+    <ul style="padding-left:1.4rem;">
+        <li>Full tree view with latest commit summary and timestamp per path.</li>
+        <li>Syntax-highlighted blob viewer for 50+ languages with <strong>Blame</strong> and XSS-safe <strong>Raw</strong> modes.</li>
+        <li><strong>Interactive Web Editor:</strong> Create, edit, and delete files directly in the browser with commit message prompts.</li>
+        <li>One-click zip/tarball downloads for any ref.</li>
+    </ul>
+</section>
+{% endif %}
+
+{# ── 15. Accounts ── #}
+{% if current_cat == 'all' or 'accounts' in allowed %}
+<section id="accounts" class="gh-docs-section">
+    <h2><span class="gh-docs-num">15</span> Accounts &amp; Profiles</h2>
+    <p>Users have dedicated profile pages at <code class="gh-docs-inline-code">/u/{username}</code> displaying public repositories and stars. Manage active sessions, 2FA, personal tokens, and SSH keys under <strong>Settings</strong>.</p>
+</section>
+{% endif %}
+
+{# ── 16. Admin ── #}
+{% if current_cat == 'all' or 'admin' in allowed %}
+<section id="admin" class="gh-docs-section">
+    <h2><span class="gh-docs-num">16</span> Platform Administration</h2>
+    <p>The Admin Dashboard for platform owners provides:</p>
+    <ul style="padding-left:1.4rem;">
+        <li>Platform metrics and 14-day activity traffic charts.</li>
+        <li>Collaborator role assignment (<code class="gh-docs-inline-code">read</code> / <code class="gh-docs-inline-code">write</code>) per repository.</li>
+        <li>Remote repository mirroring and sync from GitHub, GitLab, and Codeberg.</li>
+        <li>Security audit logging and SSH key oversight.</li>
+        <li>Maintenance helper script: <code class="gh-docs-inline-code">php bin/fix-push.php</code>.</li>
+    </ul>
+</section>
+{% endif %}
+
+{# ── 17. Security & Permissions ── #}
+{% if current_cat == 'all' or 'security' in allowed %}
+<section id="security" class="gh-docs-section" style="border: 1px solid rgba(63,185,80,0.35); background: linear-gradient(180deg, rgba(63,185,80,0.02) 0%, transparent 100%); border-radius:10px; padding:1.75rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+        <h2 style="margin:0;"><span class="gh-docs-num" style="background:#238636; color:#fff;">🛡️</span> Security Architecture &amp; Permissions Model</h2>
+        <span style="background:rgba(63,185,80,0.15); color:#3fb950; border:1px solid rgba(63,185,80,0.4); font-size:.78rem; font-weight:700; padding:.2rem .6rem; border-radius:12px;">Defense in Depth</span>
+    </div>
+
+    <p>
+        <strong>{{ app_name }}</strong> enforces strict multi-layered security controls to isolate repositories, protect user credentials, and eliminate threats across web and Git transport layers.
+    </p>
+
+    <h3>1. Role-Based Access Control (RBAC) Matrix:</h3>
+    <div style="overflow-x:auto; margin:1rem 0;">
+    <table class="gh-docs-table">
+        <thead>
+            <tr>
+                <th>Role / Level</th>
+                <th>Browse Code</th>
+                <th>Clone Repo</th>
+                <th>Push Commits</th>
+                <th>Manage Issues &amp; PRs</th>
+                <th>Merge Pull Requests</th>
+                <th>Settings &amp; Webhooks</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Public Visitor</strong></td>
+                <td>✅ (Public only)</td>
+                <td>✅ (Public only)</td>
+                <td>❌</td>
+                <td>❌</td>
+                <td>❌</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td><strong>Collaborator (<code>read</code>)</strong></td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>❌</td>
+                <td>✅ (Comment)</td>
+                <td>❌</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td><strong>Collaborator (<code>write</code>)</strong></td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅ (Unprotected)</td>
+                <td>✅ (Full)</td>
+                <td>✅ (If approved)</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td><strong>Repository Owner (<code>admin</code>)</strong></td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅ (Full)</td>
+                <td>✅ (Full)</td>
+                <td>✅ (Full)</td>
+                <td>✅ (Full + Delete)</td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+
+    <h3>2. Core Security Pillars:</h3>
+    <div class="gh-docs-grid">
+        <div class="gh-docs-card">
+            <h4>🔑 Argon2id Password Hashing</h4>
+            <p>Industry standard password hashing resistant to GPU/ASIC-based brute-force attacks.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>📲 Two-Factor Authentication (2FA)</h4>
+            <p>Full RFC 6238 TOTP support (Google / MS Authenticator) with hashed emergency recovery keys.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>⚡️ SHA-256 Token Hashing</h4>
+            <p>Personal tokens (<code class="gh-docs-inline-code">gtp_…</code>) are strictly hashed in database with instant one-click revocation.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>🔒 SSH User Hardening</h4>
+            <p>Restricted <code class="gh-docs-inline-code">git-shell-wrapper.php</code> prevents interactive shell logins and confines users to Git commands only.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>🛡️ Server-Side Branch Protection</h4>
+            <p>Pre-receive hooks enforce deletion blocking, force-push prevention, and mandatory approved code reviews.</p>
+        </div>
+        <div class="gh-docs-card">
+            <h4>📜 Security Audit Logging</h4>
+            <p>Comprehensive event logging for authentication, token generation, role assignments, and deletions.</p>
+        </div>
+    </div>
+
+    <div class="gh-docs-callout ok">📖 For the exhaustive server-side security guide and hardening checklist, see: <code class="gh-docs-inline-code">docs/security.md</code>.</div>
+</section>
+{% endif %}
+
+{# ── 18. Troubleshooting ── #}
+{% if current_cat == 'all' or 'troubleshoot' in allowed %}
+
+<!-- ── API Licenses & HWID Section (English) ────────────────────────────── -->
+<section id="api-licenses" class="gh-docs-section" style="border: 1px solid rgba(56,139,253,0.35); background: linear-gradient(180deg, rgba(56,139,253,0.02) 0%, transparent 100%); border-radius:10px; padding:1.75rem;">
+    <div class="gh-docs-header">
+        <span class="gh-badge" style="background:rgba(56,139,253,0.15); color:#58a6ff; font-weight:600; font-size:11px;">
+            <svg class="ti ti-shield-check" style="font-size:13px;"><use href="#ti-shield-check"/></svg> REST API {{ api_version|default('v1') }} Suite
+        </span>
+        <h2>🛡️ License Management, HWID Binding & Analytics API Suite</h2>
+        <p>Complete documentation for License Lifecycle Management, HWID Hardware Fingerprint Binding, IP/HWID Resets, Quotas, and System-Wide Analytics.</p>
+    </div>
+
+    <div class="gh-docs-card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-top:0; font-size:15px; display:flex; align-items:center; gap:8px;">
+            <svg class="ti ti-lock" style="font-size:16px; color:#58a6ff;"><use href="#ti-lock"/></svg>
+            1. Authentication & Security Headers
+        </h3>
+        <p>All administrative API endpoints require Bearer token authorization in request headers:</p>
+        <pre class="gh-code-block"><code>Authorization: Bearer &lt;ADMIN_API_TOKEN&gt;
+# Or via custom header:
+X-GitPHP-Token: &lt;ADMIN_API_TOKEN&gt;</code></pre>
+    </div>
+
+    <div class="gh-docs-card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-top:0; font-size:15px;">📋 2. Endpoints Reference Table</h3>
+        <div style="overflow-x:auto;">
+            <table class="gh-table" style="font-size:13px; width:100%;">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint Route</th>
+                        <th>Description & Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>POST</code></td><td><code>/api/v1/licenses</code></td><td>Generate a new server license key</td></tr>
+                    <tr><td><code>GET</code></td><td><code>/api/v1/licenses</code></td><td>List and search licenses (Paginated)</td></tr>
+                    <tr><td><code>GET</code></td><td><code>/api/v1/licenses/stats</code></td><td>System-wide license & device analytics</td></tr>
+                    <tr><td><code>GET</code></td><td><code>/api/v1/licenses/{id_or_key}</code></td><td>Retrieve single license & bound HWID devices</td></tr>
+                    <tr><td><code>PUT</code></td><td><code>/api/v1/licenses/{id_or_key}</code></td><td>Update customer info, plan, extend expiration</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/v1/licenses/{id_or_key}/status</code></td><td>Change status (<code>active</code>, <code>suspended</code>, <code>revoked</code>)</td></tr>
+                    <tr><td><code>DELETE</code></td><td><code>/api/v1/licenses/{id_or_key}</code></td><td>Delete license record & device bindings</td></tr>
+                    <tr><td><code>GET</code></td><td><code>/api/v1/licenses/{id_or_key}/devices</code></td><td>List bound hardware fingerprints / devices</td></tr>
+                    <tr><td><code>DELETE</code></td><td><code>/api/v1/licenses/{id_or_key}/devices/{machine_id}</code></td><td>Unbind / revoke specific device HWID slot</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/v1/licenses/{id_or_key}/reset-bindings</code></td><td>Reset all HWID bindings & IP for server migration</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="gh-docs-card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-top:0; font-size:15px;">💻 3. Ready-to-Use cURL Examples</h3>
+        <p><strong>Create Monthly License (30 Days):</strong></p>
+        <pre class="gh-code-block"><code>curl -s -X POST https://git.ysnapp.com/api/v1/licenses   -H "Authorization: Bearer &lt;TOKEN&gt;"   -H "Content-Type: application/json"   -d '{
+    "customer_name": "MUHAMMED GAILAN",
+    "plan_type": "monthly",
+    "duration_days": 30,
+    "max_devices": 2,
+    "bound_ip": "169.58.135.161",
+    "notes": "VIP Client"
+  }'</code></pre>
+
+        <p><strong>Get System Analytics:</strong></p>
+        <pre class="gh-code-block"><code>curl -s -H "Authorization: Bearer &lt;TOKEN&gt;" https://git.ysnapp.com/api/v1/licenses/stats</code></pre>
+
+        <p><strong>Reset Device Bindings for Migration:</strong></p>
+        <pre class="gh-code-block"><code>curl -s -X POST -H "Authorization: Bearer &lt;TOKEN&gt;" https://git.ysnapp.com/api/v1/licenses/FF-ED54-0CED-F732/reset-bindings</code></pre>
+    </div>
+
+    <div class="gh-docs-card">
+        <h3 style="margin-top:0; font-size:15px;">📕 4. Response Models & Error Dictionary</h3>
+        <ul>
+            <li><code>ERR_UNAUTHORIZED</code> (401): Missing or invalid Bearer token.</li>
+            <li><code>ERR_LIC_NOT_FOUND</code> (404): Target license key or ID does not exist.</li>
+            <li><code>ERR_LIC_EXPIRED</code> (403): License validity period has expired.</li>
+            <li><code>ERR_LIC_REVOKED</code> (403): License has been banned or revoked by admin.</li>
+            <li><code>ERR_LIC_DEVICE_LIMIT</code> (403): Maximum allowed active hardware devices quota exceeded.</li>
+            <li><code>ERR_LIC_HWID_CLONED</code> (409): Duplicate machine ID or cloned hardware collision.</li>
+        </ul>
+    </div>
+</section>
+
+<section id="troubleshoot" class="gh-docs-section">
+    <h2><span class="gh-docs-num">18</span> Troubleshooting</h2>
+    <div class="gh-docs-callout warn">⚠️ <strong>HTTP 401 Unauthorized on Push:</strong> Ensure you are using a Personal Access Token with <code class="gh-docs-inline-code">write</code> scope, or check that your web server passes the <code class="gh-docs-inline-code">Authorization</code> header (see <code class="gh-docs-inline-code">docs/deploy.md</code>).</div>
+    <div class="gh-docs-callout warn">⚠️ <strong>SSH «Permission denied (publickey)»:</strong> Verify your public key is added in Settings and run <code class="gh-docs-inline-code">php bin/fix-push.php</code> to set <code class="gh-docs-inline-code">0660</code> permissions on <code class="gh-docs-inline-code">authorized_keys</code>.</div>
+    <div class="gh-docs-callout warn">⚠️ <strong>«Branch is protected» on Push:</strong> The target branch is protected against direct pushes; push to a topic branch and open a Pull Request.</div>
+    <div class="gh-docs-callout warn">⚠️ <strong>Connection timeout during large pushes:</strong> Increase <code class="gh-docs-inline-code">maxReqBodySize</code> and <code class="gh-docs-inline-code">reqTimeout</code> in OpenLiteSpeed configuration (see <code class="gh-docs-inline-code">docs/openlitespeed.conf</code>).</div>
+</section>
+{% endif %}

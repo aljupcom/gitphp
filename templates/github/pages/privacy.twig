@@ -1,0 +1,32 @@
+{% extends "pages/base.twig" %}
+
+{% block page_content %}
+<p><strong>Last updated:</strong> {{ "now"|date("F j, Y") }}</p>
+
+<p>{{ app_name }} ("we", "us", "our") operates the Git repository hosting platform available at <strong>{{ app_url }}</strong> ("the Service"). This Privacy Policy explains what information we collect, how we use it, and the choices you have.</p>
+
+<h2>1. Information We Collect</h2>
+<ul>
+    <li><strong>Account data</strong> — username, email address, and authentication credentials (hashed passwords, optional two-factor authentication).</li>
+    <li><strong>Repository data</strong> — the code, commits, issues, pull requests, comments, and metadata you upload or create.</li>
+    <li><strong>Usage data</strong> — IP address, browser/user-agent, and timestamps used for security, rate limiting, and diagnostics.</li>
+</ul>
+
+<h2>2. How We Use Your Information</h2>
+<p>We use your information to provide and secure the Service, authenticate you, store and serve your repositories, prevent abuse, and send essential account notifications. We do not use your data for third-party advertising.</p>
+
+<h2>3. Data Sharing</h2>
+<p>We do not sell your personal data. Data is shared only with service providers required to operate the platform (for example hosting and storage) and only to the extent needed to provide the Service or comply with the law.</p>
+
+<h2>4. Data Retention</h2>
+<p>Account and repository data is retained for as long as your account is active. You may request deletion of your account and associated data at any time; some data may be retained where required by law.</p>
+
+<h2>5. Your Rights</h2>
+<p>You may access, correct, export, or delete your personal information, change your password, disable two-factor authentication, and revoke active sessions from your account settings.</p>
+
+<h2>6. Security</h2>
+<p>We apply industry-standard safeguards, including TLS in transit, one-way hashed credentials, and optional two-factor authentication. See our <a href="/security">Security page</a> for further details.</p>
+
+<h2>7. Contact</h2>
+<p>Questions about this policy? Please <a href="/contact">contact us</a>.</p>
+{% endblock %}

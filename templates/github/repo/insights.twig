@@ -1,0 +1,235 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.repo.insights_title') }} · {{ repo.name }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" with { can_write: can_write|default(false) } %}
+    {% include "partials/repo-nav.twig" with { active_tab: 'insights' } %}
+
+    <div class="gh-admin-layout" style="margin-top: 1.25rem;">
+        {# ── MOBILE SELECT NAVIGATION (Shown on <= 768px) ── #}
+        <div class="gh-nav-mobile-wrapper" style="margin-bottom: 16px; width: 100%;">
+            <label for="gh-insights-nav-select" style="display: block; font-size: 12px; font-weight: 600; color: var(--gh-fg-muted); margin-bottom: 6px;">{{ t('ui.repo.insights_view') }}</label>
+            <div style="position: relative; width: 100%;">
+                <select id="gh-insights-nav-select" class="gh-select gh-nav-select" onchange="if(this.value) window.location.href=this.value;" style="width: 100%; height: 38px; padding: 0 32px 0 12px; font-size: 13.5px; font-weight: 500; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-subtle); color: var(--gh-fg-default); appearance: none; -webkit-appearance: none; cursor: pointer; box-sizing: border-box;">
+                    <option value="?tab=pulse" {{ active_tab == 'pulse' ? 'selected' : '' }}>{{ t('ui.repo.insights_pulse') }}</option>
+                    <option value="?tab=commit-activity" {{ active_tab == 'commit-activity' ? 'selected' : '' }}>{{ t('ui.repo.insights_commit_activity') }}</option>
+                    <option value="?tab=contributors" {{ active_tab == 'contributors' ? 'selected' : '' }}>{{ t('ui.repo.insights_contributors') }}</option>
+                    <option value="?tab=punchcard" {{ active_tab == 'punchcard' ? 'selected' : '' }}>{{ t('ui.repo.insights_punchcard') }}</option>
+                </select>
+                <svg style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; width: 14px; height: 14px; fill: var(--gh-fg-muted);" viewBox="0 0 16 16"><path d="m4.427 6.427 3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 6H4.604a.25.25 0 0 0-.177.427Z"/></svg>
+            </div>
+        </div>
+
+        {# ── DESKTOP SIDEBAR NAVIGATION (Shown on > 768px) ── #}
+        <nav class="gh-admin-nav gh-nav-desktop" aria-label="{{ t_attr('ui.repo.insights_nav_aria') }}">
+            <div class="gh-admin-nav-title">{{ t('ui.repo.insights_title') }}</div>
+            <a href="?tab=pulse" class="{{ active_tab == 'pulse' ? 'is-active' : '' }}">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0ZM8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm.75 4.75a.75.75 0 0 0-1.5 0v3.5a.75.75 0 0 0 .37.65l2.5 1.5a.75.75 0 1 0 .76-1.3L8.75 7.81V4.75Z"/></svg>
+                <span>{{ t('ui.repo.insights_pulse') }}</span>
+            </a>
+            <a href="?tab=commit-activity" class="{{ active_tab == 'commit-activity' ? 'is-active' : '' }}">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1.75V13.5h13.75a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1-.75-.75V1.75a.75.75 0 0 1 1.5 0Zm14.28 2.53-5.25 5.25a.75.75 0 0 1-1.06 0L7 7.06 4.28 9.78a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.25-3.25a.75.75 0 0 1 1.06 0L10 7.94l4.72-4.72a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z"/></svg>
+                <span>{{ t('ui.repo.insights_commit_activity') }}</span>
+            </a>
+            <a href="?tab=contributors" class="{{ active_tab == 'contributors' ? 'is-active' : '' }}">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 5.5a3.5 3.5 0 1 1 5.898 2.549 5.508 5.508 0 0 1 3.034 4.084.75.75 0 1 1-1.482.235 4 4 0 0 0-7.9 0 .75.75 0 0 1-1.482-.236A5.507 5.507 0 0 1 3.102 8.05 3.493 3.493 0 0 1 2 5.5ZM11 4a3.001 3.001 0 0 1 2.22 5.018 5.01 5.01 0 0 1 2.56 3.012.749.749 0 0 1-.512.92.75.75 0 0 1-.92-.513 3.51 3.51 0 0 0-2.48-2.61.75.75 0 0 1-.532-.892 1.5 1.5 0 1 0-2.672 0 .75.75 0 0 1-.536.892 3.51 3.51 0 0 0-2.48 2.61.75.75 0 1 1-1.432-.408 5.01 5.01 0 0 1 2.56-3.012A3 3 0 0 1 11 4Z"/></svg>
+                <span>{{ t('ui.repo.insights_contributors') }}</span>
+            </a>
+            <a href="?tab=punchcard" class="{{ active_tab == 'punchcard' ? 'is-active' : '' }}">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm6.5-5a.75.75 0 0 1 .75.75v3.69l2.28 2.28a.75.75 0 1 1-1.06 1.06l-2.5-2.5a.75.75 0 0 1-.22-.53V3.75A.75.75 0 0 1 8 3Z"/></svg>
+                <span>{{ t('ui.repo.insights_punchcard') }}</span>
+            </a>
+        </nav>
+
+        {# ── Main Content Area ─────────────────────────────────────── #}
+        <div style="min-width:0;">
+
+            {# ══════════════════════════════════════════════════════════ #}
+            {# 1. COMMIT ACTIVITY (52 Weeks Interactive Bar Chart)       #}
+            {# ══════════════════════════════════════════════════════════ #}
+            {% if active_tab == 'commit-activity' %}
+                <div class="gh-box" style="margin-bottom: 1.5rem;">
+                    <div class="gh-box-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div>
+                            <h3 class="gh-box-title">{{ t('ui.repo.insights_commit_activity_title') }}</h3>
+                            <span style="font-size:12px; color:var(--gh-fg-muted);">{{ t('ui.repo.insights_total_commits_branch', {count: total_commits}) }} <code>{{ current_ref }}</code></span>
+                        </div>
+                        <span style="font-size:12px; color:var(--gh-fg-muted); background:var(--gh-bg-subtle); padding:2px 8px; border-radius:10px; border:1px solid var(--gh-border-default);">
+                            {{ t('ui.repo.insights_peak', {count: max_week_commits}) }}
+                        </span>
+                    </div>
+                    <div style="padding: 1.5rem 1.25rem 1rem;">
+                        {# 52-Week SVG Bar Chart #}
+                        <div style="position:relative; width:100%; height:160px;">
+                            <svg viewBox="0 0 780 150" style="width:100%; height:100%; overflow:visible;" preserveAspectRatio="none">
+                                {# Grid baseline #}
+                                <line x1="0" y1="135" x2="780" y2="135" stroke="var(--gh-border-default)" stroke-width="1" />
+                                <line x1="0" y1="70" x2="780" y2="70" stroke="var(--gh-border-muted)" stroke-width="1" stroke-dasharray="3,3" opacity="0.4" />
+                                
+                                {% for w in weeks %}
+                                    {% set x = w.index * 15 %}
+                                    {% set bar_height = w.total > 0 ? (w.total / max_week_commits * 120)|round : 2 %}
+                                    {% set y = 135 - bar_height %}
+                                    {% set color = w.total > 0 ? '#238636' : 'rgba(110,118,129,0.15)' %}
+                                    {% if w.total >= (max_week_commits * 0.75) %}
+                                        {% set color = '#3fb950' %}
+                                    {% endif %}
+                                    <g class="gh-chart-bar-group" data-tip="{{ t_attr('ui.repo.insights_week_of', {date: w.label, count: w.total}) }}">
+                                        <rect x="{{ x }}" y="{{ y }}" width="11" height="{{ bar_height }}"
+                                              rx="2" fill="{{ color }}"
+                                              style="transition: all .15s ease; cursor: pointer;">
+                                            <title>{{ t('ui.repo.insights_week_of', {date: w.label, count: w.total}) }}</title>
+                                        </rect>
+                                    </g>
+                                {% endfor %}
+                            </svg>
+                        </div>
+
+                        {# Months labels along bottom #}
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--gh-fg-muted); margin-top:8px; border-top:1px solid var(--gh-border-default); padding-top:6px;">
+                            <span>{{ t('ui.repo.insights_year_ago') }}</span>
+                            <span>{{ t('ui.repo.insights_months_ago', {count: 6}) }}</span>
+                            <span>{{ t('ui.repo.insights_months_ago', {count: 3}) }}</span>
+                            <span>{{ t('ui.repo.insights_this_week') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {# Daily Distribution Table / Breakdown #}
+                <div class="gh-box">
+                    <div class="gh-box-header">
+                        <h3 class="gh-box-title">{{ t('ui.repo.insights_recent_summary') }}</h3>
+                    </div>
+                    <div style="padding: 1rem; display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                        <div style="background:var(--gh-bg-subtle); padding:12px; border-radius:8px; border:1px solid var(--gh-border-default); text-align:center;">
+                            <span style="font-size:11px; color:var(--gh-fg-muted); text-transform:uppercase; font-weight:600;">{{ t('ui.repo.insights_last_7d') }}</span>
+                            <div style="font-size:22px; font-weight:700; color:var(--gh-fg-default); margin-top:4px;">{{ pulse.commits_7d }}</div>
+                        </div>
+                        <div style="background:var(--gh-bg-subtle); padding:12px; border-radius:8px; border:1px solid var(--gh-border-default); text-align:center;">
+                            <span style="font-size:11px; color:var(--gh-fg-muted); text-transform:uppercase; font-weight:600;">{{ t('ui.repo.insights_last_30d') }}</span>
+                            <div style="font-size:22px; font-weight:700; color:var(--gh-accent-fg, #58a6ff); margin-top:4px;">{{ pulse.commits_30d }}</div>
+                        </div>
+                        <div style="background:var(--gh-bg-subtle); padding:12px; border-radius:8px; border:1px solid var(--gh-border-default); text-align:center;">
+                            <span style="font-size:11px; color:var(--gh-fg-muted); text-transform:uppercase; font-weight:600;">{{ t('ui.repo.insights_active_devs') }}</span>
+                            <div style="font-size:22px; font-weight:700; color:#3fb950; margin-top:4px;">{{ pulse.active_devs }}</div>
+                        </div>
+                        <div style="background:var(--gh-bg-subtle); padding:12px; border-radius:8px; border:1px solid var(--gh-border-default); text-align:center;">
+                            <span style="font-size:11px; color:var(--gh-fg-muted); text-transform:uppercase; font-weight:600;">{{ t('ui.repo.insights_all_time') }}</span>
+                            <div style="font-size:22px; font-weight:700; color:var(--gh-fg-default); margin-top:4px;">{{ total_commits }}</div>
+                        </div>
+                    </div>
+                </div>
+
+            {# ══════════════════════════════════════════════════════════ #}
+            {# 2. PUNCH CARD (7 Days x 24 Hours Bubble Heatmap)          #}
+            {# ══════════════════════════════════════════════════════════ #}
+            {% elseif active_tab == 'punchcard' %}
+                <div class="gh-box">
+                    <div class="gh-box-header" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h3 class="gh-box-title">{{ t('ui.repo.insights_punchcard_title') }}</h3>
+                            <span style="font-size:12px; color:var(--gh-fg-muted);">{{ t('ui.repo.insights_punchcard_sub') }}</span>
+                        </div>
+                        <span style="font-size:12px; color:var(--gh-fg-muted);">{{ t('ui.repo.insights_peak_hour', {count: max_punch}) }}</span>
+                    </div>
+                    <div style="padding: 1.5rem; overflow-x:auto;">
+                        {% set day_keys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] %}
+                        <div style="min-width:640px;">
+                            {# Hours Header (00..23) #}
+                            <div style="display:grid; grid-template-columns: 50px repeat(24, 1fr); gap:2px; margin-bottom:8px; font-size:10px; color:var(--gh-fg-muted); text-align:center;">
+                                <div></div>
+                                {% for h in 0..23 %}
+                                    <div>{{ h % 3 == 0 ? (h == 0 ? '12a' : (h < 12 ? h ~ 'a' : (h == 12 ? '12p' : (h - 12) ~ 'p'))) : '·' }}</div>
+                                {% endfor %}
+                            </div>
+
+                            {# 7 Days Rows #}
+                            {% for d_idx, day_key in day_keys %}
+                                <div style="display:grid; grid-template-columns: 50px repeat(24, 1fr); gap:2px; align-items:center; margin-bottom:6px;">
+                                    <div style="font-size:12px; font-weight:600; color:var(--gh-fg-muted);">{{ t('ui.repo.insights_day_' ~ day_key) }}</div>
+                                    {% for h in 0..23 %}
+                                        {% set count = punchcard[d_idx][h] %}
+                                        {% set size = count > 0 ? (count / max_punch * 18)|round + 4 : 3 %}
+                                        {% set opacity = count > 0 ? (0.4 + (count / max_punch * 0.6)) : 0.15 %}
+                                        <div style="display:flex; align-items:center; justify-content:center; height:24px; background:var(--gh-bg-subtle); border-radius:4px;"
+                                             title="{{ t_attr('ui.repo.insights_hour_commits', {day: t('ui.repo.insights_day_' ~ day_key), hour: h, count: count}) }}">
+                                            <div style="width:{{ size }}px; height:{{ size }}px; border-radius:50%; background:{{ count > 0 ? 'var(--gh-accent-fg, #58a6ff)' : 'var(--gh-fg-muted)' }}; opacity:{{ opacity }}; transition:transform .15s ease;"
+                                                 onmouseover="this.style.transform='scale(1.4)'" onmouseout="this.style.transform='scale(1)'"></div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+            {# ══════════════════════════════════════════════════════════ #}
+            {# 3. CONTRIBUTORS LEADERBOARD & SPARKLINES                  #}
+            {# ══════════════════════════════════════════════════════════ #}
+            {% elseif active_tab == 'contributors' %}
+                <div class="gh-box">
+                    <div class="gh-box-header">
+                        <h3 class="gh-box-title">{{ t('ui.repo.insights_contributors_to', {count: contributors|length, branch: branch}) }}</h3>
+                    </div>
+                    <div style="padding: 1rem;">
+                        {% for c in contributors %}
+                            <div style="display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--gh-border-default); flex-wrap:wrap;">
+                                {# Avatar #}
+                                <span style="width:36px; height:36px; border-radius:50%; background:rgba(88,166,255,0.15); color:var(--gh-accent-fg,#58a6ff); display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; border:1px solid var(--gh-border-default);">
+                                    {{ c.initial }}
+                                </span>
+
+                                {# Info #}
+                                <div style="flex:1; min-width:180px;">
+                                    <div style="font-weight:600; font-size:14px; color:var(--gh-fg-default);">{{ c.name }}</div>
+                                    <div style="font-size:12px; color:var(--gh-fg-muted); margin-top:2px;">
+                                        {{ t_html('ui.repo.insights_contributor_stats', {count: c.count, percent: c.percent}) }} · {{ t('ui.repo.insights_first_commit', {time: c.first_ts|time_ago}) }}
+                                    </div>
+                                </div>
+
+                                {# Mini 52-Week Sparkline #}
+                                <div style="width:200px; height:30px; display:flex; align-items:flex-end; gap:1px;" title="{{ t_attr('ui.repo.insights_week_activity', {name: c.name}) }}">
+                                    {% for w_count in c.weekly %}
+                                        {% set h = w_count > 0 ? (w_count / c.weekly_max * 28)|round + 2 : 1 %}
+                                        <div style="flex:1; height:{{ h }}px; background:{{ w_count > 0 ? '#3fb950' : 'rgba(110,118,129,0.15)' }}; border-radius:1px;"></div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="gh-muted">{{ t('ui.repo.insights_no_contributors') }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            {# ══════════════════════════════════════════════════════════ #}
+            {# 4. PULSE OVERVIEW                                         #}
+            {# ══════════════════════════════════════════════════════════ #}
+            {% elseif active_tab == 'pulse' %}
+                <div class="gh-stat-grid" style="margin-bottom: 1.5rem;">
+                    <div class="gh-stat-card"><span class="gh-stat-label">{{ t('ui.repo.insights_commits_7d') }}</span><span class="gh-stat-value">{{ pulse.commits_7d }}</span></div>
+                    <div class="gh-stat-card"><span class="gh-stat-label">{{ t('ui.repo.insights_commits_30d') }}</span><span class="gh-stat-value">{{ pulse.commits_30d }}</span></div>
+                    <div class="gh-stat-card"><span class="gh-stat-label">{{ t('ui.repo.insights_open_issues') }}</span><span class="gh-stat-value">{{ pulse.open_issues }}</span></div>
+                    <div class="gh-stat-card"><span class="gh-stat-label">{{ t('ui.repo.insights_merged_prs') }}</span><span class="gh-stat-value">{{ pulse.merged_prs }}</span></div>
+                </div>
+
+                <div class="gh-box">
+                    <div class="gh-box-header"><h3 class="gh-box-title">{{ t('ui.repo.insights_pulse_summary') }}</h3></div>
+                    <div style="padding: 1.25rem; line-height: 1.8; color:var(--gh-fg-default);">
+                        <p>
+                            {{ t_html('ui.repo.insights_monthly_summary', {commits: pulse.commits_30d, ref: current_ref, authors: pulse.active_devs}) }}
+                        </p>
+                        <ul style="padding-left:1.4rem; margin-top:10px; color:var(--gh-fg-muted);">
+                            <li>{{ t_html('ui.repo.insights_open_closed_issues', {open: pulse.open_issues, closed: pulse.closed_issues}) }}</li>
+                            <li>{{ t_html('ui.repo.insights_open_merged_prs', {open: pulse.open_prs, merged: pulse.merged_prs}) }}</li>
+                            <li>{{ t_html('ui.repo.insights_total_history', {count: total_commits}) }}</li>
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

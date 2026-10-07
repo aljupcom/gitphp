@@ -1,0 +1,118 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.repo.commits') }} — {{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'commits' } %}
+
+    <div class="gh-file-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0 12px 0; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            {% if branches|length > 0 %}
+                {% set ref_base = "/" ~ owner ~ "/" ~ repo.slug ~ "/commits" %}
+                {% include "partials/ref-selector.twig" with { base_url: ref_base } %}
+            {% endif %}
+
+            <a href="/{{ owner }}/{{ repo.slug }}/branches" class="gh-btn gh-btn-sm" style="display: flex; align-items: center; gap: 5px;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"/></svg>
+                <strong>{{ branches|length }}</strong> <span>{{ t(branches|length == 1 ? 'ui.repo.branch' : 'ui.repo.branches') }}</span>
+            </a>
+
+            <a href="/{{ owner }}/{{ repo.slug }}/tags" class="gh-btn gh-btn-sm" style="display: flex; align-items: center; gap: 5px;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg>
+                <strong>{{ tags|length }}</strong> <span>{{ t(tags|length == 1 ? 'ui.repo.tag' : 'ui.repo.tags') }}</span>
+            </a>
+        </div>
+
+        <span class="gh-toolbar-stat gh-mono" style="font-weight: 600; font-size: 13px; color: var(--gh-fg-default);">
+            {{ t('ui.repo.commits_count', {count: total}) }}
+        </span>
+    </div>
+
+    {% if commits|length > 0 %}
+        {% if page == 1 %}
+            {% set latest = commits[0] %}
+            <div class="gh-latest-commit-box" id="latest-commit-banner" data-latest-hash="{{ latest.hash }}" data-latest-short="{{ latest.short_hash }}" style="display: flex; justify-content: space-between; align-items: center; background: rgba(31, 111, 235, 0.06); border: 1px solid rgba(56, 139, 253, 0.35); border-left: 4px solid #1f6feb; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; gap: 14px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                    <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 9px; border-radius: 4px; background: #238636; color: #fff;">
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm3.78 6.97a.75.75 0 0 0-1.06-1.06L7.25 9.38 5.28 7.41a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l4-4Z"/></svg>
+                        HEAD
+                    </span>
+                    <span style="font-size: 13px; color: var(--gh-fg-muted); white-space: nowrap; font-weight: 500;">{{ t('ui.repo.latest_commit') }}:</span>
+                    <a href="/{{ owner }}/{{ repo.slug }}/commit/{{ latest.hash }}" style="font-size: 13px; font-weight: 600; color: var(--gh-fg-default); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ latest.message }}">
+                        {{ latest.message }}
+                    </a>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                    <span class="gh-hash-chip" style="background: rgba(31, 111, 235, 0.15); border: 1px solid rgba(56, 139, 253, 0.4); padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+                        <a class="gh-mono" href="/{{ owner }}/{{ repo.slug }}/commit/{{ latest.hash }}" style="color: #58a6ff; font-weight: 700; font-size: 12px; text-decoration: none;">{{ latest.short_hash }}</a>
+                        <button type="button" class="gh-copy-chip" data-copy="{{ latest.hash }}" aria-label="{{ t_attr('ui.repo.copy_hash_aria') }}" title="{{ t_attr('ui.repo.copy_hash', {hash: latest.hash}) }}">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+                        </button>
+                    </span>
+                    <a href="/{{ owner }}/{{ repo.slug }}/commit/{{ latest.hash }}" class="gh-btn gh-btn-sm" style="font-size: 12px; gap: 5px;">
+                        <span>{{ t('ui.repo.view_commit') }}</span>
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="m6.22 3.22 4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L8.94 8 5.22 4.28a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215Z"/></svg>
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="gh-commit-list">
+            {% for c in commits %}
+                {% set is_latest = (page == 1 and loop.first) %}
+                <div class="gh-commit-item{{ is_latest ? ' gh-commit-item-latest' }}" {% if is_latest %}id="latest-commit" data-latest="true" data-commit-hash="{{ c.hash }}" data-short-hash="{{ c.short_hash }}" style="border-left: 3px solid #238636; background: rgba(35, 134, 54, 0.03);"{% endif %}>
+                    <span class="gh-commit-avatar" aria-hidden="true">{{ c.author_name|slice(0, 1)|upper }}</span>
+                    <div class="gh-commit-main">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <a class="gh-commit-msg" href="/{{ owner }}/{{ repo.slug }}/commit/{{ c.hash }}" style="{{ is_latest ? 'font-weight: 600;' : '' }}">{{ c.message }}</a>
+                            {% if is_latest %}
+                                <span class="gh-badge-latest" style="display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; border-radius: 12px; background: rgba(35, 134, 54, 0.15); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.4);">
+                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm3.78 6.97a.75.75 0 0 0-1.06-1.06L7.25 9.38 5.28 7.41a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l4-4Z"/></svg>
+                                    {{ t('ui.repo.latest_head') }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="gh-commit-byline">
+                            <span class="gh-hash-chip{{ is_latest ? ' gh-hash-chip-latest' }}" style="{{ is_latest ? 'background: rgba(31, 111, 235, 0.15); border-color: rgba(56, 139, 253, 0.4);' : '' }}">
+                                <a class="gh-mono" href="/{{ owner }}/{{ repo.slug }}/commit/{{ c.hash }}" style="{{ is_latest ? 'color: #58a6ff; font-weight: 700;' : '' }}">{{ c.short_hash }}</a>
+                                <button type="button" class="gh-copy-chip" data-copy="{{ c.hash }}" aria-label="{{ t_attr('ui.repo.copy_hash_aria') }}" title="{{ t_attr('ui.repo.copy_hash', {hash: c.hash}) }}">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+                                </button>
+                            </span>
+                            <span class="gh-commit-author">{{ c.author_name }}</span>
+                            <span class="gh-commit-when">{{ t('ui.repo.committed') }} <time datetime="{{ c.date }}">{{ c.date|time_ago }}</time></span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if has_prev or has_next %}
+            <nav class="gh-pagination" aria-label="{{ t_attr('ui.repo.commits_pagination') }}">
+                {% if has_prev %}
+                    <a class="gh-btn" href="{{ base_url }}?page={{ page - 1 }}">
+                        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.78 12.78a.75.75 0 0 1-1.06 0L4.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L6.06 8l3.72 3.72a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215Z"/></svg>
+                        <span>{{ t('ui.repo.newer') }}</span>
+                    </a>
+                {% endif %}
+                <span class="gh-pagination-status">{{ page }}</span>
+                {% if has_next %}
+                    <a class="gh-btn" href="{{ base_url }}?page={{ page + 1 }}">
+                        <span>{{ t('ui.repo.older') }}</span>
+                        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L9.94 8 6.22 4.28a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734-.215Z"/></svg>
+                    </a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="gh-empty">
+            <svg width="48" height="48" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm7-3.25v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.751.751 0 0 1 7 8.25v-3.5a.75.75 0 0 1 1.5 0Z"/></svg>
+            <h2>{{ t('ui.repo.no_commits') }}</h2>
+            <p>{{ t('ui.repo.no_commits_sub') }}</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

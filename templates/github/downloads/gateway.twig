@@ -1,0 +1,722 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.gateway.page_title', {'title': file.title, 'app': app_name}) }}{% endblock %}
+
+{% block content %}
+<div class="gh-container" style="max-width: 1060px; margin: 2.5rem auto 4.5rem auto; padding: 0 1rem;">
+
+    <div class="gateway-layout">
+        <!-- Main Download Card -->
+        <div class="gateway-main-card">
+            
+            <!-- Header Banner -->
+            <div class="gateway-card-header">
+                <div class="gateway-icon-badge">
+                    <svg width="34" height="34" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/>
+                    </svg>
+                </div>
+
+                <div class="gateway-folder-pill">
+                    <svg class="ti ti-folder" style="width: 14px; height: 14px;"><use href="#ti-folder"/></svg>
+                    <span>{{ folder_name|default('General') }}</span>
+                </div>
+
+                <h1 class="gateway-file-title">
+                    {{ file.title }}
+                </h1>
+                <p class="gateway-file-name" title="{{ file.original_name }}">
+                    {{ file.original_name }}
+                </p>
+            </div>
+
+            <!-- Card Body -->
+            <div class="gateway-card-body">
+                <!-- Stats Row -->
+                <div class="gateway-stats-grid">
+                    <div class="gateway-stat-box">
+                        <span class="gateway-stat-label">
+                            <svg class="ti ti-database" style="width:13px; height:13px; vertical-align:-1px; color:#1f6feb;"><use href="#ti-database"/></svg>
+                            {{ t('ui.gateway.file_size') }}
+                        </span>
+                        <strong class="gateway-stat-val">
+                            {% if file.file_size > 1073741824 %}
+                                {{ (file.file_size / 1073741824)|number_format(2) }} GB
+                            {% elseif file.file_size > 1048576 %}
+                                {{ (file.file_size / 1048576)|number_format(2) }} MB
+                            {% else %}
+                                {{ (file.file_size / 1024)|number_format(1) }} KB
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="gateway-stat-box">
+                        <span class="gateway-stat-label">
+                            <svg class="ti ti-arrow-down-circle" style="width:13px; height:13px; vertical-align:-1px; color:#2ea043;"><use href="#ti-arrow-down-circle"/></svg>
+                            {{ t('ui.gateway.downloads') }}
+                        </span>
+                        <strong class="gateway-stat-val" style="color: #2ea043;">
+                            {{ t('ui.gateway.downloads_count', {'count': file.download_count}) }}
+                        </strong>
+                    </div>
+                </div>
+
+                {% if file_available is defined and file_available == false %}
+                    <div class="gateway-alert-box alert-unavailable">
+                        <svg class="ti ti-alert-circle" style="width: 20px; height: 20px; flex-shrink:0;"><use href="#ti-alert-circle"/></svg>
+                        <span>{{ t('ui.gateway.file_unavailable') }}</span>
+                    </div>
+                {% elseif not is_unlocked %}
+                    <!-- Password Protection Gate -->
+                    <form method="POST" action="/d/{{ file.short_code }}/unlock" class="gateway-unlock-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                        <div style="margin-bottom: 1.25rem;">
+                            <label for="password" style="display: block; font-weight: 600; font-size: 0.92rem; margin-bottom: 0.5rem; color: var(--gh-text);">
+                                <svg class="ti ti-lock"><use href="#ti-lock"/></svg> {{ t('ui.gateway.enter_password') }}
+                            </label>
+                            <input type="password" id="password" name="password" required placeholder="{{ t_attr('ui.gateway.password_placeholder') }}" class="gh-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 8px;">
+                        </div>
+
+                        <button type="submit" class="gh-btn gh-btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; font-weight: 600; justify-content: center; border-radius: 8px;">
+                            {{ t('ui.gateway.unlock_button') }}
+                        </button>
+                    </form>
+                {% else %}
+                    <!-- Direct Download Button -->
+                    <div style="text-align: center;">
+                        <a href="{{ download_url|default('/d/' ~ file.short_code ~ '/get/' ~ download_token) }}" class="gateway-download-btn">
+                            <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/>
+                            </svg>
+                            <span>{{ t('ui.gateway.download_now') }}</span>
+                        </a>
+
+                        <div class="gateway-action-row">
+                            <button type="button" class="gh-btn gateway-tool-btn" onclick="copyCurrentLink()">
+                                <svg class="ti ti-link"><use href="#ti-link"/></svg>
+                                <span id="copyLinkText">{{ t('ui.gateway.copy_download_link') }}</span>
+                            </button>
+
+                            <button type="button" class="gh-btn gateway-tool-btn gateway-tool-report" onclick="openReportModal()">
+                                <svg class="ti ti-flag"><use href="#ti-flag"/></svg>
+                                <span>{{ t('ui.gateway.report_broken_link') }}</span>
+                            </button>
+                        </div>
+
+                        <p class="gateway-security-notice">
+                            <svg class="ti ti-shield-check" style="color: #2ea043; width: 17px; height: 17px;"><use href="#ti-shield-check"/></svg>
+                            <span>{{ t('ui.gateway.security_notice') }}</span>
+                        </p>
+                    </div>
+                {% endif %}
+
+                <!-- Report Link Trigger for locked / unavailable states -->
+                {% if not is_unlocked or (file_available is defined and file_available == false) %}
+                    <div style="margin-top: 1.5rem; text-align: center; border-top: 1px solid var(--gh-border); padding-top: 1.25rem;">
+                        <button type="button" class="gh-btn gateway-tool-btn gateway-tool-report" onclick="openReportModal()">
+                            <svg class="ti ti-flag"><use href="#ti-flag"/></svg>
+                            <span>{{ t('ui.gateway.report_broken_link') }}</span>
+                        </button>
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <!-- Sidebar for Large Screens Only (min-width: 992px) -->
+        <aside class="gateway-sidebar">
+            
+            <!-- File Verification Card -->
+            <div class="gateway-sidebar-widget">
+                <div class="gateway-widget-header header-security">
+                    <svg class="ti ti-shield-lock" style="color: #1f6feb; width: 18px; height: 18px;"><use href="#ti-shield-lock"/></svg>
+                    <h3>{{ t('ui.gateway.sidebar_security') }}</h3>
+                </div>
+
+                <div class="gateway-widget-content">
+                    <div class="gateway-badge-verified">
+                        <svg class="ti ti-circle-check" style="width: 17px; height: 17px; flex-shrink: 0;"><use href="#ti-circle-check"/></svg>
+                        <span>{{ t('ui.gateway.sidebar_status_clean') }}</span>
+                    </div>
+
+                    <div style="margin-top: 0.85rem; font-size: 0.82rem; color: var(--gh-text-muted); line-height: 1.5;">
+                        {{ t('ui.gateway.sidebar_status_verified') }}
+                    </div>
+
+                    {% if file_sha256 %}
+                        <div style="margin-top: 1.25rem;">
+                            <span class="gateway-meta-label">{{ t('ui.gateway.sidebar_hash') }}</span>
+                            <div class="gateway-hash-box">
+                                <code id="fileHashVal">{{ file_sha256 }}</code>
+                                <button type="button" class="gateway-hash-copy-btn" onclick="copyHash()" title="{{ t_attr('ui.gateway.sidebar_hash_copy') }}">
+                                    <svg class="ti ti-copy" style="width: 15px; height: 15px;"><use href="#ti-copy"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Details & Activity Widget -->
+            <div class="gateway-sidebar-widget">
+                <div class="gateway-widget-header header-activity">
+                    <svg class="ti ti-activity" style="color: #2ea043; width: 18px; height: 18px;"><use href="#ti-activity"/></svg>
+                    <h3>{{ t('ui.gateway.sidebar_recent_activity') }}</h3>
+                </div>
+
+                <div class="gateway-widget-content">
+                    <ul class="gateway-meta-list">
+                        <li>
+                            <span class="gateway-meta-label">{{ t('ui.gateway.sidebar_mime') }}</span>
+                            <span class="gateway-meta-val">{{ file.mime_type|default('application/octet-stream') }}</span>
+                        </li>
+                        <li>
+                            <span class="gateway-meta-label">{{ t('ui.gateway.sidebar_uploaded_at') }}</span>
+                            <span class="gateway-meta-val">{{ file.created_at|date('Y-m-d H:i') }}</span>
+                        </li>
+                        <li>
+                            <span class="gateway-meta-label">{{ t('ui.gateway.sidebar_downloads') }}</span>
+                            <span class="gateway-meta-val" style="font-weight: 700; color: #2ea043;">{{ file.download_count }}</span>
+                        </li>
+                    </ul>
+
+                    <div class="gateway-activity-bubble">
+                        <div class="activity-pulse-dot"></div>
+                        <div style="font-size: 0.82rem; color: var(--gh-text-muted);">
+                            <strong style="color: var(--gh-text);">{{ t('ui.gateway.sidebar_recent_activity') }}:</strong>
+                            <div style="margin-top: 2px;">{{ t('ui.gateway.sidebar_activity_desc') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+    </div>
+
+</div>
+
+<!-- Modal: Report Broken Link -->
+<div id="reportModal" class="gateway-modal" style="display: none;">
+    <div class="gateway-modal-backdrop" onclick="closeReportModal()"></div>
+    <div class="gateway-modal-dialog">
+        <div class="gateway-modal-header">
+            <h3 style="margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem; color: var(--gh-text);">
+                <svg class="ti ti-flag" style="color: #cf222e; width: 18px; height: 18px;"><use href="#ti-flag"/></svg>
+                {{ t('ui.gateway.report_modal_title') }}
+            </h3>
+            <button type="button" class="gateway-modal-close" onclick="closeReportModal()">&times;</button>
+        </div>
+
+        <form method="POST" action="/d/{{ file.short_code }}/report">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="gateway-modal-body">
+                <p style="margin: 0 0 1rem 0; font-size: 0.88rem; color: var(--gh-text-muted); line-height: 1.5;">
+                    {{ t('ui.gateway.report_broken_desc') }}
+                </p>
+
+                <div style="margin-bottom: 1.25rem;">
+                    <label for="reportReason" style="display: block; font-weight: 600; font-size: 0.88rem; margin-bottom: 0.4rem; color: var(--gh-text);">
+                        {{ t('ui.gateway.report_reason') }} <span style="color: #cf222e;">*</span>
+                    </label>
+                    <select id="reportReason" name="reason" required class="gh-input" style="width: 100%; padding: 0.65rem; border-radius: 6px;">
+                        <option value="">-- {{ t('ui.gateway.report_reason_placeholder') }} --</option>
+                        <option value="file_missing">{{ t('ui.gateway.report_reason_404') }}</option>
+                        <option value="corrupt_hash">{{ t('ui.gateway.report_reason_corrupt') }}</option>
+                        <option value="slow_timeout">{{ t('ui.gateway.report_reason_slow') }}</option>
+                        <option value="wrong_version">{{ t('ui.gateway.report_reason_wrong') }}</option>
+                        <option value="other">{{ t('ui.gateway.report_reason_other') }}</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label for="reportDetails" style="display: block; font-weight: 600; font-size: 0.88rem; margin-bottom: 0.4rem; color: var(--gh-text);">
+                        {{ t('ui.gateway.report_details') }}
+                    </label>
+                    <textarea id="reportDetails" name="details" rows="3" class="gh-input" style="width: 100%; padding: 0.65rem; border-radius: 6px; resize: vertical;" placeholder="{{ t_attr('ui.gateway.report_details_placeholder') }}"></textarea>
+                </div>
+            </div>
+
+            <div class="gateway-modal-footer">
+                <button type="button" class="gh-btn" onclick="closeReportModal()">{{ t('ui.gateway.report_close') }}</button>
+                <button type="submit" class="gh-btn gh-btn-primary" style="background: #cf222e; border-color: #cf222e; color: #fff;">
+                    {{ t('ui.gateway.report_submit') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Responsive Gateway Layout */
+.gateway-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+@media (min-width: 992px) {
+    .gateway-layout {
+        grid-template-columns: 1fr 340px;
+    }
+    .gateway-sidebar {
+        display: block !important;
+    }
+}
+
+/* Sidebar is strictly hidden on mobile and tablets */
+.gateway-sidebar {
+    display: none;
+}
+
+.gateway-main-card {
+    background: var(--gh-bg-secondary);
+    border: 1px solid var(--gh-border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s ease;
+}
+
+.gateway-card-header {
+    padding: 2.75rem 2rem 2.25rem 2rem;
+    text-align: center;
+    border-bottom: 1px solid var(--gh-border);
+    background: linear-gradient(180deg, rgba(31, 111, 235, 0.08) 0%, transparent 100%);
+    position: relative;
+}
+
+.gateway-icon-badge {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1f6feb 0%, #1158c7 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem auto;
+    box-shadow: 0 6px 20px rgba(31, 111, 235, 0.35);
+}
+
+.gateway-folder-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(31, 111, 235, 0.1);
+    color: #1f6feb;
+    border: 1px solid rgba(31, 111, 235, 0.22);
+    border-radius: 20px;
+    padding: 0.28rem 0.95rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.85rem;
+}
+
+.gateway-file-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem 0;
+    color: var(--gh-text);
+    word-break: break-word;
+    line-height: 1.35;
+}
+
+.gateway-file-name {
+    margin: 0;
+    color: var(--gh-text-muted);
+    font-size: 0.9rem;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    word-break: break-all;
+}
+
+.gateway-card-body {
+    padding: 2.25rem 2rem;
+}
+
+/* Distinctive Stats Cards */
+.gateway-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.gateway-stat-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    background: var(--gh-bg);
+    border: 1px solid var(--gh-border);
+    border-radius: 12px;
+    padding: 1.15rem 1.25rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.gateway-stat-box:hover {
+    border-color: rgba(31, 111, 235, 0.4);
+    transform: translateY(-2px);
+}
+
+.gateway-stat-label {
+    font-size: 0.76rem;
+    color: var(--gh-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.gateway-stat-val {
+    font-size: 1.2rem;
+    color: var(--gh-text);
+    font-weight: 800;
+}
+
+.gateway-alert-box {
+    background: rgba(219, 168, 34, 0.12);
+    border: 1px solid rgba(219, 168, 34, 0.4);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-size: 0.92rem;
+    color: var(--gh-text);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.gateway-download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 1.05rem 1.5rem;
+    font-size: 1.12rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(180deg, #2ea043 0%, #238636 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    text-decoration: none;
+    box-shadow: 0 6px 20px rgba(46, 160, 67, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gateway-download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(46, 160, 67, 0.45);
+    color: #fff;
+}
+
+.gateway-download-btn:active {
+    transform: translateY(0);
+}
+
+.gateway-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.gateway-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    border-radius: 8px;
+    background: var(--gh-bg);
+    border: 1px solid var(--gh-border);
+    color: var(--gh-text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gateway-tool-btn:hover {
+    background: var(--gh-bg-secondary);
+    border-color: rgba(31, 111, 235, 0.5);
+    color: #1f6feb;
+}
+
+.gateway-tool-report {
+    color: #cf222e !important;
+    border-color: rgba(207, 34, 46, 0.3) !important;
+}
+
+.gateway-tool-report:hover {
+    background: rgba(207, 34, 46, 0.08) !important;
+    border-color: #cf222e !important;
+}
+
+.gateway-security-notice {
+    margin: 1.5rem 0 0 0;
+    font-size: 0.84rem;
+    color: var(--gh-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Sidebar Distinctive Widgets */
+.gateway-sidebar-widget {
+    background: var(--gh-bg-secondary);
+    border: 1px solid var(--gh-border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+}
+
+.gateway-widget-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--gh-border);
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.gateway-widget-header.header-security {
+    background: linear-gradient(90deg, rgba(31, 111, 235, 0.08) 0%, transparent 100%);
+    border-top: 3px solid #1f6feb;
+}
+
+.gateway-widget-header.header-activity {
+    background: linear-gradient(90deg, rgba(46, 160, 67, 0.08) 0%, transparent 100%);
+    border-top: 3px solid #2ea043;
+}
+
+.gateway-widget-header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--gh-text);
+}
+
+.gateway-widget-content {
+    padding: 1.25rem;
+}
+
+.gateway-badge-verified {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    background: rgba(46, 160, 67, 0.12);
+    color: #2ea043;
+    border: 1px solid rgba(46, 160, 67, 0.32);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.gateway-hash-box {
+    display: flex;
+    align-items: center;
+    background: var(--gh-bg);
+    border: 1px solid var(--gh-border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    margin-top: 0.4rem;
+    gap: 0.5rem;
+}
+
+.gateway-hash-box code {
+    font-size: 0.72rem;
+    color: var(--gh-text);
+    word-break: break-all;
+    flex-grow: 1;
+    user-select: all;
+    font-family: monospace;
+}
+
+.gateway-hash-copy-btn {
+    background: transparent;
+    border: none;
+    color: var(--gh-text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+}
+
+.gateway-hash-copy-btn:hover {
+    color: #1f6feb;
+}
+
+.gateway-meta-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.gateway-meta-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    border-bottom: 1px dashed var(--gh-border);
+    padding-bottom: 0.55rem;
+}
+
+.gateway-meta-list li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.gateway-meta-label {
+    color: var(--gh-text-muted);
+    font-size: 0.82rem;
+}
+
+.gateway-meta-val {
+    color: var(--gh-text);
+    font-family: monospace;
+    font-weight: 500;
+}
+
+.gateway-activity-bubble {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: var(--gh-bg);
+    border: 1px solid var(--gh-border);
+    border-radius: 10px;
+    padding: 0.9rem;
+    margin-top: 1.25rem;
+}
+
+.activity-pulse-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #2ea043;
+    margin-top: 0.3rem;
+    box-shadow: 0 0 0 0 rgba(46, 160, 67, 0.7);
+    animation: pulse-ring 2s infinite;
+    flex-shrink: 0;
+}
+
+@keyframes pulse-ring {
+    0% {
+        box-shadow: 0 0 0 0 rgba(46, 160, 67, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(46, 160, 67, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(46, 160, 67, 0);
+    }
+}
+
+/* Modal CSS */
+.gateway-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gateway-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(3px);
+}
+
+.gateway-modal-dialog {
+    position: relative;
+    background: var(--gh-bg-secondary);
+    border: 1px solid var(--gh-border);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 480px;
+    margin: 1.5rem;
+    box-shadow: 0 16px 45px rgba(0,0,0,0.35);
+    z-index: 1051;
+    overflow: hidden;
+}
+
+.gateway-modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--gh-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gateway-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--gh-text-muted);
+    cursor: pointer;
+}
+
+.gateway-modal-body {
+    padding: 1.5rem;
+}
+
+.gateway-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--gh-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    background: rgba(0, 0, 0, 0.02);
+}
+</style>
+
+<script>
+function openReportModal() {
+    document.getElementById('reportModal').style.display = 'flex';
+}
+
+function closeReportModal() {
+    document.getElementById('reportModal').style.display = 'none';
+}
+
+function copyCurrentLink() {
+    const url = window.location.href.split('?')[0];
+    navigator.clipboard.writeText(url).then(() => {
+        const textSpan = document.getElementById('copyLinkText');
+        const orig = textSpan.innerText;
+        textSpan.innerText = "{{ t('ui.gateway.link_copied') }}";
+        setTimeout(() => { textSpan.innerText = orig; }, 3000);
+    });
+}
+
+function copyHash() {
+    const hashEl = document.getElementById('fileHashVal');
+    if (hashEl) {
+        navigator.clipboard.writeText(hashEl.innerText.trim()).then(() => {
+            alert("{{ t('ui.gateway.sidebar_hash_copied') }}");
+        });
+    }
+}
+</script>
+{% endblock %}

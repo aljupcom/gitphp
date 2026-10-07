@@ -1,0 +1,78 @@
+{% extends "layout.twig" %}
+
+{% block title %}Blame — {{ segments|last }} — {{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+        {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'code' } %}
+
+    {# Toolbar with Branch Selector & Breadcrumbs #}
+    <div style="display: flex; align-items: center; justify-content: space-between; margin: 16px 0 12px 0; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            {% if branches is defined and branches|length > 0 %}
+                {% set ref_base = "/" ~ owner ~ "/" ~ repo.slug ~ "/blame" %}
+                {% include "partials/ref-selector.twig" with { base_url: ref_base } %}
+            {% endif %}
+
+            <nav class="gh-breadcrumb" aria-label="Breadcrumb" style="margin: 0;">
+                <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}">{{ repo.slug }}</a>
+                {% for seg in segments %}
+                    <span class="sep">/</span>
+                    {% if not loop.last %}
+                        {% set seg_path = segments[0:loop.index]|join('/') %}
+                        <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}/{{ seg_path }}">{{ seg }}</a>
+                    {% else %}
+                        <strong>{{ seg }}</strong>
+                    {% endif %}
+                {% endfor %}
+            </nav>
+        </div>
+
+        <a href="/{{ owner }}/{{ repo.slug }}/commits/{{ current_ref }}/{{ current_path }}" class="gh-btn gh-btn-sm" style="display: flex; align-items: center; gap: 5px;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm7-3.25v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.751.751 0 0 1 7 8.25v-3.5a.75.75 0 0 1 1.5 0Z"/></svg>
+            <span>History</span>
+        </a>
+    </div>
+
+    <div class="gh-blame-toolbar">
+        <span class="gh-blame-info">
+            <span class="gh-mono">{{ current_ref }}</span>
+            <span>{{ file_size|number_format }} bytes</span>
+        </span>
+        <span class="gh-toolbar-spacer"></span>
+        <a class="gh-btn gh-btn-sm" href="/{{ owner }}/{{ repo.slug }}/blob/{{ current_ref }}/{{ current_path }}">
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.78 12.78a.75.75 0 0 1-1.06 0L4.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L6.06 8l3.72 3.72a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215Z"/></svg>
+            <span>File view</span>
+        </a>
+    </div>
+
+    {% if too_large %}
+        <div class="gh-flash gh-flash-info">This file is too large for the blame view (limit: 256 KB).</div>
+    {% elseif lines|length == 0 %}
+        <div class="gh-flash gh-flash-error">Blame data could not be loaded for this file.</div>
+    {% else %}
+        <div class="gh-blame-view">
+            <table class="gh-blame-table">
+                <tbody>
+                    {% for l in lines %}
+                        {% set chunk_start = l.hash != (lines[loop.index0 - 1].hash ?? '') %}
+                        <tr class="{{ chunk_start ? 'gh-blame-chunk-start' : '' }}">
+                            <td class="gh-blame-meta">
+                                {% if chunk_start %}
+                                    <a class="gh-blame-hash gh-mono" href="/{{ owner }}/{{ repo.slug }}/commit/{{ l.hash }}">{{ l.short_hash }}</a>
+                                    <span class="gh-blame-author">{{ l.author }}</span>
+                                    <span class="gh-blame-date">{{ l.date|time_ago }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="gh-blame-ln">{{ l.line }}</td>
+                            <td class="gh-blame-code"><pre>{{ l.content }}</pre></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

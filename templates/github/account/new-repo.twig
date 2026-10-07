@@ -1,0 +1,126 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.new_repo.title') }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="padding: 24px 16px; max-width: 1200px; margin: 0 auto;">
+    <div class="gh-admin-layout">
+        {% include "partials/user-nav.twig" with { active: 'new-repo' } %}
+
+        <div style="min-width: 0; max-width: 820px; width: 100%;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600; color: var(--gh-fg-default);">{{ t('ui.new_repo.title') }}</h1>
+                    <p style="color: var(--gh-fg-muted); font-size: 13px; margin:0;">
+                        {{ t('ui.new_repo.namespace_hint', {'owner': owner_name}) }}
+                    </p>
+                </div>
+                <a href="/repos/import" class="gh-btn" style="display:inline-flex; align-items:center; gap:6px; font-weight:500; font-size: 13px;">
+                    <svg class="ti ti-download"><use href="#ti-download"/></svg>
+                    <span>{{ t('ui.nav.import_repo') }}</span>
+                </a>
+            </div>
+
+            {# Sub-nav tabs #}
+            <div style="display:flex; border-bottom:1px solid var(--gh-border-default); margin-bottom:20px; gap:4px;">
+                <a href="/repos/new" style="padding:8px 16px; font-size:14px; font-weight:600; text-decoration:none; color:var(--gh-fg-default); border-bottom:2px solid #58a6ff; display:inline-flex; align-items:center; gap:6px;">
+                    <svg class="ti ti-plus"><use href="#ti-plus"/></svg> {{ t('ui.repo_import.tab_blank') }}
+                </a>
+                <a href="/repos/import" style="padding:8px 16px; font-size:14px; font-weight:500; text-decoration:none; color:var(--gh-fg-muted); display:inline-flex; align-items:center; gap:6px;">
+                    <svg class="ti ti-download"><use href="#ti-download"/></svg> {{ t('ui.repo_import.tab_import') }}
+                </a>
+            </div>
+
+            <div class="gh-form-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 20px; background: var(--gh-bg-default);">
+                <form method="post" action="/repos/new">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                    <div class="gh-form-group" style="margin-bottom:16px;">
+                        <label class="gh-label" for="repo-name" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{{ t('ui.new_repo.repo_name') }} <span style="color:#cf222e;">*</span></label>
+                        <input type="text" name="name" id="repo-name" required value="{{ old_name ?? '' }}" class="gh-form-control gh-input"
+                               style="width:100%;" placeholder="{{ t_attr('ui.new_repo.repo_name_placeholder') }}">
+                    </div>
+
+                    <div class="gh-form-group" style="margin-bottom:16px;">
+                        <label class="gh-label" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{{ t('ui.new_repo.slug_label') }}</label>
+                        <p class="gh-hint" style="color:var(--gh-fg-muted); font-size:12px; margin-top:0;">{{ t('ui.new_repo.slug_hint') }}</p>
+                        <div style="display:flex; align-items:center; gap:6px;" dir="ltr">
+                            <span class="gh-mono" style="color: var(--gh-fg-muted);">{{ owner_name }} /</span>
+                            <input type="text" name="slug" id="repo-slug" value="{{ old_slug ?? '' }}" class="gh-form-control gh-input gh-mono" style="flex:1;" placeholder="my-project">
+                        </div>
+                    </div>
+
+                    <div class="gh-form-group" style="margin-bottom:16px;">
+                        <label class="gh-label" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{{ t('ui.new_repo.desc_label') }}</label>
+                        <input type="text" name="description" value="{{ old_description ?? '' }}" class="gh-form-control gh-input"
+                               style="width:100%;" placeholder="{{ t_attr('ui.new_repo.desc_placeholder') }}">
+                    </div>
+
+                    <div class="gh-form-group" style="margin-bottom:16px;">
+                        <label class="gh-label" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{{ t('ui.new_repo.topics_label') }}</label>
+                        <input type="text" name="topics" value="{{ old_topics ?? '' }}" class="gh-form-control gh-input" style="width:100%;" placeholder="{{ t_attr('ui.new_repo.topics_placeholder') }}">
+                    </div>
+
+                    <div class="gh-form-group" style="margin-bottom:16px;">
+                        <label class="gh-label" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{{ t('ui.new_repo.default_branch') }}</label>
+                        <input type="text" name="default_branch" value="{{ old_default_branch ?? 'main' }}" class="gh-form-control gh-input gh-mono" style="width:100%;" placeholder="main" dir="ltr">
+                    </div>
+
+                    <div class="gh-form-group" style="margin-bottom:16px;">
+                        <span style="font-weight:600; font-size:13px; display:block; margin-bottom:6px;">{{ t('ui.new_repo.visibility') }}</span>
+                        <div style="display:flex; gap:16px;">
+                            <label style="display:inline-flex; align-items:center; gap:6px; font-size:14px; cursor:pointer;">
+                                <input type="radio" name="visibility" value="public" {{ (old_visibility ?? 'public') == 'public' ? 'checked' : '' }}>
+                                <strong>{{ t('ui.new_repo.public_label') }}</strong>
+                            </label>
+                            <label style="display:inline-flex; align-items:center; gap:6px; font-size:14px; cursor:pointer;">
+                                <input type="radio" name="visibility" value="private" {{ (old_visibility ?? '') == 'private' ? 'checked' : '' }}>
+                                <strong>{{ t('ui.new_repo.private_label') }}</strong>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="border-top:1px solid var(--gh-border-default,#30363d); padding-top:16px; margin-top:16px;">
+                        <label style="font-weight:600; font-size:13px;">{{ t('ui.new_repo.init_heading') }}</label>
+                        <div style="margin-top:10px;">
+                            <label style="display:flex; align-items:center; gap:8px; font-size:14px; margin-bottom:12px; cursor:pointer;">
+                                <input type="checkbox" name="init_readme" value="1" checked>
+                                {{ t('ui.new_repo.init_readme') }}
+                            </label>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 16px;">
+                                <div>
+                                    <label style="font-size:12px; font-weight:600;">{{ t('ui.new_repo.gitignore_template') }}</label>
+                                    <select name="gitignore" class="gh-form-control" style="margin-top:4px;">
+                                        <option value="">{{ t('ui.new_repo.none') }}</option>
+                                        <option value="php">PHP</option>
+                                        <option value="node">Node.js</option>
+                                        <option value="python">Python</option>
+                                        <option value="java">Java</option>
+                                        <option value="go">Go</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size:12px; font-weight:600;">{{ t('ui.new_repo.license_template') }}</label>
+                                    <select name="license" class="gh-form-control" style="margin-top:4px;">
+                                        <option value="">{{ t('ui.new_repo.none') }}</option>
+                                        <option value="MIT">MIT License</option>
+                                        <option value="Apache-2.0">Apache 2.0</option>
+                                        <option value="GPL-3.0">GPL-3.0</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:10px; align-items:center; border-top:1px solid var(--gh-border-default); padding-top:16px; margin-top:16px;">
+                        <button type="submit" class="gh-btn gh-btn-primary" style="font-weight:600;">
+                            <svg class="ti ti-plus"><use href="#ti-plus"/></svg> {{ t('ui.new_repo.create_btn') }}
+                        </button>
+                        <a href="/repos/import" class="gh-btn">{{ t('ui.repo_import.cancel') }}</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

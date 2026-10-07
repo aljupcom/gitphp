@@ -1,0 +1,44 @@
+{% extends "layout.twig" %}
+
+{% block title %}Two-factor authentication — {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="gh-auth">
+    <span class="gh-auth-mark" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 16 16" fill="currentColor"><path d="M4 4a4 4 0 0 1 8 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25v-5.5C2 6.784 2.784 6 3.75 6H4Zm8.25 3.5h-8.5a.25.25 0 0 0-.25.25v5.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25ZM10.5 6V4a2.5 2.5 0 1 0-5 0v2Z"/></svg>
+    </span>
+
+    <h1 class="gh-auth-title">Two-factor authentication</h1>
+    <p class="gh-auth-sub">Enter the 6-digit code from your authenticator app to finish signing in.</p>
+
+    {% if error %}
+        <div class="gh-flash gh-flash-error gh-auth-error" role="alert"
+             style="width:100%; max-width:360px; margin-bottom:16px;">{{ error }}</div>
+    {% endif %}
+
+    <div class="gh-auth-card">
+        <form method="POST" action="/2fa" class="gh-auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="gh-form-group">
+                <label class="gh-label" for="code">Authentication code</label>
+                <input class="gh-input gh-mono" type="text" id="code" name="code"
+                       placeholder="123456" required autofocus autocomplete="one-time-code"
+                       inputmode="numeric" pattern="[0-9]{6}" maxlength="6" spellcheck="false"
+                       style="text-align:center; font-size:22px; letter-spacing:8px;">
+            </div>
+
+            <label class="gh-form-checkbox" style="margin: 4px 0 12px; display:flex; gap:6px; align-items:center; font-size:13px;">
+                <input type="checkbox" name="remember" value="1">
+                Keep me signed in on this device
+            </label>
+
+            <button type="submit" class="gh-btn gh-btn-primary gh-btn-block">Verify &amp; sign in</button>
+        </form>
+    </div>
+
+    <div class="gh-auth-alt">
+        <a href="/login">&larr; Back to sign in</a>
+    </div>
+</section>
+{% endblock %}

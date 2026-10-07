@@ -1,0 +1,763 @@
+{% extends "layout.twig" %}
+
+{% block title %}@{{ target_user.username }} · User Administration · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-container" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+
+    {# Breadcrumb #}
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 16px; color: var(--gh-fg-muted);">
+        <a href="{{ admin_prefix|default('/admin') }}/users" style="color: var(--gh-accent); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            <svg class="ti ti-arrow-left" style="font-size: 16px;"><use href="#ti-arrow-left"/></svg>
+            <span>Users</span>
+        </a>
+        <span>/</span>
+        <span style="font-weight: 600; color: var(--gh-fg-default);">@{{ target_user.username }}</span>
+    </div>
+
+    {# Flash Alerts #}
+    {% if flash_success %}
+        <div class="gh-alert gh-alert-success" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 6px; background: rgba(46,160,67,0.15); border: 1px solid rgba(46,160,67,0.4); color: #3fb950;">
+            <svg class="ti ti-check" style="font-size: 18px;"><use href="#ti-check"/></svg>
+            <span>{{ flash_success }}</span>
+        </div>
+    {% endif %}
+    {% if flash_error %}
+        <div class="gh-alert gh-alert-danger" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 6px; background: rgba(248,81,73,0.15); border: 1px solid rgba(248,81,73,0.4); color: #f85149;">
+            <svg class="ti ti-alert-circle" style="font-size: 18px;"><use href="#ti-alert-circle"/></svg>
+            <span>{{ flash_error }}</span>
+        </div>
+    {% endif %}
+
+    {# Layout Grid: Left Sidebar + Right Tabbed Dashboard #}
+    <div class="gh-admin-layout" style="display: grid; grid-template-columns: 240px 1fr; gap: 24px;">
+
+        {# Admin Navigation Sidebar #}
+        <div>
+            {% include "partials/admin-nav.twig" with { active: 'users', counts: nav_counts|default({}) } %}
+        </div>
+
+        {# Main Content Area #}
+        <div style="min-width: 0;">
+
+            {# User Header Profile Banner #}
+            <div class="gh-box" style="padding: 20px; border-radius: 8px; margin-bottom: 20px; background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default);">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--gh-border-muted); border: 2px solid var(--gh-border-default); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: var(--gh-fg-default);">
+                            {{ target_user.username|slice(0, 2)|upper }}
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <h1 style="font-size: 20px; font-weight: 700; margin: 0; color: var(--gh-fg-default);">
+                                    {{ target_user.display_name|default(target_user.username) }}
+                                </h1>
+                                <span style="font-size: 14px; color: var(--gh-fg-muted);">@{{ target_user.username }}</span>
+                                
+                                {# Role Badges #}
+                                {% if target_user.role == 'admin' %}
+                                    <span class="gh-badge" style="background: rgba(137,87,229,0.15); color: #a371f7; border: 1px solid rgba(137,87,229,0.4); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Site Admin</span>
+                                {% elseif target_user.role == 'staff' %}
+                                    <span class="gh-badge" style="background: rgba(56,139,253,0.15); color: #58a6ff; border: 1px solid rgba(56,139,253,0.4); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Staff / Moderator</span>
+                                {% elseif target_user.role == 'auditor' %}
+                                    <span class="gh-badge" style="background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.4); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Auditor</span>
+                                {% elseif target_user.role == 'restricted' %}
+                                    <span class="gh-badge" style="background: rgba(227,179,65,0.15); color: #e3b341; border: 1px solid rgba(227,179,65,0.4); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Restricted</span>
+                                {% elseif target_user.role == 'bot' %}
+                                    <span class="gh-badge" style="background: rgba(57,197,187,0.15); color: #39c5bb; border: 1px solid rgba(57,197,187,0.4); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Service Bot</span>
+                                {% else %}
+                                    <span class="gh-badge" style="font-size: 11px; padding: 2px 8px; border-radius: 12px;">Standard Member</span>
+                                {% endif %}
+
+                                {# Moderation Badges #}
+                                {% if target_user.is_suspended %}
+                                    {% if target_user.suspension_type == 'locked' %}
+                                        <span class="gh-badge" style="background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.4); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">🔒 Security Locked</span>
+                                    {% elseif target_user.suspension_type == 'read_only' %}
+                                        <span class="gh-badge" style="background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid rgba(88,166,255,0.4); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">👁️ Read-Only</span>
+                                    {% elseif target_user.suspension_type == 'shadow_banned' %}
+                                        <span class="gh-badge" style="background: rgba(139,148,158,0.15); color: #8b949e; border: 1px solid rgba(139,148,158,0.4); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">👻 Shadow Banned</span>
+                                    {% else %}
+                                        <span class="gh-badge" style="background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.4); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">🚫 Suspended</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="gh-badge" style="background: rgba(46,160,67,0.15); color: #3fb950; border: 1px solid rgba(46,160,67,0.4); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Active</span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 12.5px; color: var(--gh-fg-muted); margin-top: 4px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                                <span>📧 {{ target_user.email }}</span>
+                                <span>🆔 User ID #{{ target_user.id }}</span>
+                                <span>📅 Joined {{ target_user.created_at|date('M j, Y') }}</span>
+                                {% if last_session %}
+                                    <span>🚩 {{ last_session.flag_emoji }} {{ last_session.country }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 8px;">
+                        <a href="/{{ target_user.username }}" target="_blank" class="gh-btn" style="font-size: 12.5px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                            <svg class="ti ti-external-link" style="font-size: 14px;"><use href="#ti-external-link"/></svg>
+                            <span>Public Profile</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {# ── RESPONSIVE MOBILE SELECT TABS (Shown on <= 768px) ── #}
+            <div class="gh-nav-mobile-wrapper" style="margin-bottom: 16px; width: 100%;">
+                <label for="user-tabs-select" style="display: block; font-size: 12px; font-weight: 600; color: var(--gh-fg-muted); margin-bottom: 6px;">User Management Tab</label>
+                <div style="position: relative; width: 100%;">
+                    <select id="user-tabs-select" class="gh-select gh-nav-select" onchange="if(this.value) window.location.href=this.value;" style="width: 100%; height: 38px; padding: 0 32px 0 12px; font-size: 13.5px; font-weight: 500; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-subtle); color: var(--gh-fg-default); appearance: none; -webkit-appearance: none; cursor: pointer; box-sizing: border-box;">
+                        <option value="{{ admin_prefix }}/users/{{ target_user.id }}?tab=info" {{ active_tab == 'info' ? 'selected' : '' }}>📋 Overview</option>
+                        <option value="{{ admin_prefix }}/users/{{ target_user.id }}?tab=repos" {{ active_tab == 'repos' ? 'selected' : '' }}>📦 Repositories ({{ repos|length }})</option>
+                        <option value="{{ admin_prefix }}/users/{{ target_user.id }}?tab=sessions" {{ active_tab == 'sessions' ? 'selected' : '' }}>📱 Sessions ({{ sessions|length }})</option>
+                        <option value="{{ admin_prefix }}/users/{{ target_user.id }}?tab=activity" {{ active_tab == 'activity' ? 'selected' : '' }}>📜 Activity Log ({{ activities|length }})</option>
+                        <option value="{{ admin_prefix }}/users/{{ target_user.id }}?tab=options" {{ active_tab == 'options' ? 'selected' : '' }}>⚙️ Options &amp; Security</option>
+                    </select>
+                    <svg style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; width: 14px; height: 14px; fill: var(--gh-fg-muted);" viewBox="0 0 16 16"><path d="m4.427 6.427 3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 6H4.604a.25.25 0 0 0-.177.427Z"/></svg>
+                </div>
+            </div>
+
+            {# ── DESKTOP GITHUB UNDERLINE NAVIGATION (Shown on > 768px) ── #}
+            <nav class="gh-nav-desktop" aria-label="User Tabs" style="display: flex; gap: 4px; border-bottom: 1px solid var(--gh-border-default); margin-bottom: 20px;">
+                <a href="{{ admin_prefix }}/users/{{ target_user.id }}?tab=info" class="gh-tab-link {{ active_tab == 'info' ? 'is-active' : '' }}" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13.5px; font-weight: 500; color: var(--gh-fg-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px;">
+                    <svg class="ti ti-user" style="font-size: 16px;"><use href="#ti-user"/></svg>
+                    <span>Overview</span>
+                </a>
+                <a href="{{ admin_prefix }}/users/{{ target_user.id }}?tab=repos" class="gh-tab-link {{ active_tab == 'repos' ? 'is-active' : '' }}" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13.5px; font-weight: 500; color: var(--gh-fg-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px;">
+                    <svg class="ti ti-box" style="font-size: 16px;"><use href="#ti-box"/></svg>
+                    <span>Repositories</span>
+                    <span class="gh-badge" style="font-size: 11px; padding: 1px 6px;">{{ repos|length }}</span>
+                </a>
+                <a href="{{ admin_prefix }}/users/{{ target_user.id }}?tab=sessions" class="gh-tab-link {{ active_tab == 'sessions' ? 'is-active' : '' }}" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13.5px; font-weight: 500; color: var(--gh-fg-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px;">
+                    <svg class="ti ti-device-mobile" style="font-size: 16px;"><use href="#ti-device-mobile"/></svg>
+                    <span>Sessions</span>
+                    <span class="gh-badge" style="font-size: 11px; padding: 1px 6px;">{{ sessions|length }}</span>
+                </a>
+                <a href="{{ admin_prefix }}/users/{{ target_user.id }}?tab=activity" class="gh-tab-link {{ active_tab == 'activity' ? 'is-active' : '' }}" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13.5px; font-weight: 500; color: var(--gh-fg-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px;">
+                    <svg class="ti ti-history" style="font-size: 16px;"><use href="#ti-history"/></svg>
+                    <span>Activity Log</span>
+                    <span class="gh-badge" style="font-size: 11px; padding: 1px 6px;">{{ activities|length }}</span>
+                </a>
+                <a href="{{ admin_prefix }}/users/{{ target_user.id }}?tab=options" class="gh-tab-link {{ active_tab == 'options' ? 'is-active' : '' }}" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13.5px; font-weight: 500; color: var(--gh-fg-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px;">
+                    <svg class="ti ti-settings" style="font-size: 16px;"><use href="#ti-settings"/></svg>
+                    <span>Options &amp; Security</span>
+                </a>
+            </nav>
+
+            {# ══════════════════════════════════════════════════════════════ #}
+            {# TAB 1: Overview & Info                                         #}
+            {# ══════════════════════════════════════════════════════════════ #}
+            {% if active_tab == 'info' %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="gh-card" style="padding: 16px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-subtle);">
+                        <div style="font-size: 12px; color: var(--gh-fg-muted); margin-bottom: 6px; font-weight: 600;">📦 Repositories</div>
+                        <div style="font-size: 22px; font-weight: 700; color: var(--gh-fg-default);">{{ repos|length }}</div>
+                    </div>
+                    <div class="gh-card" style="padding: 16px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-subtle);">
+                        <div style="font-size: 12px; color: var(--gh-fg-muted); margin-bottom: 6px; font-weight: 600;">📱 Active Sessions</div>
+                        <div style="font-size: 22px; font-weight: 700; color: var(--gh-fg-default);">{{ sessions|length }}</div>
+                    </div>
+                    <div class="gh-card" style="padding: 16px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-subtle);">
+                        <div style="font-size: 12px; color: var(--gh-fg-muted); margin-bottom: 6px; font-weight: 600;">🎫 API Access Tokens</div>
+                        <div style="font-size: 22px; font-weight: 700; color: var(--gh-fg-default);">{{ tokens|length }}</div>
+                    </div>
+                    <div class="gh-card" style="padding: 16px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-subtle);">
+                        <div style="font-size: 12px; color: var(--gh-fg-muted); margin-bottom: 6px; font-weight: 600;">📜 Recorded Activities</div>
+                        <div style="font-size: 22px; font-weight: 700; color: var(--gh-fg-default);">{{ activities|length }}</div>
+                    </div>
+                </div>
+
+                {# Last Active Device & Connection Intelligence Card #}
+                <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; overflow: hidden; background: var(--gh-bg-subtle); margin-bottom: 24px;">
+                    <div style="padding: 12px 16px; background: var(--gh-bg-muted); border-bottom: 1px solid var(--gh-border-default); font-weight: 600; font-size: 14px; color: var(--gh-fg-default); display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg class="ti ti-radar" style="font-size: 16px; color: var(--gh-accent);"><use href="#ti-radar"/></svg>
+                            <span>Last Active Device &amp; Connection Intelligence</span>
+                        </div>
+                        {% if last_session %}
+                            <span class="gh-badge" style="background: rgba(46,160,67,0.15); color: #3fb950; font-size: 11px; padding: 2px 8px; border-radius: 12px;">Verified</span>
+                        {% endif %}
+                    </div>
+                    <div style="padding: 16px;">
+                        {% if last_session %}
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+                                <div>
+                                    <div style="font-size: 12px; color: var(--gh-fg-muted); font-weight: 600; margin-bottom: 4px;">📱 Last Active Hardware</div>
+                                    <div style="font-size: 15px; font-weight: 700; color: var(--gh-fg-default);">{{ last_session.device_model }}</div>
+                                    <div style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 2px;">
+                                        {{ last_session.device_brand }} · <code>{{ last_session.device_code }}</code>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--gh-fg-muted); font-weight: 600; margin-bottom: 4px;">🌐 IP Address</div>
+                                    <div style="font-size: 14px; font-weight: 600; font-family: ui-monospace, SFMono-Regular, monospace; color: var(--gh-accent);">
+                                        {{ last_session.ip_address }}
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 2px;">
+                                        Last active: {{ last_session.last_activity }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--gh-fg-muted); font-weight: 600; margin-bottom: 4px;">🚩 Location &amp; Country</div>
+                                    <div style="font-size: 14.5px; font-weight: 700; color: var(--gh-fg-default); display: flex; align-items: center; gap: 6px;">
+                                        <span style="font-size: 18px;">{{ last_session.flag_emoji }}</span>
+                                        <span>{{ last_session.country }}</span>
+                                        <span class="gh-badge" style="font-size: 11px;">{{ last_session.country_code }}</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 2px;">
+                                        Continent: {{ last_session.continent|default('Global') }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: var(--gh-fg-muted); font-weight: 600; margin-bottom: 4px;">🏢 Network &amp; ISP (Autonomous System)</div>
+                                    <div style="font-size: 13.5px; font-weight: 600; color: var(--gh-fg-default);">
+                                        {{ last_session.as_name|default('Unknown Provider') }}
+                                    </div>
+                                    {% if last_session.as_domain %}
+                                        <div style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 2px;">
+                                            Domain: <code>{{ last_session.as_domain }}</code>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div style="text-align: center; color: var(--gh-fg-muted); padding: 12px 0; font-size: 13px;">
+                                No recent connection or session data recorded yet.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Identity Details Card #}
+                <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; overflow: hidden; background: var(--gh-bg-subtle); margin-bottom: 24px;">
+                    <div style="padding: 12px 16px; background: var(--gh-bg-muted); border-bottom: 1px solid var(--gh-border-default); font-weight: 600; font-size: 14px; color: var(--gh-fg-default);">
+                        Account Identity &amp; Profile Details
+                    </div>
+                    <div style="padding: 16px;">
+                        <table class="gh-table" style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                            <tbody>
+                                <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                    <td style="padding: 10px 0; width: 220px; color: var(--gh-fg-muted); font-weight: 500;">Username</td>
+                                    <td style="padding: 10px 0; font-weight: 600; color: var(--gh-fg-default);">@{{ target_user.username }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                    <td style="padding: 10px 0; color: var(--gh-fg-muted); font-weight: 500;">Display Name</td>
+                                    <td style="padding: 10px 0; color: var(--gh-fg-default);">{{ target_user.display_name|default('Not set') }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                    <td style="padding: 10px 0; color: var(--gh-fg-muted); font-weight: 500;">Email Address</td>
+                                    <td style="padding: 10px 0; color: var(--gh-fg-default); font-family: ui-monospace, SFMono-Regular, monospace;">{{ target_user.email }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                    <td style="padding: 10px 0; color: var(--gh-fg-muted); font-weight: 500;">Role &amp; Privilege</td>
+                                    <td style="padding: 10px 0;">
+                                        {% if target_user.role == 'admin' %}
+                                            <span class="gh-badge" style="background: rgba(137,87,229,0.15); color: #a371f7; border: 1px solid rgba(137,87,229,0.4); font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Site Administrator</span>
+                                        {% elseif target_user.role == 'staff' %}
+                                            <span class="gh-badge" style="background: rgba(56,139,253,0.15); color: #58a6ff; border: 1px solid rgba(56,139,253,0.4); font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Staff / Moderator</span>
+                                        {% elseif target_user.role == 'auditor' %}
+                                            <span class="gh-badge" style="background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.4); font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Security Auditor</span>
+                                        {% elseif target_user.role == 'restricted' %}
+                                            <span class="gh-badge" style="background: rgba(227,179,65,0.15); color: #e3b341; border: 1px solid rgba(227,179,65,0.4); font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Restricted Member</span>
+                                        {% elseif target_user.role == 'bot' %}
+                                            <span class="gh-badge" style="background: rgba(57,197,187,0.15); color: #39c5bb; border: 1px solid rgba(57,197,187,0.4); font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Service Bot</span>
+                                        {% else %}
+                                            <span class="gh-badge" style="font-size: 12px; padding: 2px 8px; border-radius: 12px;">Standard Developer</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                    <td style="padding: 10px 0; color: var(--gh-fg-muted); font-weight: 500;">Account Standing &amp; Moderation</td>
+                                    <td style="padding: 10px 0;">
+                                        {% if target_user.is_suspended %}
+                                            {% if target_user.suspension_type == 'locked' %}
+                                                <span class="gh-badge" style="background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.4); font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">🔒 Security Lockdown</span>
+                                            {% elseif target_user.suspension_type == 'read_only' %}
+                                                <span class="gh-badge" style="background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid rgba(88,166,255,0.4); font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">👁️ Read-Only Mode</span>
+                                            {% elseif target_user.suspension_type == 'shadow_banned' %}
+                                                <span class="gh-badge" style="background: rgba(139,148,158,0.15); color: #8b949e; border: 1px solid rgba(139,148,158,0.4); font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">👻 Shadow Banned</span>
+                                            {% else %}
+                                                <span class="gh-badge" style="background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.4); font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 600;">🚫 Suspended</span>
+                                            {% endif %}
+                                            {% if target_user.status_reason %}
+                                                <div style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 4px;">Reason: {{ target_user.status_reason }}</div>
+                                            {% endif %}
+                                            {% if target_user.suspension_until %}
+                                                <div style="font-size: 11.5px; color: #d29922; margin-top: 2px;">⏳ Active until: {{ target_user.suspension_until }}</div>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="gh-badge" style="background: rgba(46,160,67,0.15); color: #3fb950; border: 1px solid rgba(46,160,67,0.4); font-size: 12px; padding: 2px 8px; border-radius: 12px;">Active / Operational</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                    <td style="padding: 10px 0; color: var(--gh-fg-muted); font-weight: 500;">Registration Date</td>
+                                    <td style="padding: 10px 0; color: var(--gh-fg-default);">{{ target_user.created_at }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0; color: var(--gh-fg-muted); font-weight: 500;">Last Profile Update</td>
+                                    <td style="padding: 10px 0; color: var(--gh-fg-default);">{{ target_user.updated_at|default('N/A') }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            {# ══════════════════════════════════════════════════════════════ #}
+            {# TAB 2: Repositories                                            #}
+            {# ══════════════════════════════════════════════════════════════ #}
+            {% elseif active_tab == 'repos' %}
+                <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; overflow: hidden; background: var(--gh-bg-subtle);">
+                    <div style="padding: 12px 16px; background: var(--gh-bg-muted); border-bottom: 1px solid var(--gh-border-default); display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-weight: 600; font-size: 14px; color: var(--gh-fg-default);">Owned Repositories ({{ repos|length }})</span>
+                    </div>
+
+                    {% if repos is empty %}
+                        <div style="padding: 32px 16px; text-align: center; color: var(--gh-fg-muted); font-size: 13.5px;">
+                            <svg class="ti ti-box" style="font-size: 32px; opacity: 0.5; margin-bottom: 8px;"><use href="#ti-box"/></svg>
+                            <p style="margin: 0;">This user has not created any repositories yet.</p>
+                        </div>
+                    {% else %}
+                        <table class="gh-table" style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                            <thead>
+                                <tr style="background: var(--gh-bg-subtle); border-bottom: 1px solid var(--gh-border-default); color: var(--gh-fg-muted); font-size: 12px; text-align: left;">
+                                    <th style="padding: 10px 16px;">Repository Name</th>
+                                    <th style="padding: 10px 16px;">Visibility</th>
+                                    <th style="padding: 10px 16px;">Default Branch</th>
+                                    <th style="padding: 10px 16px;">Stars</th>
+                                    <th style="padding: 10px 16px;">Last Updated</th>
+                                    <th style="padding: 10px 16px; text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in repos %}
+                                    <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                        <td style="padding: 12px 16px;">
+                                            <a href="/{{ target_user.username }}/{{ r.slug }}" style="font-weight: 600; color: var(--gh-accent); text-decoration: none;">
+                                                {{ r.name }}
+                                            </a>
+                                            {% if r.description %}
+                                                <div style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 2px;">{{ r.description|slice(0, 80) }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 12px 16px;">
+                                            {% if r.visibility == 'private' %}
+                                                <span class="gh-badge" style="font-size: 11px; padding: 2px 6px; border-radius: 12px;">Private</span>
+                                            {% else %}
+                                                <span class="gh-badge" style="background: rgba(46,160,67,0.15); color: #3fb950; font-size: 11px; padding: 2px 6px; border-radius: 12px;">Public</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 12px 16px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; color: var(--gh-fg-muted);">
+                                            {{ r.default_branch|default('main') }}
+                                        </td>
+                                        <td style="padding: 12px 16px; color: var(--gh-fg-default);">
+                                            ★ {{ r.stars_count|default(0) }}
+                                        </td>
+                                        <td style="padding: 12px 16px; color: var(--gh-fg-muted); font-size: 12.5px;">
+                                            {{ r.updated_at|date('M j, Y H:i') }}
+                                        </td>
+                                        <td style="padding: 12px 16px; text-align: right;">
+                                            <a href="{{ admin_prefix }}/repos/{{ r.slug }}/edit" class="gh-btn" style="font-size: 11.5px; padding: 3px 8px;">Manage</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+
+            {# ══════════════════════════════════════════════════════════════ #}
+            {# TAB 3: Sessions & Devices                                      #}
+            {# ══════════════════════════════════════════════════════════════ #}
+            {% elseif active_tab == 'sessions' %}
+                <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; overflow: hidden; background: var(--gh-bg-subtle);">
+                    <div style="padding: 12px 16px; background: var(--gh-bg-muted); border-bottom: 1px solid var(--gh-border-default); display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-weight: 600; font-size: 14px; color: var(--gh-fg-default);">Active Hardware Sessions ({{ sessions|length }})</span>
+                        {% if sessions is not empty %}
+                            <form method="POST" action="{{ admin_prefix }}/sessions/revoke-user/{{ target_user.id }}" style="margin: 0;" onsubmit="return confirm('Terminate all active sessions for this user?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="gh-btn gh-btn-danger" style="font-size: 12px; padding: 4px 10px;">
+                                    Revoke All Sessions
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+
+                    {% if sessions is empty %}
+                        <div style="padding: 32px 16px; text-align: center; color: var(--gh-fg-muted); font-size: 13.5px;">
+                            <svg class="ti ti-device-laptop" style="font-size: 32px; opacity: 0.5; margin-bottom: 8px;"><use href="#ti-device-laptop"/></svg>
+                            <p style="margin: 0;">No active sessions found for this user.</p>
+                        </div>
+                    {% else %}
+                        <table class="gh-table" style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                            <thead>
+                                <tr style="background: var(--gh-bg-subtle); border-bottom: 1px solid var(--gh-border-default); color: var(--gh-fg-muted); font-size: 12px; text-align: left;">
+                                    <th style="padding: 10px 16px;">Device &amp; Commercial Model</th>
+                                    <th style="padding: 10px 16px;">Location &amp; Country</th>
+                                    <th style="padding: 10px 16px;">Network / ISP</th>
+                                    <th style="padding: 10px 16px;">IP Address</th>
+                                    <th style="padding: 10px 16px;">OS &amp; Browser</th>
+                                    <th style="padding: 10px 16px;">Last Activity</th>
+                                    <th style="padding: 10px 16px; text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in sessions %}
+                                    <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                        <td style="padding: 12px 16px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div style="width: 28px; height: 28px; border-radius: 4px; background: var(--gh-border-muted); display: flex; align-items: center; justify-content: center; color: var(--gh-accent);">
+                                                    {% if s.device_type == 'mobile' or s.device_brand in ['Apple', 'Samsung', 'Xiaomi', 'Google', 'Huawei'] %}
+                                                        <svg class="ti ti-device-mobile" style="font-size: 16px;"><use href="#ti-device-mobile"/></svg>
+                                                    {% else %}
+                                                        <svg class="ti ti-device-laptop" style="font-size: 16px;"><use href="#ti-device-laptop"/></svg>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <div style="font-weight: 600; color: var(--gh-fg-default);">{{ s.device_model }}</div>
+                                                    <div style="font-size: 11px; color: var(--gh-fg-muted);">{{ s.device_brand }} · <code>{{ s.device_code }}</code></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 12px 16px; color: var(--gh-fg-default);">
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                <span>{{ s.flag_emoji }}</span>
+                                                <span style="font-weight: 600;">{{ s.country }}</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 12px 16px; color: var(--gh-fg-muted); font-size: 12px;">
+                                            {{ s.as_name|default('—') }}
+                                        </td>
+                                        <td style="padding: 12px 16px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; color: var(--gh-fg-muted);">
+                                            {{ s.ip_address }}
+                                        </td>
+                                        <td style="padding: 12px 16px; color: var(--gh-fg-muted); font-size: 12px;">
+                                            {{ s.os_name }} · {{ s.browser_name }}
+                                        </td>
+                                        <td style="padding: 12px 16px; color: var(--gh-fg-muted); font-size: 12.5px;">
+                                            {{ s.last_activity }}
+                                        </td>
+                                        <td style="padding: 12px 16px; text-align: right;">
+                                            <form method="POST" action="{{ admin_prefix }}/sessions/{{ s.id }}/revoke" style="display: inline; margin: 0;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                <button type="submit" class="gh-btn gh-btn-danger" style="font-size: 11px; padding: 3px 8px;">
+                                                    Revoke
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+
+            {# ══════════════════════════════════════════════════════════════ #}
+            {# TAB 4: Activity Log                                            #}
+            {# ══════════════════════════════════════════════════════════════ #}
+            {% elseif active_tab == 'activity' %}
+                <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; overflow: hidden; background: var(--gh-bg-subtle);">
+                    <div style="padding: 12px 16px; background: var(--gh-bg-muted); border-bottom: 1px solid var(--gh-border-default); display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-weight: 600; font-size: 14px; color: var(--gh-fg-default);">Recorded User Activity Logs ({{ activities|length }})</span>
+                    </div>
+
+                    {% if activities is empty %}
+                        <div style="padding: 32px 16px; text-align: center; color: var(--gh-fg-muted); font-size: 13.5px;">
+                            <svg class="ti ti-history" style="font-size: 32px; opacity: 0.5; margin-bottom: 8px;"><use href="#ti-history"/></svg>
+                            <p style="margin: 0;">No activity events logged for this user yet.</p>
+                        </div>
+                    {% else %}
+                        <table class="gh-table" style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                            <thead>
+                                <tr style="background: var(--gh-bg-subtle); border-bottom: 1px solid var(--gh-border-default); color: var(--gh-fg-muted); font-size: 12px; text-align: left;">
+                                    <th style="padding: 10px 16px;">Action</th>
+                                    <th style="padding: 10px 16px;">Details</th>
+                                    <th style="padding: 10px 16px;">IP Address</th>
+                                    <th style="padding: 10px 16px;">Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for act in activities %}
+                                    <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                        <td style="padding: 12px 16px;">
+                                            <span class="gh-badge" style="font-size: 11px; padding: 2px 6px; font-weight: 600;">
+                                                {{ act.action }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 12px 16px; color: var(--gh-fg-default);">
+                                            {{ act.details|default('—') }}
+                                        </td>
+                                        <td style="padding: 12px 16px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; color: var(--gh-fg-muted);">
+                                            {{ act.ip_address|default('127.0.0.1') }}
+                                        </td>
+                                        <td style="padding: 12px 16px; color: var(--gh-fg-muted); font-size: 12.5px;">
+                                            {{ act.created_at }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+
+            {# ══════════════════════════════════════════════════════════════ #}
+            {# TAB 5: Options & Danger Zone                                   #}
+            {# ══════════════════════════════════════════════════════════════ #}
+            {% elseif active_tab == 'options' %}
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+
+                    {# 1. Expanded GitHub-style Role & Access Management #}
+                    <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 20px; background: var(--gh-bg-subtle);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <h3 style="font-size: 15px; font-weight: 600; margin: 0; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                                <svg class="ti ti-shield-lock" style="font-size: 18px; color: var(--gh-accent);"><use href="#ti-shield-lock"/></svg>
+                                <span>Change User Role &amp; Access Permissions</span>
+                            </h3>
+                            <span style="font-size: 12px; color: var(--gh-fg-muted);">Current Role: <strong style="color: var(--gh-fg-default);">{{ target_user.role|capitalize }}</strong></span>
+                        </div>
+                        <p style="font-size: 13px; color: var(--gh-fg-muted); margin: 0 0 16px 0; line-height: 1.5;">
+                            Assign an enterprise permission tier. Roles grant specific operational capabilities across system administration, moderation, compliance, or developer collaboration.
+                        </p>
+                        <form method="POST" action="{{ admin_prefix }}/users/{{ target_user.id }}/role">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                                <label style="display: flex; gap: 10px; padding: 12px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); cursor: pointer;">
+                                    <input type="radio" name="role" value="admin" {{ target_user.role == 'admin' ? 'checked' : '' }} style="margin-top: 3px;">
+                                    <div>
+                                        <div style="font-size: 13.5px; font-weight: 600; color: #a371f7;">👑 Site Administrator</div>
+                                        <div style="font-size: 11.5px; color: var(--gh-fg-muted); margin-top: 2px;">Full access to system configs, security, users, and server infrastructure.</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; gap: 10px; padding: 12px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); cursor: pointer;">
+                                    <input type="radio" name="role" value="staff" {{ target_user.role == 'staff' ? 'checked' : '' }} style="margin-top: 3px;">
+                                    <div>
+                                        <div style="font-size: 13.5px; font-weight: 600; color: #58a6ff;">🛡️ Staff / Moderator</div>
+                                        <div style="font-size: 11.5px; color: var(--gh-fg-muted); margin-top: 2px;">Can moderate users, inspect repositories, manage sessions, and suspensions.</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; gap: 10px; padding: 12px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); cursor: pointer;">
+                                    <input type="radio" name="role" value="auditor" {{ target_user.role == 'auditor' ? 'checked' : '' }} style="margin-top: 3px;">
+                                    <div>
+                                        <div style="font-size: 13.5px; font-weight: 600; color: #d29922;">🔍 Security Auditor</div>
+                                        <div style="font-size: 11.5px; color: var(--gh-fg-muted); margin-top: 2px;">Read-only access to audit trail logs, device telemetry, and compliance data.</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; gap: 10px; padding: 12px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); cursor: pointer;">
+                                    <input type="radio" name="role" value="user" {{ target_user.role == 'user' ? 'checked' : '' }} style="margin-top: 3px;">
+                                    <div>
+                                        <div style="font-size: 13.5px; font-weight: 600; color: var(--gh-fg-default);">💻 Standard Member</div>
+                                        <div style="font-size: 11.5px; color: var(--gh-fg-muted); margin-top: 2px;">Standard developer access. Can create repositories, push/pull, and collaborate.</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; gap: 10px; padding: 12px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); cursor: pointer;">
+                                    <input type="radio" name="role" value="restricted" {{ target_user.role == 'restricted' ? 'checked' : '' }} style="margin-top: 3px;">
+                                    <div>
+                                        <div style="font-size: 13.5px; font-weight: 600; color: #e3b341;">🔒 Restricted User</div>
+                                        <div style="font-size: 11.5px; color: var(--gh-fg-muted); margin-top: 2px;">Access limited to assigned repositories only. Cannot create public repos.</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; gap: 10px; padding: 12px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); cursor: pointer;">
+                                    <input type="radio" name="role" value="bot" {{ target_user.role == 'bot' ? 'checked' : '' }} style="margin-top: 3px;">
+                                    <div>
+                                        <div style="font-size: 13.5px; font-weight: 600; color: #39c5bb;">🤖 Service Bot Account</div>
+                                        <div style="font-size: 11.5px; color: var(--gh-fg-muted); margin-top: 2px;">Machine account for CI/CD. Interactive web login is restricted; tokens/keys only.</div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="gh-btn gh-btn-primary" style="font-size: 13px; padding: 6px 16px; font-weight: 600;">
+                                Update User Role
+                            </button>
+                        </form>
+                    </div>
+
+                    {# 2. Expanded Account Moderation, Suspension & Lockdown #}
+                    <div class="gh-card" style="border: 1px solid {{ target_user.is_suspended ? 'rgba(248,81,73,0.5)' : 'var(--gh-border-default)' }}; border-radius: 6px; padding: 20px; background: var(--gh-bg-subtle);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <h3 style="font-size: 15px; font-weight: 600; margin: 0; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                                <svg class="ti ti-ban" style="font-size: 18px; color: {{ target_user.is_suspended ? '#f85149' : 'var(--gh-fg-muted)' }};"><use href="#ti-ban"/></svg>
+                                <span>Account Suspension &amp; Moderation Controls</span>
+                            </h3>
+                            {% if target_user.is_suspended %}
+                                <span class="gh-badge" style="background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.4); font-size: 12px; padding: 2px 10px; border-radius: 12px; font-weight: 600;">
+                                    Moderation Active: {{ target_user.suspension_type|upper }}
+                                </span>
+                            {% else %}
+                                <span class="gh-badge" style="background: rgba(46,160,67,0.15); color: #3fb950; border: 1px solid rgba(46,160,67,0.4); font-size: 12px; padding: 2px 10px; border-radius: 12px; font-weight: 600;">
+                                    Account In Good Standing
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        {% if target_user.is_suspended %}
+                            <div style="background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.25); border-radius: 6px; padding: 14px; margin-bottom: 18px;">
+                                <div style="font-size: 13.5px; font-weight: 600; color: #f85149; margin-bottom: 4px;">Account is currently restricted</div>
+                                {% if target_user.status_reason %}
+                                    <div style="font-size: 12.5px; color: var(--gh-fg-default); margin-bottom: 4px;"><strong>Reason / Public Note:</strong> {{ target_user.status_reason }}</div>
+                                {% endif %}
+                                {% if target_user.suspension_until %}
+                                    <div style="font-size: 12px; color: #d29922; margin-bottom: 4px;"><strong>⏳ Expiration Date:</strong> {{ target_user.suspension_until }} (Auto-lifts on expiry)</div>
+                                {% else %}
+                                    <div style="font-size: 12px; color: var(--gh-fg-muted); margin-bottom: 4px;"><strong>Duration:</strong> Indefinite / Permanent</div>
+                                {% endif %}
+                                {% if target_user.internal_note %}
+                                    <div style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(248,81,73,0.15);">
+                                        <strong>Private Moderator Note:</strong> {{ target_user.internal_note }}
+                                    </div>
+                                {% endif %}
+
+                                <form method="POST" action="{{ admin_prefix }}/users/{{ target_user.id }}/status" style="margin-top: 12px;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <input type="hidden" name="action" value="reinstate">
+                                    <button type="submit" class="gh-btn gh-btn-primary" style="font-size: 13px; padding: 5px 14px; font-weight: 600;">
+                                        ✓ Lift Suspension &amp; Reinstate Account
+                                    </button>
+                                </form>
+                            </div>
+                        {% endif %}
+
+                        <form method="POST" action="{{ admin_prefix }}/users/{{ target_user.id }}/status">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="action" value="apply">
+
+                            <div style="font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 8px;">1. Select Moderation Action &amp; Restriction Type:</div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                                <label style="display: flex; gap: 10px; padding: 10px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); cursor: pointer;">
+                                    <input type="radio" name="suspension_type" value="suspended" {{ (target_user.suspension_type == 'suspended' or not target_user.is_suspended) ? 'checked' : '' }} style="margin-top: 3px;">
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600; color: #f85149;">🚫 Full Account Suspension</div>
+                                        <div style="font-size: 11px; color: var(--gh-fg-muted);">Blocks web login, Git push/pull, and API tokens entirely.</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; gap: 10px; padding: 10px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); cursor: pointer;">
+                                    <input type="radio" name="suspension_type" value="locked" {{ target_user.suspension_type == 'locked' ? 'checked' : '' }} style="margin-top: 3px;">
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600; color: #d29922;">🔒 Security Lockdown</div>
+                                        <div style="font-size: 11px; color: var(--gh-fg-muted);">Compromised account. Blocks login until cleared / password reset.</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; gap: 10px; padding: 10px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); cursor: pointer;">
+                                    <input type="radio" name="suspension_type" value="read_only" {{ target_user.suspension_type == 'read_only' ? 'checked' : '' }} style="margin-top: 3px;">
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600; color: #58a6ff;">👁️ Read-Only Restriction</div>
+                                        <div style="font-size: 11px; color: var(--gh-fg-muted);">Can view and clone/pull, but cannot push or create new repos.</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; gap: 10px; padding: 10px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); cursor: pointer;">
+                                    <input type="radio" name="suspension_type" value="shadow_banned" {{ target_user.suspension_type == 'shadow_banned' ? 'checked' : '' }} style="margin-top: 3px;">
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600; color: #8b949e;">👻 Shadow Ban (Conceal)</div>
+                                        <div style="font-size: 11px; color: var(--gh-fg-muted);">Hides profile and repos from public feeds and global search.</div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 12.5px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">2. Duration &amp; Expiration</label>
+                                    <select name="duration" class="gh-select" onchange="document.getElementById('custom-until-wrapper').style.display = this.value === 'custom' ? 'block' : 'none';" style="width: 100%; height: 34px; font-size: 13px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default);">
+                                        <option value="permanent">Indefinite (Until manually lifted)</option>
+                                        <option value="24h">24 Hours (1 Day)</option>
+                                        <option value="7d">7 Days (1 Week)</option>
+                                        <option value="30d">30 Days (1 Month)</option>
+                                        <option value="custom">Custom Date &amp; Time...</option>
+                                    </select>
+                                    <div id="custom-until-wrapper" style="display: none; margin-top: 8px;">
+                                        <input type="datetime-local" name="custom_until" class="gh-input" style="width: 100%; height: 34px; font-size: 12.5px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style="display: block; font-size: 12.5px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">3. Violation Category</label>
+                                    <select name="category" class="gh-select" style="width: 100%; height: 34px; font-size: 13px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default);">
+                                        <option value="ToS &amp; Code of Conduct Violation">ToS &amp; Code of Conduct Violation</option>
+                                        <option value="Spam &amp; Excessive Automated Requests">Spam &amp; Excessive Automated Requests</option>
+                                        <option value="Malicious Code / Malware Distribution">Malicious Code / Malware Distribution</option>
+                                        <option value="Compromised Account / Unauthorized Activity">Compromised Account / Unauthorized Activity</option>
+                                        <option value="Resource Abuse &amp; Excessive Bandwidth">Resource Abuse &amp; Excessive Bandwidth</option>
+                                        <option value="DMCA &amp; Copyright Infringement">DMCA &amp; Copyright Infringement</option>
+                                        <option value="Administrative Investigation">Administrative Investigation</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 14px;">
+                                <label style="display: block; font-size: 12.5px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">4. Public Explanation (Shown to User upon login attempt)</label>
+                                <input type="text" name="reason" placeholder="e.g. Account placed under review for suspected repository policy violations" class="gh-input" style="width: 100%; height: 34px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box;">
+                            </div>
+
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; font-size: 12.5px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 6px;">5. Private Moderator / Internal Audit Note (Visible to Admins only)</label>
+                                <textarea name="internal_note" rows="2" placeholder="Private notes, ticket reference #, investigator notes..." class="gh-input" style="width: 100%; padding: 8px 12px; font-size: 12.5px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); box-sizing: border-box; resize: vertical;"></textarea>
+                            </div>
+
+                            <div style="margin-bottom: 18px; display: flex; flex-direction: column; gap: 8px;">
+                                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gh-fg-default); cursor: pointer;">
+                                    <input type="checkbox" name="revoke_sessions" value="1" checked style="cursor: pointer;">
+                                    <span>Immediately terminate all active hardware sessions across all devices</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gh-fg-default); cursor: pointer;">
+                                    <input type="checkbox" name="revoke_tokens" value="1" style="cursor: pointer;">
+                                    <span>Revoke all Personal Access Tokens (PATs) and API keys</span>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="gh-btn gh-btn-danger" style="font-size: 13px; padding: 6px 16px; font-weight: 600;">
+                                Apply Account Moderation
+                            </button>
+                        </form>
+                    </div>
+
+                    {# 3. Password Reset #}
+                    <div class="gh-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 20px; background: var(--gh-bg-subtle);">
+                        <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 8px 0; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                            <svg class="ti ti-key" style="font-size: 18px; color: var(--gh-accent);"><use href="#ti-key"/></svg>
+                            <span>Force Password Reset</span>
+                        </h3>
+                        <p style="font-size: 13px; color: var(--gh-fg-muted); margin: 0 0 16px 0;">
+                            Set a direct password override for this account. All existing active user sessions will be terminated immediately.
+                        </p>
+                        <form method="POST" action="{{ admin_prefix }}/users/{{ target_user.id }}/password" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="password" name="new_password" required minlength="8" placeholder="Enter new password (min 8 chars)" class="gh-input" style="height: 34px; padding: 0 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); color: var(--gh-fg-default); min-width: 280px;">
+                            <button type="submit" class="gh-btn" style="font-size: 13px; padding: 5px 14px; font-weight: 600;">
+                                Update Password
+                            </button>
+                        </form>
+                    </div>
+
+                    {# 4. Danger Zone: Delete User #}
+                    <div class="gh-card" style="border: 1px solid #f85149; border-radius: 6px; padding: 20px; background: rgba(248,81,73,0.04);">
+                        <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 8px 0; color: #f85149; display: flex; align-items: center; gap: 8px;">
+                            <svg class="ti ti-trash" style="font-size: 18px; color: #f85149;"><use href="#ti-trash"/></svg>
+                            <span>Danger Zone: Permanently Delete Account</span>
+                        </h3>
+                        <p style="font-size: 13px; color: var(--gh-fg-muted); margin: 0 0 16px 0;">
+                            Permanently delete @{{ target_user.username }}, including all their owned repositories, active sessions, and personal access tokens. This action is irreversible.
+                        </p>
+                        <form method="POST" action="{{ admin_prefix }}/users/{{ target_user.id }}/delete" onsubmit="return confirm('Are you completely sure you want to permanently delete user @{{ target_user.username }}? This action CANNOT be undone!');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="gh-btn gh-btn-danger" style="font-size: 13px; padding: 6px 16px; font-weight: 600;">
+                                Permanently Delete User Account
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

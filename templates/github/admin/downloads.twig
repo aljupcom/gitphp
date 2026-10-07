@@ -1,0 +1,551 @@
+{% extends "layout.twig" %}
+
+{% block title %}Downloads &amp; Distribution Hub — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600;">{{ t('adm.downloads.title')|default('Download Center & Asset Distribution') }}</h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                {{ t('adm.downloads.description')|default('Generate secure short URLs (/d/xxxxxx) for releases, packages, and direct file distribution with password and quota enforcement.') }}
+            </p>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'downloads', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; flex:1;">
+            
+            {# ── Folder Sidebar + Main Content Layout ── #}
+            <div style="display:grid; grid-template-columns:220px 1fr; gap:20px; align-items:start;">
+
+                {# ── Sidebar: Folder Tree ── #}
+                <div class="gh-box" style="position:sticky; top:70px;">
+                    <div class="gh-box-header" style="padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:13px; font-weight:600; color:var(--gh-fg-default);">
+                            <svg class="ti ti-folders" style="vertical-align:middle; margin-right:4px;"><use href="#ti-folders"/></svg>
+                            Folders
+                        </span>
+                        <div style="display:flex; gap:4px;">
+                            <a href="{{ admin_prefix }}/downloads/reports" class="gh-btn gh-btn-sm" title="{{ t_attr('adm.nav.download_reports') }}" style="padding:2px 7px; font-size:11px; color:#cf222e; border-color:rgba(207,34,46,0.4); text-decoration:none;"><svg class="ti ti-flag" style="width:11px; height:11px; vertical-align:-1px;"><use href="#ti-flag"/></svg> {{ t('adm.nav.download_reports') }}</a> <a href="{{ admin_prefix }}/downloads/guide" class="gh-btn gh-btn-sm" title="{{ t_attr('adm.downloads_guide.downloads_guide_title') }}" style="padding:2px 7px; font-size:11px; color:var(--gh-accent-fg); border-color:var(--gh-accent-fg); text-decoration:none;">
+                                📖 {{ t('adm.downloads_guide.guide_documentation') }}
+                            </a>
+                            <button type="button" class="gh-btn gh-btn-sm" onclick="openFolderModal(null)" title="New Folder" style="padding:2px 8px; font-size:11px;">
+                                <svg class="ti ti-folder-plus"><use href="#ti-folder-plus"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="padding:8px 0;">
+                        {# {{ t('adm.downloads.all_files')|default('All Files') }} link #}
+                        <a href="{{ admin_prefix }}/downloads"
+                           style="display:flex; align-items:center; gap:8px; padding:6px 14px; font-size:13px; text-decoration:none;
+                                  color:{{ current_folder is null ? 'var(--accent, #7c3aed)' : 'var(--gh-fg-muted)' }};
+                                  font-weight:{{ current_folder is null ? '600' : 'normal' }};
+                                  background:{{ current_folder is null ? 'var(--accent-dim, rgba(124,58,237,.1))' : 'transparent' }};
+                                  border-radius:4px; margin:0 6px;">
+                            <svg class="ti ti-files" style="font-size:14px; flex-shrink:0;"><use href="#ti-files"/></svg>
+                            <span>{{ t('adm.downloads.all_files')|default('All Files') }}</span>
+                        </a>
+
+                        {% for folder in folders %}
+                            {# Root folder #}
+                            {% set is_active = current_folder is not null and current_folder.id == folder.id %}
+                            <div style="margin-top:2px;">
+                                <div style="display:flex; align-items:center; gap:4px; padding:0 6px;">
+                                    <a href="{{ admin_prefix }}/downloads/folder/{{ folder.slug }}"
+                                       style="flex:1; display:flex; align-items:center; gap:6px; padding:5px 8px; font-size:13px;
+                                              text-decoration:none;
+                                              color:{{ is_active ? 'var(--accent, #7c3aed)' : 'var(--gh-fg-default)' }};
+                                              font-weight:{{ is_active ? '600' : 'normal' }};
+                                              background:{{ is_active ? 'var(--accent-dim, rgba(124,58,237,.1))' : 'transparent' }};
+                                              border-radius:4px;">
+                                        {% if folder.is_system %}
+                                            <svg class="ti ti-lock" style="font-size:13px; flex-shrink:0; color:var(--gh-fg-muted);"><use href="#ti-lock"/></svg>
+                                        {% else %}
+                                            <svg class="ti ti-folder" style="font-size:13px; flex-shrink:0;"><use href="#ti-folder"/></svg>
+                                        {% endif %}
+                                        <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ folder.name }}</span>
+                                        {% if folder.file_count > 0 %}
+                                            <span style="font-size:11px; background:var(--gh-bg-subtle); border-radius:999px; padding:1px 6px; color:var(--gh-fg-muted); flex-shrink:0;">{{ folder.file_count }}</span>
+                                        {% endif %}
+                                    </a>
+                                    {% if not folder.is_system %}
+                                    <button type="button" onclick="openFolderModal({{ folder.id }}, '{{ folder.name|escape('js') }}', '{{ folder.description|default('')|escape('js') }}')"
+                                            class="gh-btn gh-btn-sm" title="Rename"
+                                            style="padding:2px 5px; font-size:11px; opacity:0.6; border-color:transparent; background:transparent;">
+                                        <svg class="ti ti-pencil" style="font-size:11px;"><use href="#ti-pencil"/></svg>
+                                    </button>
+                                    {% endif %}
+                                </div>
+
+                                {# Sub-folders #}
+                                {% if folder.children is defined and folder.children|length > 0 %}
+                                    <div style="margin-left:16px; border-left:1px solid var(--gh-border-muted); padding-left:6px; margin-top:2px;">
+                                        {% for child in folder.children %}
+                                            {% set is_child_active = current_folder is not null and current_folder.id == child.id %}
+                                            <div style="display:flex; align-items:center; gap:4px;">
+                                                <a href="{{ admin_prefix }}/downloads/folder/{{ child.slug }}"
+                                                   style="flex:1; display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px;
+                                                          text-decoration:none;
+                                                          color:{{ is_child_active ? 'var(--accent, #7c3aed)' : 'var(--gh-fg-muted)' }};
+                                                          font-weight:{{ is_child_active ? '600' : 'normal' }};
+                                                          background:{{ is_child_active ? 'var(--accent-dim, rgba(124,58,237,.1))' : 'transparent' }};
+                                                          border-radius:4px;">
+                                                    <svg class="ti ti-folder" style="font-size:12px; flex-shrink:0;"><use href="#ti-folder"/></svg>
+                                                    <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ child.name }}</span>
+                                                    {% if child.file_count > 0 %}
+                                                        <span style="font-size:10px; background:var(--gh-bg-subtle); border-radius:999px; padding:1px 5px; color:var(--gh-fg-muted); flex-shrink:0;">{{ child.file_count }}</span>
+                                                    {% endif %}
+                                                </a>
+                                                {% if not child.is_system %}
+                                                <button type="button" onclick="openFolderModal({{ child.id }}, '{{ child.name|escape('js') }}', '{{ child.description|default('')|escape('js') }}')"
+                                                        class="gh-btn gh-btn-sm" title="Rename"
+                                                        style="padding:2px 4px; font-size:10px; opacity:0.6; border-color:transparent; background:transparent;">
+                                                    <svg class="ti ti-pencil" style="font-size:10px;"><use href="#ti-pencil"/></svg>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# ── Main Panel ── #}
+                <div style="min-width:0;">
+
+                    {# Breadcrumb + folder actions #}
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+                        <nav style="display:flex; align-items:center; gap:4px; font-size:13px; color:var(--gh-fg-muted); flex:1;">
+                            <a href="{{ admin_prefix }}/downloads" style="color:var(--gh-accent-fg); text-decoration:none;">{{ t('adm.downloads.all_files')|default('All Files') }}</a>
+                            {% if current_folder %}
+                                <span style="color:var(--gh-fg-subtle);">/</span>
+                                <span style="color:var(--gh-fg-default); font-weight:600;">{{ current_folder.name }}</span>
+                                {% if current_folder.description %}
+                                    <span style="color:var(--gh-fg-muted); font-size:12px;">— {{ current_folder.description }}</span>
+                                {% endif %}
+                            {% endif %}
+                        </nav>
+
+                        {% if current_folder and not current_folder.is_system %}
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="gh-btn gh-btn-sm"
+                                    onclick="openFolderModal({{ current_folder.id }}, '{{ current_folder.name|escape('js') }}', '{{ current_folder.description|default('')|escape('js') }}')">
+                                <svg class="ti ti-pencil"><use href="#ti-pencil"/></svg> Rename
+                            </button>
+                            <button type="button" class="gh-btn gh-btn-sm" style="color:var(--gh-danger-fg);"
+                                    onclick="confirmDeleteFolder({{ current_folder.id }}, '{{ current_folder.name|escape('js') }}')">
+                                <svg class="ti ti-trash"><use href="#ti-trash"/></svg> Delete Folder
+                            </button>
+                        </div>
+                        {% endif %}
+
+                        <button type="button" class="gh-btn gh-btn-sm gh-btn-primary" id="toggle-upload-btn" onclick="toggleUploadBox()" style="font-weight:600;">
+                            <span id="toggle-btn-icon"><svg class="ti ti-plus"><use href="#ti-plus"/></svg></span>
+                            <span id="toggle-btn-text">New Upload</span>
+                        </button>
+                    </div>
+
+                    {# Upload Creation Box #}
+                    <div class="gh-box" style="margin-bottom: 20px;">
+                        <div id="upload-box-content" style="display:none; padding:16px; border-top:1px solid var(--gh-border-default); background:var(--gh-bg-canvas);">
+                            <div style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--gh-border-muted); padding-bottom:10px;">
+                                <button type="button" id="tab-simple-btn" class="gh-btn gh-btn-sm" onclick="switchUploadTab('simple')" style="font-weight:600; background:var(--gh-bg-subtle);">
+                                    <svg class="ti ti-bolt"><use href="#ti-bolt"/></svg> Simple Upload
+                                </button>
+                                <button type="button" id="tab-advanced-btn" class="gh-btn gh-btn-sm" onclick="switchUploadTab('advanced')" style="border-color:transparent; background:transparent;">
+                                    <svg class="ti ti-tool"><use href="#ti-tool"/></svg> Password &amp; Limits
+                                </button>
+                                <button type="button" id="tab-widget-btn" class="gh-btn gh-btn-sm" onclick="switchUploadTab('widget')" style="border-color:transparent; background:transparent;">
+                                    <svg class="ti ti-puzzle"><use href="#ti-puzzle"/></svg> Quick Widget
+                                </button>
+                            </div>
+
+                            {# 1. Simple Form #}
+                            <form id="form-simple" method="POST" action="{{ admin_prefix|default('/admin') }}/downloads/upload" enctype="multipart/form-data">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                {% if current_folder %}
+                                    <input type="hidden" name="folder_id" value="{{ current_folder.id }}">
+                                {% endif %}
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
+                                    <div class="gh-form-group">
+                                        <label class="gh-form-label" for="simple_file">Select File <span style="color:#cf222e;">*</span></label>
+                                        <input type="file" id="simple_file" name="file" required class="gh-form-control" style="padding:4px;">
+                                    </div>
+                                    <div class="gh-form-group">
+                                        <label class="gh-form-label" for="simple_title">Display Title (Optional)</label>
+                                        <input type="text" id="simple_title" name="title" placeholder="e.g. Release v1.0.0" class="gh-form-control">
+                                    </div>
+                                    {% if not current_folder %}
+                                    <div class="gh-form-group">
+                                        <label class="gh-form-label" for="simple_folder">Target Folder</label>
+                                        <select id="simple_folder" name="folder_id" class="gh-form-control">
+                                            <option value="">— Uncategorised —</option>
+                                            {% for f in folders %}
+                                                <option value="{{ f.id }}">📁 {{ f.name }}</option>
+                                                {% for c in f.children %}
+                                                    <option value="{{ c.id }}">　└ {{ c.name }}</option>
+                                                {% endfor %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div style="display:flex; justify-content:flex-end; margin-top:14px; padding-top:12px; border-top:1px solid var(--gh-border-muted);">
+                                    <button type="submit" class="gh-btn gh-btn-primary" style="font-weight:600;">
+                                        <svg class="ti ti-link"><use href="#ti-link"/></svg> Generate Link
+                                    </button>
+                                </div>
+                            </form>
+
+                            {# 2. Advanced Form #}
+                            <form id="form-advanced" method="POST" action="{{ admin_prefix|default('/admin') }}/downloads/upload" enctype="multipart/form-data" style="display:none;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                {% if current_folder %}
+                                    <input type="hidden" name="folder_id" value="{{ current_folder.id }}">
+                                {% endif %}
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+                                    <div class="gh-form-group">
+                                        <label class="gh-form-label" for="adv_file">Select File <span style="color:#cf222e;">*</span></label>
+                                        <input type="file" id="adv_file" name="file" required class="gh-form-control" style="padding:4px;">
+                                    </div>
+                                    <div class="gh-form-group">
+                                        <label class="gh-form-label" for="adv_title">Custom Title</label>
+                                        <input type="text" id="adv_title" name="title" placeholder="e.g. Production Installer" class="gh-form-control">
+                                    </div>
+                                    {% if not current_folder %}
+                                    <div class="gh-form-group">
+                                        <label class="gh-form-label" for="adv_folder">Target Folder</label>
+                                        <select id="adv_folder" name="folder_id" class="gh-form-control">
+                                            <option value="">— Uncategorised —</option>
+                                            {% for f in folders %}
+                                                <option value="{{ f.id }}">📁 {{ f.name }}</option>
+                                                {% for c in f.children %}
+                                                    <option value="{{ c.id }}">　└ {{ c.name }}</option>
+                                                {% endfor %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    {% endif %}
+                                    <div class="gh-form-group">
+                                        <label class="gh-form-label" for="password">Password Protection</label>
+                                        <input type="password" id="password" name="password" placeholder="Leave empty for public" class="gh-form-control">
+                                    </div>
+                                    <div class="gh-form-group">
+                                        <label class="gh-form-label" for="expiry_days">Expiration (Days)</label>
+                                        <input type="number" id="expiry_days" name="expiry_days" min="1" max="365" placeholder="e.g. 30" class="gh-form-control">
+                                    </div>
+                                    <div class="gh-form-group">
+                                        <label class="gh-form-label" for="max_downloads">Download Limit</label>
+                                        <input type="number" id="max_downloads" name="max_downloads" min="1" placeholder="e.g. 100" class="gh-form-control">
+                                    </div>
+                                </div>
+                                <div style="display:flex; justify-content:flex-end; margin-top:14px; padding-top:12px; border-top:1px solid var(--gh-border-muted);">
+                                    <button type="submit" class="gh-btn gh-btn-primary" style="font-weight:600;">
+                                        <svg class="ti ti-shield-lock"><use href="#ti-shield-lock"/></svg> Generate Protected Link
+                                    </button>
+                                </div>
+                            </form>
+
+                            {# 3. Widget #}
+                            <div id="section-widget" style="display:none;">
+                                <p style="font-size:13px; color:var(--gh-fg-muted); margin:0 0 14px;">
+                                    Include the drag-and-drop widget using:
+                                    <code style="background:var(--gh-bg-subtle); padding:2px 6px; border-radius:4px; font-size:12px;">&#123;% include "partials/quick-upload-widget.twig" %&#125;</code>
+                                </p>
+                                {% include "partials/quick-upload-widget.twig" with { widget_id: 'admin_demo' } %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Files Table #}
+                    <div class="gh-box">
+                        <div class="gh-box-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px;">
+                            <h2 style="font-size:14px; margin:0; font-weight:600; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                                <svg class="ti ti-files"><use href="#ti-files"/></svg>
+                                {% if current_folder %}
+                                    <span>{{ current_folder.name }} ({{ files|length }} files)</span>
+                                {% else %}
+                                    <span>All Download Links ({{ files|length }})</span>
+                                {% endif %}
+                            </h2>
+                        </div>
+
+                        {% if files is empty %}
+                            <div style="padding:40px 20px; text-align:center; color:var(--gh-fg-muted);">
+                                <svg class="ti ti-cloud-off" style="font-size:36px; margin-bottom:8px; opacity:0.6;"><use href="#ti-cloud-download"/></svg>
+                                <p style="font-size:14px; margin:0 0 4px;">No files in this folder yet</p>
+                                <p style="font-size:12px; margin:0;">Click "New Upload" above to add the first file.</p>
+                            </div>
+                        {% else %}
+                            <div style="overflow-x:auto;">
+                                <table class="gh-table" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>Title / File</th>
+                                            <th>Folder</th>
+                                            <th>Size</th>
+                                            <th>Downloads</th>
+                                            <th>Status</th>
+                                            <th>Short URL</th>
+                                            <th style="text-align:right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for f in files %}
+                                        <tr>
+                                            <td style="max-width:200px;">
+                                                <div style="font-weight:500; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ f.title }}">
+                                                    {{ f.title|default(f.original_name) }}
+                                                </div>
+                                                <div style="font-size:11px; color:var(--gh-fg-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ f.original_name }}</div>
+                                            </td>
+                                            <td>
+                                                {% if f.folder_name %}
+                                                    <a href="{{ admin_prefix }}/downloads/folder/{{ f.folder_slug }}"
+                                                       style="font-size:12px; color:var(--gh-accent-fg); text-decoration:none; display:flex; align-items:center; gap:4px;">
+                                                        <svg class="ti ti-folder" style="font-size:12px;"><use href="#ti-folder"/></svg>
+                                                        {{ f.folder_name }}
+                                                    </a>
+                                                {% else %}
+                                                    <span style="font-size:12px; color:var(--gh-fg-subtle);">—</span>
+                                                {% endif %}
+                                            </td>
+                                            <td style="font-size:12px; white-space:nowrap; color:var(--gh-fg-muted);">
+                                                {% if f.file_size > 1048576 %}
+                                                    {{ (f.file_size / 1048576)|round(1) }} MB
+                                                {% elseif f.file_size > 1024 %}
+                                                    {{ (f.file_size / 1024)|round(1) }} KB
+                                                {% else %}
+                                                    {{ f.file_size }} B
+                                                {% endif %}
+                                            </td>
+                                            <td style="font-size:12px; color:var(--gh-fg-muted); text-align:center;">
+                                                {{ f.download_count }}{% if f.max_downloads %}/{{ f.max_downloads }}{% endif %}
+                                            </td>
+                                            <td>
+                                                {% if not f.is_active %}
+                                                    <span style="font-size:11px; background:var(--gh-danger-subtle); color:var(--gh-danger-fg); padding:2px 7px; border-radius:999px;">Inactive</span>
+                                                {% elseif f.is_expired %}
+                                                    <span style="font-size:11px; background:var(--gh-attention-subtle); color:var(--gh-attention-fg); padding:2px 7px; border-radius:999px;">Expired</span>
+                                                {% elseif f.is_limit_reached %}
+                                                    <span style="font-size:11px; background:var(--gh-attention-subtle); color:var(--gh-attention-fg); padding:2px 7px; border-radius:999px;">Limit reached</span>
+                                                {% else %}
+                                                    <span style="font-size:11px; background:var(--gh-success-subtle); color:var(--gh-success-fg); padding:2px 7px; border-radius:999px;">Active</span>
+                                                {% endif %}
+                                                {% if f.is_locked %}<svg class="ti ti-lock" style="font-size:11px; color:var(--gh-fg-muted); margin-left:4px;" title="Password protected"><use href="#ti-lock"/></svg>{% endif %}
+                                            </td>
+                                            <td style="min-width:200px;">
+                                                <div style="display:flex; align-items:center; gap:4px;">
+                                                    <input id="link-{{ f.id }}" type="text" value="{{ f.short_url }}" readonly
+                                                           style="font-family:monospace; font-size:11px; background:var(--gh-bg-subtle); border:1px solid var(--gh-border-muted);
+                                                                  border-radius:4px; padding:3px 6px; flex:1; color:var(--gh-fg-default); min-width:0;">
+                                                    <button type="button" class="gh-btn gh-btn-sm" onclick="copyLink('link-{{ f.id }}', this)" title="Copy Link">
+                                                        <svg class="ti ti-copy" style="font-size:13px;"><use href="#ti-copy"/></svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td style="text-align:right; white-space:nowrap;">
+                                                {# Move to folder button #}
+                                                <button type="button" class="gh-btn gh-btn-sm"
+                                                        onclick="openMoveModal({{ f.id }}, '{{ f.title|default(f.original_name)|escape('js') }}')"
+                                                        title="Move to folder" style="margin-right:4px;">
+                                                    <svg class="ti ti-arrows-move" style="font-size:13px;"><use href="#ti-arrows-move"/></svg>
+                                                </button>
+                                                <form method="POST" action="{{ admin_prefix }}/downloads/{{ f.id }}/delete" style="display:inline;"
+                                                      onsubmit="return confirm('Delete link for {{ f.original_name|escape('js') }}?')">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                    <button type="submit" class="gh-btn gh-btn-sm" style="color:var(--gh-danger-fg);" title="Delete">
+                                                        <svg class="ti ti-trash" style="font-size:13px;"><use href="#ti-trash"/></svg>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                </div>{# /Main Panel #}
+            </div>{# /Sidebar+Main Grid #}
+
+            {# ── Folder Create/Rename Modal ── #}
+            <div id="folder-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.55); align-items:center; justify-content:center;">
+                <div class="gh-box" style="width:420px; max-width:92vw; padding:24px; position:relative;">
+                    <h3 id="folder-modal-title" style="font-size:16px; margin:0 0 18px; font-weight:700;">New Folder</h3>
+                    <form id="folder-modal-form" method="POST" action="">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" id="fm-parent-id" name="parent_id" value="">
+                        <div class="gh-form-group" style="margin-bottom:14px;">
+                            <label class="gh-form-label" for="fm-name">Folder Name <span style="color:#cf222e;">*</span></label>
+                            <input type="text" id="fm-name" name="name" required maxlength="100" class="gh-form-control" placeholder="e.g. Releases, Docs, Marketing…">
+                        </div>
+                        <div class="gh-form-group" style="margin-bottom:14px;">
+                            <label class="gh-form-label" for="fm-parent">Parent Folder (optional)</label>
+                            <select id="fm-parent-select" name="parent_id" class="gh-form-control">
+                                <option value="">— Root (no parent) —</option>
+                                {% for folder in folders %}
+                                    <option value="{{ folder.id }}">{{ folder.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="gh-form-group" style="margin-bottom:18px;">
+                            <label class="gh-form-label" for="fm-desc">Description (optional)</label>
+                            <input type="text" id="fm-desc" name="description" maxlength="255" class="gh-form-control" placeholder="Short description of this folder">
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button type="button" class="gh-btn gh-btn-sm" onclick="closeFolderModal()">Cancel</button>
+                            <button type="submit" id="fm-submit" class="gh-btn gh-btn-sm gh-btn-primary" style="font-weight:600;">
+                                <svg class="ti ti-folder-plus"><use href="#ti-folder-plus"/></svg>
+                                <span id="fm-submit-label">Create Folder</span>
+                            </button>
+                        </div>
+                    </form>
+                    <button type="button" onclick="closeFolderModal()"
+                            style="position:absolute; top:12px; right:14px; background:none; border:none; font-size:18px; cursor:pointer; color:var(--gh-fg-muted); line-height:1;">&times;</button>
+                </div>
+            </div>
+
+            {# ── Move File Modal ── #}
+            <div id="move-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.55); align-items:center; justify-content:center;">
+                <div class="gh-box" style="width:380px; max-width:92vw; padding:24px; position:relative;">
+                    <h3 style="font-size:16px; margin:0 0 6px; font-weight:700;">Move File</h3>
+                    <p id="move-modal-filename" style="font-size:12px; color:var(--gh-fg-muted); margin:0 0 18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></p>
+                    <form id="move-modal-form" method="POST" action="">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <div class="gh-form-group" style="margin-bottom:18px;">
+                            <label class="gh-form-label" for="move-folder-id">Target Folder</label>
+                            <select id="move-folder-id" name="folder_id" class="gh-form-control">
+                                <option value="">— Uncategorised —</option>
+                                {% for f in folders %}
+                                    <option value="{{ f.id }}">📁 {{ f.name }}</option>
+                                    {% for c in f.children %}
+                                        <option value="{{ c.id }}">　└ {{ c.name }}</option>
+                                    {% endfor %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button type="button" class="gh-btn gh-btn-sm" onclick="closeMoveModal()">Cancel</button>
+                            <button type="submit" class="gh-btn gh-btn-sm gh-btn-primary" style="font-weight:600;">
+                                <svg class="ti ti-arrows-move"><use href="#ti-arrows-move"/></svg> Move
+                            </button>
+                        </div>
+                    </form>
+                    <button type="button" onclick="closeMoveModal()"
+                            style="position:absolute; top:12px; right:14px; background:none; border:none; font-size:18px; cursor:pointer; color:var(--gh-fg-muted); line-height:1;">&times;</button>
+                </div>
+            </div>
+
+            {# ── Delete Folder Hidden Form ── #}
+            <form id="delete-folder-form" method="POST" action="" style="display:none;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            </form>
+
+
+<script>
+// ── Upload box toggle ──
+function toggleUploadBox() {
+    var box = document.getElementById('upload-box-content');
+    var btnText = document.getElementById('toggle-btn-text');
+    if (!box) return;
+    if (box.style.display === 'none' || box.style.display === '') {
+        box.style.display = 'block'; btnText.textContent = 'Hide Uploader';
+    } else {
+        box.style.display = 'none'; btnText.textContent = 'New Upload';
+    }
+}
+
+// ── Upload tab switch ──
+function switchUploadTab(tab) {
+    ['simple','advanced','widget'].forEach(function(t) {
+        var el = document.getElementById(t === 'widget' ? 'section-widget' : 'form-' + t);
+        if (el) el.style.display = (t === tab) ? 'block' : 'none';
+        var btn = document.getElementById('tab-' + t + '-btn');
+        if (btn) {
+            btn.style.background = t === tab ? 'var(--gh-bg-subtle)' : 'transparent';
+            btn.style.borderColor = t === tab ? 'var(--gh-border-default)' : 'transparent';
+            btn.style.fontWeight  = t === tab ? '600' : 'normal';
+        }
+    });
+}
+
+// ── Copy link ──
+function copyLink(inputId, btn) {
+    var el = document.getElementById(inputId);
+    if (!el) return;
+    navigator.clipboard.writeText(el.value).then(function() {
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<svg class="ti ti-check" style="font-size:13px; color:#3fb950;"><use href="#ti-check"/></svg>';
+        setTimeout(function() { btn.innerHTML = orig; }, 1500);
+    });
+}
+
+// ── Folder Modal ──
+var _folderModalMode = 'create'; // 'create' | 'rename'
+function openFolderModal(folderId, name, desc) {
+    var modal = document.getElementById('folder-modal');
+    var form  = document.getElementById('folder-modal-form');
+    var ap    =  + admin_prefix_js + ;
+
+    if (folderId) {
+        // Rename mode
+        _folderModalMode = 'rename';
+        document.getElementById('folder-modal-title').textContent = 'Rename Folder';
+        document.getElementById('fm-submit-label').textContent = 'Save';
+        document.getElementById('fm-name').value = name || '';
+        document.getElementById('fm-desc').value  = desc || '';
+        document.getElementById('fm-parent-select').closest('.gh-form-group').style.display = 'none';
+        form.action = ap + '/downloads/folders/' + folderId + '/rename';
+    } else {
+        // Create mode
+        _folderModalMode = 'create';
+        document.getElementById('folder-modal-title').textContent = 'New Folder';
+        document.getElementById('fm-submit-label').textContent = 'Create Folder';
+        document.getElementById('fm-name').value = '';
+        document.getElementById('fm-desc').value  = '';
+        document.getElementById('fm-parent-select').closest('.gh-form-group').style.display = '';
+        form.action = ap + '/downloads/folders/create';
+    }
+
+    modal.style.display = 'flex';
+    setTimeout(function() { document.getElementById('fm-name').focus(); }, 80);
+}
+function closeFolderModal() {
+    document.getElementById('folder-modal').style.display = 'none';
+}
+document.getElementById('folder-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeFolderModal();
+});
+
+// ── Move File Modal ──
+function openMoveModal(fileId, filename) {
+    var ap =  + admin_prefix_js + ;
+    document.getElementById('move-modal-filename').textContent = filename;
+    document.getElementById('move-modal-form').action = ap + '/downloads/' + fileId + '/move';
+    document.getElementById('move-modal').style.display = 'flex';
+}
+function closeMoveModal() {
+    document.getElementById('move-modal').style.display = 'none';
+}
+document.getElementById('move-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeMoveModal();
+});
+
+// ── Delete Folder Confirmation ──
+function confirmDeleteFolder(folderId, name) {
+    if (!confirm('Delete folder "' + name + '"?\nAll its files will move to Uncategorised.')) return;
+    var ap   =  + admin_prefix_js + ;
+    var form = document.getElementById('delete-folder-form');
+    form.action = ap + '/downloads/folders/' + folderId + '/delete';
+    form.submit();
+}
+</script>
+{% endblock %}

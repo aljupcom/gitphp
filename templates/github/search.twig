@@ -1,0 +1,143 @@
+{% extends "layout.twig" %}
+
+{% block title %}Search results · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-container" style="max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem;">
+    <div style="margin-bottom: 2rem;">
+        <form method="GET" action="/search" style="display: flex; gap: 0.5rem; max-width: 700px;">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search repositories, code, commits, issues, users…" class="gh-input" style="flex: 1; padding: 0.6rem 1rem; font-size: 1rem;">
+            <button type="submit" class="gh-btn gh-btn-primary" style="padding: 0.6rem 1.25rem;">Search</button>
+        </form>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: start;">
+        <!-- Filter Tabs Sidebar -->
+        <div style="background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px; padding: 0.5rem;">
+            <nav style="display: flex; flex-direction: column; gap: 0.25rem;">
+                {% for key, label in {
+                    'repositories': ['Repositories', repo_results|length],
+                    'code': ['Code', code_results|length],
+                    'commits': ['Commits', commit_results|length],
+                    'users': ['Users', user_results|length],
+                    'issues': ['Issues', issue_results|length],
+                    'pulls': ['Pull requests', pull_results|length]
+                } %}
+                <a href="/search?q={{ query }}&type={{ key }}" class="gh-btn" style="text-align: left; justify-content: space-between; border: none; background: {{ type == key ? 'var(--gh-bg)' : 'transparent' }}; font-weight: {{ type == key ? '600' : 'normal' }};">
+                    <span>{{ label[0] }}</span>
+                    <span class="gh-tab-count">{{ label[1] }}</span>
+                </a>
+                {% endfor %}
+            </nav>
+        </div>
+
+        <!-- Search Results List -->
+        <div>
+            {% if query is empty %}
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--gh-text-muted);">
+                    Enter a search term above to find repositories, code, commits, issues and users.
+                </div>
+
+            {% elseif type == 'code' %}
+                <h2 style="font-size: 1.2rem; font-weight: 600; margin: 0 0 1rem 0; color: var(--gh-text);">Code matches ({{ code_results|length }})</h2>
+                {% if code_results is empty %}
+                    <div class="gh-empty" style="text-align: center; padding: 3rem; background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px;">No code matches found for "{{ query }}".</div>
+                {% else %}
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        {% for c in code_results %}
+                            <div style="background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px; overflow: hidden;">
+                                <div style="padding: 0.6rem 1rem; background: var(--gh-bg); border-bottom: 1px solid var(--gh-border); font-size: 0.88rem; display: flex; justify-content: space-between;">
+                                    <a href="/{{ c.repo.display_owner|default(owner) }}/{{ c.repo.slug }}/blob/HEAD/{{ c.file }}#L{{ c.line_num }}" style="color: #1f6feb; text-decoration: none; font-weight: 600;">{{ c.repo.name }} / {{ c.file }}</a>
+                                    <span style="color: var(--gh-text-muted);">Line {{ c.line_num }}</span>
+                                </div>
+                                <div style="padding: 0.75rem 1rem; font-family: monospace; font-size: 0.85rem; overflow-x: auto; background: var(--gh-bg-secondary); color: var(--gh-text);">
+                                    <code>{{ c.content }}</code>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+            {% elseif type == 'commits' %}
+                <h2 style="font-size: 1.2rem; font-weight: 600; margin: 0 0 1rem 0; color: var(--gh-text);">Commit matches ({{ commit_results|length }})</h2>
+                {% if commit_results is empty %}
+                    <div class="gh-empty" style="text-align: center; padding: 3rem; background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px;">No commits found matching "{{ query }}".</div>
+                {% else %}
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        {% for cm in commit_results %}
+                            <div style="background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                     <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;"><a href="/{{ cm.repo.display_owner|default(owner) }}/{{ cm.repo.slug }}/commit/{{ cm.hash }}" style="color: var(--gh-text); text-decoration: none;">{{ cm.subject }}</a></div>
+                                     <div style="font-size: 0.82rem; color: var(--gh-text-muted);"><strong>{{ cm.repo.name }}</strong> · {{ cm.author_name }} committed {{ cm.date|time_ago }}</div>
+                                 </div>
+                                 <a href="/{{ cm.repo.display_owner|default(owner) }}/{{ cm.repo.slug }}/commit/{{ cm.hash }}" class="gh-btn gh-btn-sm" style="font-family: monospace;">{{ cm.hash|slice(0, 7) }}</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+            {% elseif type == 'users' %}
+                <h2 style="font-size: 1.2rem; font-weight: 600; margin: 0 0 1rem 0; color: var(--gh-text);">Users ({{ user_results|length }})</h2>
+                {% if user_results is empty %}
+                    <div class="gh-empty" style="text-align: center; padding: 3rem; background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px;">No users found matching "{{ query }}".</div>
+                {% else %}
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        {% for u in user_results %}
+                            <a href="/{{ u.username }}" style="display:flex; align-items:center; gap:0.75rem; background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px; padding: 0.9rem 1rem; text-decoration:none;">
+                                <span style="width:38px; height:38px; border-radius:50%; background:#58a6ff22; color:#58a6ff; display:inline-flex; align-items:center; justify-content:center; font-weight:700;">{{ u.username|first|upper }}</span>
+                                <span style="font-weight:600; color: var(--gh-text);">{{ u.username }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+            {% elseif type == 'issues' or type == 'pulls' %}
+                {% set rows = type == 'issues' ? issue_results : pull_results %}
+                {% set noun = type == 'issues' ? 'issues' : 'pull requests' %}
+                <h2 style="font-size: 1.2rem; font-weight: 600; margin: 0 0 1rem 0; color: var(--gh-text);">{{ noun|capitalize }} ({{ rows|length }})</h2>
+                {% if rows is empty %}
+                    <div class="gh-empty" style="text-align: center; padding: 3rem; background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px;">No {{ noun }} found matching "{{ query }}".</div>
+                {% else %}
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        {% for i in rows %}
+                            {% set base = '/' ~ i.repo_owner ~ '/' ~ i.repo_slug %}
+                            <div style="background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px; padding: 0.9rem 1rem;">
+                                <div style="display:flex; justify-content:space-between; align-items:baseline; gap:1rem;">
+                                    <a href="{{ base }}/{% if type == 'issues' %}issues/{{ i.id }}{% else %}pull/{{ i.number }}{% endif %}" style="font-weight:600; color:#1f6feb; text-decoration:none;">{{ i.title }}</a>
+                                    <span class="gh-badge" style="background: var(--gh-bg);">{{ i.status }}</span>
+                                </div>
+                                <div style="font-size:0.82rem; color:var(--gh-text-muted); margin-top:0.35rem;">
+                                    {{ i.repo_name }} · {% if type == 'issues' %}#{{ i.id }}{% else %}#{{ i.number }}{% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <h2 style="font-size: 1.2rem; font-weight: 600; margin: 0 0 1rem 0; color: var(--gh-text);">Repository matches ({{ repo_results|length }})</h2>
+                {% if repo_results is empty %}
+                    <div class="gh-empty" style="text-align: center; padding: 3rem; background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px;">No repositories found matching "{{ query }}".</div>
+                {% else %}
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        {% for r in repo_results %}
+                            <div style="background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px; padding: 1.25rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                                    <a href="/{{ r.display_owner }}/{{ r.slug }}" style="font-size: 1.1rem; font-weight: 600; color: #1f6feb; text-decoration: none;">{{ r.display_owner }} / {{ r.name }}</a>
+                                    <span class="gh-badge{{ r.visibility == 'private' ? ' gh-badge-private' : '' }}">{{ r.visibility }}</span>
+                                </div>
+                                {% if r.description %}<p style="margin: 0 0 0.75rem 0; color: var(--gh-text-muted); font-size: 0.9rem;">{{ r.description }}</p>{% endif %}
+                                <div style="display: flex; gap: 1rem; font-size: 0.82rem; color: var(--gh-text-muted);">
+                                    <span>⭐ {{ r.stars_count|default(0) }}</span>
+                                    <span>🍴 {{ r.forks_count|default(0) }}</span>
+                                    <span>Updated {{ r.updated_at|time_ago }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

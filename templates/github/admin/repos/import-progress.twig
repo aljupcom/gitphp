@@ -1,0 +1,92 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.repo_import.progress_title') }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    <div style="max-width: 820px; margin: 0 auto;">
+        <div class="gh-page-head" style="margin-bottom: 20px;">
+            <h1 class="gh-page-title" style="font-size:22px; font-weight:600; margin:0 0 6px;">{{ t('ui.repo_import.progress_header') }}</h1>
+            <p style="color:var(--gh-fg-muted); font-size:13px; margin:0;">
+                {{ t('ui.repo_import.progress_desc') }}
+            </p>
+        </div>
+
+        {% if status is null %}
+            <div class="gh-flash gh-flash-error" role="alert">
+                {{ t('ui.repo_import.job_expired') }} <a href="/repos/import" style="color:inherit; text-decoration:underline;">{{ t('ui.repo_import.start_new') }}</a>.
+            </div>
+        {% else %}
+        <div class="gh-form-card" id="imp-card" data-job-id="{{ job_id }}" data-initial-phase="{{ status.phase|default('queued')|e }}" data-progress-url="/repos/import/progress" data-run-url="/repos/import/run" style="border:1px solid var(--gh-border-default); border-radius:8px; padding:24px; background:var(--gh-bg-default);">
+            <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+                <h2 style="margin:0; font-size:1.15rem; font-weight:600;" id="imp-title">{{ status.name|default(status.slug) }}</h2>
+                <span class="gh-mono" dir="ltr" style="color:var(--gh-fg-muted); font-size:.85rem;">{{ status.slug }}</span>
+            </div>
+
+            {# Big percentage + phase #}
+            <div style="display:flex; align-items:center; gap:16px; margin:20px 0 14px;">
+                <div id="imp-pct" style="font-size:2.6rem; font-weight:700; letter-spacing:-1px; min-width:110px;
+                     background:linear-gradient(120deg,var(--gh-accent-fg, #58a6ff),var(--gh-success-fg, #3fb950));
+                     -webkit-background-clip:text; background-clip:text; color:transparent;">{{ status.percent|default(0) }}%</div>
+                <div style="min-width:0;">
+                    <div id="imp-msg" style="font-weight:600; font-size:15px;">{{ status.message|default('Queued') }}</div>
+                    <div id="imp-detail" class="gh-mono" style="color:var(--gh-fg-muted); font-size:.82rem; margin-top:3px; word-break:break-all;">{{ status.detail|default('') }}</div>
+                </div>
+            </div>
+
+            {# Progress bar #}
+            <div style="height:10px; border-radius:999px; background:var(--gh-bg-inset,#010409);
+                        border:1px solid var(--gh-border-default); overflow:hidden; position:relative;">
+                <div id="imp-bar" style="height:100%; width:{{ max(status.percent|default(2), 2) }}%;
+                     background:linear-gradient(90deg,var(--gh-success-emphasis,#2ea043),var(--gh-accent-emphasis,#388bfd));
+                     transition:width .5s ease; position:relative;">
+                    <span id="imp-shimmer" style="position:absolute; inset:0;
+                          background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);
+                          animation:impShimmer 1.4s linear infinite;"></span>
+                </div>
+            </div>
+
+            {# Phase checklist #}
+            <div style="display:flex; gap:14px; flex-wrap:wrap; margin:16px 0 6px; font-size:.8rem;" id="imp-phases">
+                <span data-ph="verify"    style="color:var(--gh-fg-muted);">{{ t('ui.repo_import.phase_verify') }}</span>
+                <span data-ph="metadata"  style="color:var(--gh-fg-muted);">{{ t('ui.repo_import.phase_metadata') }}</span>
+                <span data-ph="clone"     style="color:var(--gh-fg-muted);">{{ t('ui.repo_import.phase_clone') }}</span>
+                <span data-ph="audit"     style="color:var(--gh-fg-muted);">{{ t('ui.repo_import.phase_audit') }}</span>
+                <span data-ph="extras"    style="color:var(--gh-fg-muted);">{{ t('ui.repo_import.phase_extras') }}</span>
+                <span data-ph="done"      style="color:var(--gh-fg-muted);">{{ t('ui.repo_import.phase_done') }}</span>
+            </div>
+
+            {# Live log tail #}
+            <pre id="imp-log" class="gh-mono" dir="ltr" style="margin-top:16px; background:var(--gh-bg-inset,#010409);
+                 border:1px solid var(--gh-border-default); border-radius:8px; padding:12px 14px;
+                 font-size:.78rem; color:var(--gh-fg-muted); max-height:190px; overflow-y:auto; line-height:1.7;">{% for line in status.log|default([]) %}{{ line }}
+{% endfor %}</pre>
+
+            {# Outcome panels #}
+            <div id="imp-error" class="gh-flash gh-flash-error" role="alert" hidden style="margin-top:14px;"></div>
+
+            <div id="imp-done" hidden style="margin-top:18px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <a id="imp-repo-btn" class="gh-btn gh-btn-primary" href="#">{{ t('ui.repo_import.open_repo') }}</a>
+                    <a class="gh-btn" href="/repos/import">{{ t('ui.repo_import.import_another') }}</a>
+                    <a class="gh-btn" href="/">{{ t('ui.repo_import.back_to_repos') }}</a>
+                </div>
+            </div>
+
+            <noscript>
+                <p class="gh-hint" style="margin-top:14px;">
+                    {{ t('ui.repo_import.noscript_hint') }} <a href="/repos/import/progress?id={{ job_id }}">{{ t('ui.repo_import.refresh_manually') }}</a>.
+                </p>
+                <meta http-equiv="refresh" content="3">
+            </noscript>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {% if status is not null %}
+    <script src="{{ asset('assets/js/import-progress.js') }}"></script>
+    {% endif %}
+{% endblock %}

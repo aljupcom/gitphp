@@ -1,0 +1,150 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.nav.sign_in') }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+{% set admin_tab = login_tab is defined and login_tab == 'admin' %}
+<section class="gh-auth">
+    <div style="text-align: center; margin-bottom: 24px;">
+        <a href="/" aria-label="{{ app_name }}" style="display: inline-block; text-decoration: none;">
+            {% include "partials/logo.twig" with { size: 48 } %}
+        </a>
+    </div>
+
+    <h1 class="gh-auth-title">{{ t('ui.auth.login_title') }}</h1>
+    <p class="gh-auth-sub">{{ t('ui.auth.login_sub')|default('Use your account to access repositories, pull requests and more.') }}</p>
+
+    {% if error is defined and error %}
+        <div class="gh-flash gh-flash-error gh-auth-error{% if error_code is defined and (error_code == 'BOT' or error_code == 'NOT_VERIFIED') %} gh-flash-warn{% endif %}"
+             role="alert">
+            {{ error }}
+            {% if error_code is defined and (error_code == 'SUSPENDED' or error_code == 'LOCKED') %}
+                <a href="/contact" style="display:block; margin-top:4px; font-weight:600;">{{ t('ui.auth.contact_support')|default('Contact support') }}</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="gh-auth-card">
+        {# CSS-only tabs: hidden radio inputs drive which pane is visible,
+           so no JavaScript is needed for switching (CSP-safe). #}
+        <div class="gh-auth-tabs">
+            <input type="radio" name="auth-tab" id="gh-tab-member" class="gh-auth-tab-input"{% if not admin_tab %} checked{% endif %}>
+            <input type="radio" name="auth-tab" id="gh-tab-admin" class="gh-auth-tab-input"{% if admin_tab %} checked{% endif %}>
+
+            <div class="gh-auth-tab-labels" role="tablist" aria-label="{{ t_attr('ui.auth.account_type')|default('Account type') }}">
+                <label for="gh-tab-member" role="tab" aria-selected="{% if not admin_tab %}true{% else %}false{% endif %}">
+                    {{ t('ui.auth.member')|default('Member') }}
+                </label>
+                <label for="gh-tab-admin" role="tab" aria-selected="{% if admin_tab %}true{% else %}false{% endif %}">
+                    {{ t('ui.auth.admin')|default('Admin') }}
+                </label>
+            </div>
+
+            <div class="gh-auth-panes">
+                {# Default pane: registered user accounts #}
+                <div class="gh-auth-pane gh-auth-pane-member" role="tabpanel" aria-labelledby="gh-tab-member">
+                    <form method="POST" action="/login" class="gh-auth-form">
+                        {% if csrf_token is defined %}
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        {% endif %}
+                        <input type="hidden" name="account_type" value="member">
+                        <input type="hidden" name="_client_hints" class="gh-client-hints-input" value="">
+
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="username">{{ t('ui.auth.username_or_email') }}</label>
+                            <input class="gh-input" type="text" id="username" name="username"
+                                   placeholder="{{ t_attr('ui.auth.username_placeholder')|default('you@example.com') }}" required autofocus
+                                   autocomplete="username" spellcheck="false">
+                        </div>
+
+                        <div class="gh-form-group">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <label class="gh-label" for="password" style="margin-bottom:0;">{{ t('ui.auth.password') }}</label>
+                                <a href="/forgot-password" style="font-size:12px; color: var(--gh-accent-fg, #58a6ff); text-decoration:none; font-weight:500;">{{ t('ui.auth.forgot_password') }}</a>
+                            </div>
+                            <div class="gh-pass-wrap">
+                                <input class="gh-input" type="password" id="password" name="password"
+                                       placeholder="{{ t_attr('ui.auth.password_placeholder')|default('Enter your password') }}" required autocomplete="current-password">
+                                <button type="button" class="gh-pass-toggle"
+                                        data-toggle-password="#password"
+                                        aria-label="{{ t_attr('ui.auth.toggle_password')|default('Show or hide password') }}" title="{{ t_attr('ui.auth.toggle_password')|default('Show or hide password') }}">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 0 1 0 1.798c-.45.678-1.367 1.932-2.637 3.023C11.67 13.008 9.981 14 8 14c-1.981 0-3.671-.992-4.933-2.078C1.797 10.83.88 9.576.43 8.898a1.62 1.62 0 0 1 0-1.798c.45-.677 1.367-1.931 2.637-3.022C4.33 2.992 6.019 2 8 2ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; align-items:center; margin: 8px 0 16px; font-size:13px;">
+                            <label style="display:flex; gap:6px; align-items:center; cursor:pointer; user-select:none;">
+                                <input type="checkbox" name="remember" value="1">
+                                <span>{{ t('ui.auth.remember_me') }}</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="gh-btn gh-btn-primary gh-btn-block">{{ t('ui.auth.sign_in_btn') }}</button>
+                    </form>
+                </div>
+
+                {# Admin pane: owner account only #}
+                <div class="gh-auth-pane gh-auth-pane-admin" role="tabpanel" aria-labelledby="gh-tab-admin">
+                    <form method="POST" action="/login" class="gh-auth-form">
+                        {% if csrf_token is defined %}
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        {% endif %}
+                        <input type="hidden" name="account_type" value="admin">
+                        <input type="hidden" name="_client_hints" class="gh-client-hints-input" value="">
+
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="admin-username">{{ t('ui.auth.admin_username_label')|default(t('ui.auth.admin')) }}</label>
+                            <input class="gh-input" type="text" id="admin-username" name="username"
+                                   value="{{ owner_name }}" readonly
+                                   autocomplete="username" spellcheck="false" aria-describedby="admin-hint">
+                        </div>
+
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="admin-password">{{ t('ui.auth.password') }}</label>
+                            <div class="gh-pass-wrap">
+                                <input class="gh-input" type="password" id="admin-password" name="password"
+                                       placeholder="{{ t_attr('ui.auth.admin_password_placeholder')|default('Administrator password') }}" required autocomplete="current-password">
+                                <button type="button" class="gh-pass-toggle"
+                                        data-toggle-password="#admin-password"
+                                        aria-label="{{ t_attr('ui.auth.toggle_password')|default('Show or hide password') }}" title="{{ t_attr('ui.auth.toggle_password')|default('Show or hide password') }}">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 0 1 0 1.798c-.45.678-1.367 1.932-2.637 3.023C11.67 13.008 9.981 14 8 14c-1.981 0-3.671-.992-4.933-2.078C1.797 10.83.88 9.576.43 8.898a1.62 1.62 0 0 1 0-1.798c.45-.677 1.367-1.931 2.637-3.022C4.33 2.992 6.019 2 8 2ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
+                                </button>
+                            </div>
+                            {% if not owner_password_set %}
+                                <p class="gh-form-hint gh-form-warn">{{ t('ui.auth.no_admin_pass_set')|default('No administrator password has been set yet. Run the installer or set one in the admin area first.') }}</p>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="gh-btn gh-btn-primary gh-btn-block">{{ t('ui.auth.sign_in_btn') }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="gh-auth-alt">
+        {{ t('ui.auth.new_to_platform') }} <a href="/register">{{ t('ui.auth.create_account') }}</a>
+    </div>
+
+    <nav class="gh-auth-foot-links" aria-label="Footer">
+        <a href="/docs">{{ t('ui.nav.docs') }}</a>
+        <a href="/search">{{ t('ui.nav.explore') }}</a>
+    </nav>
+</section>
+
+<script>
+(function() {
+    if (typeof navigator !== 'undefined' && navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+        navigator.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion', 'architecture', 'bitness'])
+            .then(function(hints) {
+                var json = JSON.stringify(hints);
+                document.querySelectorAll('.gh-client-hints-input').forEach(function(input) {
+                    input.value = json;
+                });
+            })
+            .catch(function() {});
+    }
+})();
+</script>
+{% endblock %}

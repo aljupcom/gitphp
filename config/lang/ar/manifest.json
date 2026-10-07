@@ -1,0 +1,10 @@
+{
+    "code": "ar",
+    "name": "Arabic",
+    "native_name": "العربية",
+    "direction": "rtl",
+    "version": "1.0.0",
+    "author": "GitPHP Team",
+    "active": true,
+    "default": false
+}

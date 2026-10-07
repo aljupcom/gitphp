@@ -1,0 +1,235 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ page_title }} — {{ app_name }}{% endblock %}
+
+{% set cat_labels = { 'general': 'General enquiry', 'technical': 'Technical issue', 'account': 'Account & access', 'abuse': 'Report abuse', 'feature': 'Feature request' } %}
+{% set prio_labels = { 'low': 'Low', 'normal': 'Normal', 'high': 'High', 'urgent': 'Urgent' } %}
+{% set status_labels = { 'open': 'Open', 'pending': 'Awaiting reply', 'answered': 'Answered', 'closed': 'Closed' } %}
+
+{% block content %}
+<div class="gh-page" dir="ltr">
+
+    {# ── Hero ───────────────────────────────────────────────── #}
+    <section class="gh-support-hero">
+        <div class="gh-support-hero-main">
+            <h1 class="gh-support-hero-title">
+                <svg class="ti ti-lifebuoy"><use href="#ti-lifebuoy"/></svg>
+                Support Center
+            </h1>
+            <p class="gh-support-hero-sub">
+                Open a ticket and track its progress — available to both visitors and registered users.
+            </p>
+        </div>
+        <ul class="gh-support-hero-facts">
+            <li><strong>Guests welcome</strong><span>No account needed</span></li>
+            <li><strong>Tracked</strong><span>Unique reference</span></li>
+            <li><strong>Replies</strong><span>Full conversation</span></li>
+        </ul>
+    </section>
+
+    {% if error %}
+        <div class="gh-flash gh-flash-error" role="alert">{{ error }}</div>
+    {% endif %}
+    {% if success %}
+        <div class="gh-flash gh-flash-success" role="status">{{ success }}</div>
+    {% endif %}
+
+    {% if new_ref %}
+        <div class="gh-ticket-ref-card">
+            <div>
+                <span class="gh-ticket-ref-label">Your ticket reference</span>
+                <span class="gh-ticket-ref">{{ new_ref }}</span>
+            </div>
+            <div class="gh-ticket-ref-actions">
+                <button type="button" class="gh-copy-inline" data-copy="{{ new_ref }}" title="Copy reference" aria-label="Copy reference">
+                    <svg class="ti ti-copy"><use href="#ti-copy"/></svg>
+                </button>
+                <a class="gh-btn gh-btn-sm gh-btn-primary" href="/support/ticket/{{ new_ref }}">View ticket</a>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ── Tabbed dashboard (CSS-only, no JS required) ─────────── #}
+    <div class="gh-support-tabs">
+        <input type="radio" name="support-tab" id="gh-st-create" class="gh-support-tab-input"{% if active_tab != 'track' %} checked{% endif %}>
+        <input type="radio" name="support-tab" id="gh-st-track" class="gh-support-tab-input"{% if active_tab == 'track' %} checked{% endif %}>
+
+        <div class="gh-support-tab-labels" role="tablist">
+            <label for="gh-st-create">
+                <svg class="ti ti-plus"><use href="#ti-plus"/></svg> Create Ticket
+            </label>
+            <label for="gh-st-track">
+                <svg class="ti ti-list-search"><use href="#ti-list-search"/></svg> Ticket Tracking
+            </label>
+        </div>
+
+        <div class="gh-support-panes">
+
+            {# ── Tab 1: Create ─────────────────────────────── #}
+            <section class="gh-support-pane gh-support-pane-create" role="tabpanel" aria-label="Create ticket">
+                <div class="gh-support-grid">
+                    <form class="gh-box gh-support-form" method="POST" action="/support/tickets">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                        {% if is_guest %}
+                            <div class="gh-support-row">
+                                <div class="gh-form-group">
+                                    <label class="gh-label" for="t-name">Your name</label>
+                                    <input class="gh-input" type="text" id="t-name" name="name" required
+                                           maxlength="100" value="{{ old.name|default('') }}" placeholder="Jane Doe">
+                                </div>
+                                <div class="gh-form-group">
+                                    <label class="gh-label" for="t-email">Email</label>
+                                    <input class="gh-input" type="email" id="t-email" name="email" required
+                                           maxlength="255" value="{{ old.email|default('') }}" placeholder="you@example.com">
+                                    <div class="gh-form-hint">Used to reply and to look up your ticket later.</div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="gh-support-identity">
+                                <svg class="ti ti-user-check"><use href="#ti-user-check"/></svg>
+                                Submitting as <strong>{{ prefill_name|default(current_user|default(owner|default('Account'))) }}</strong>
+                                {% if prefill_email %}<span class="gh-muted">({{ prefill_email }})</span>{% endif %}
+                            </div>
+                        {% endif %}
+
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="t-subject">Subject</label>
+                            <input class="gh-input" type="text" id="t-subject" name="subject" required
+                                   minlength="5" maxlength="200" value="{{ old.subject|default('') }}"
+                                   placeholder="Short summary of your request">
+                        </div>
+
+                        <div class="gh-support-row">
+                            <div class="gh-form-group">
+                                <label class="gh-label" for="t-category">Category</label>
+                                <select class="gh-select" id="t-category" name="category">
+                                    {% for c in categories %}
+                                        <option value="{{ c }}"{% if old.category|default('general') == c %} selected{% endif %}>{{ cat_labels[c]|default(c) }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="gh-form-group">
+                                <label class="gh-label" for="t-priority">Priority</label>
+                                <select class="gh-select" id="t-priority" name="priority">
+                                    {% for p in priorities %}
+                                        <option value="{{ p }}"{% if old.priority|default('normal') == p %} selected{% endif %}>{{ prio_labels[p]|default(p) }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="gh-form-group">
+                            <label class="gh-label" for="t-message">How can we help?</label>
+                            <textarea class="gh-textarea" id="t-message" name="message" required
+                                      minlength="15" maxlength="5000" rows="7"
+                                      placeholder="Describe the issue, the steps you took, and any error messages…">{{ old.message|default('') }}</textarea>
+                            <div class="gh-form-hint">Include URLs and error text where possible — it speeds up the reply.</div>
+                        </div>
+
+                        <button type="submit" class="gh-btn gh-btn-primary gh-btn-block">
+                            <svg class="ti ti-send"><use href="#ti-send"/></svg> Create Ticket
+                        </button>
+                    </form>
+
+                    <aside class="gh-support-aside">
+                        <div class="gh-box">
+                            <h3 class="gh-support-aside-title">Before you write</h3>
+                            <ul class="gh-support-aside-list">
+                                <li><a href="/docs">Read the documentation</a> — most answers live there.</li>
+                                <li><a href="/docs?cat=troubleshoot">Troubleshooting guide</a> for common errors.</li>
+                                <li><a href="/security">Security practices</a> for account questions.</li>
+                            </ul>
+                        </div>
+                        <div class="gh-box">
+                            <h3 class="gh-support-aside-title">Response targets</h3>
+                            <ul class="gh-support-sla">
+                                <li><span class="gh-ticket-status gh-ticket-status--urgent">Urgent</span> same business day</li>
+                                <li><span class="gh-ticket-status gh-ticket-status--high">High</span> within 24 hours</li>
+                                <li><span class="gh-ticket-status gh-ticket-status--normal">Normal</span> 1–2 business days</li>
+                            </ul>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+
+            {# ── Tab 2: Tracking ───────────────────────────── #}
+            <section class="gh-support-pane gh-support-pane-track" role="tabpanel" aria-label="Ticket tracking">
+                {% if tickets|length > 0 %}
+                    <div class="gh-table-wrap">
+                        <table class="gh-table gh-ticket-table">
+                            <thead>
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in tickets %}
+                                    <tr>
+                                        <td><a class="gh-ticket-ref-link" href="/support/ticket/{{ t.reference }}">{{ t.reference }}</a></td>
+                                        <td class="gh-ticket-subject">{{ t.subject }}</td>
+                                        <td><span class="gh-ticket-status gh-ticket-status--{{ t.status }}">{{ status_labels[t.status]|default(t.status) }}</span></td>
+                                        <td class="gh-ticket-prio">{{ prio_labels[t.priority]|default(t.priority) }}</td>
+                                        <td class="gh-ticket-when"><time datetime="{{ t.updated_at }}">{{ t.updated_at|time_ago }}</time></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+
+                <div class="gh-support-grid">
+                    <form class="gh-box gh-support-form" method="POST" action="/support/track">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <h3 class="gh-support-aside-title">Look up a ticket</h3>
+                        <p class="gh-muted" style="font-size:13px; margin-top:0;">
+                            Visitors can track a ticket with its reference and the email used to open it.
+                        </p>
+                        <div class="gh-support-row">
+                            <div class="gh-form-group">
+                                <label class="gh-label" for="k-ref">Ticket reference</label>
+                                <input class="gh-input gh-mono" type="text" id="k-ref" name="reference" required
+                                       placeholder="TCK-1A2B3C4D" maxlength="20">
+                            </div>
+                            <div class="gh-form-group">
+                                <label class="gh-label" for="k-email">Email</label>
+                                <input class="gh-input" type="email" id="k-email" name="email" required
+                                       placeholder="you@example.com" maxlength="255">
+                            </div>
+                        </div>
+                        <button type="submit" class="gh-btn gh-btn-primary gh-btn-block">
+                            <svg class="ti ti-search"><use href="#ti-search"/></svg> Find my ticket
+                        </button>
+                    </form>
+
+                    <aside class="gh-support-aside">
+                        <div class="gh-box">
+                            <h3 class="gh-support-aside-title">Status meanings</h3>
+                            <ul class="gh-support-sla">
+                                <li><span class="gh-ticket-status gh-ticket-status--open">Open</span> received, queued</li>
+                                <li><span class="gh-ticket-status gh-ticket-status--pending">Awaiting reply</span> we need your input</li>
+                                <li><span class="gh-ticket-status gh-ticket-status--answered">Answered</span> a reply is waiting</li>
+                                <li><span class="gh-ticket-status gh-ticket-status--closed">Closed</span> resolved</li>
+                            </ul>
+                        </div>
+                        {% if is_guest %}
+                            <div class="gh-box">
+                                <h3 class="gh-support-aside-title">Tip</h3>
+                                <p class="gh-muted" style="font-size:13px; margin:0;">
+                                    <a href="/register">Create an account</a> and all your tickets appear here automatically —
+                                    no reference needed.
+                                </p>
+                            </div>
+                        {% endif %}
+                    </aside>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

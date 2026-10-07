@@ -1,0 +1,142 @@
+<div style="display:flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 0;">
+
+        {# Original PR body #}
+        <div class="gh-box" style="margin-bottom: 12px;">
+            <div style="padding: 10px 14px; border-bottom: 1px solid var(--gh-border-default); font-size: 13px;">
+                <strong>{{ pr.author_name }}</strong>
+                <span style="color: var(--gh-fg-muted);">{{ t('ui.pulls.opened_this_pr', {'time': pr.created_at|time_ago}) }}</span>
+            </div>
+            <div class="markdown-body" style="padding: 12px 14px; font-size: 14px;">
+                {% if pr_body_html %}
+                    {{ pr_body_html|raw }}
+                {% else %}
+                    <span style="color: var(--gh-fg-muted);">{{ t('ui.pulls.no_description') }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Conversation comments #}
+        {% for c in comments %}
+            <div class="gh-box" style="margin-bottom: 12px;">
+                <div style="padding: 10px 14px; border-bottom: 1px solid var(--gh-border-default); font-size: 13px;">
+                    <strong>{{ c.author_name }}</strong>
+                    <span style="color: var(--gh-fg-muted);">{{ t('ui.pulls.commented', {'time': c.created_at|time_ago}) }}</span>
+                </div>
+                <div class="markdown-body" style="padding: 12px 14px; font-size: 14px;">
+                    {{ c.body_html|raw }}
+                </div>
+            </div>
+        {% endfor %}
+
+        {# Comment form #}
+        {% if is_logged_in %}
+            <form method="post" action="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}/comment">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <textarea name="body" rows="4" required placeholder="{{ t_attr('ui.pulls.leave_comment') }}"
+                          style="width:100%; background: var(--gh-bg-canvas, #0d1117); color: var(--gh-fg-default); border:1px solid var(--gh-border-default, #30363d); border-radius:6px; padding:10px;"></textarea>
+                <button type="submit" class="gh-btn gh-btn-primary" style="margin-top: 8px;">{{ t('ui.pulls.comment_btn') }}</button>
+            </form>
+        {% endif %}
+    </div>
+
+    {# Merge box sidebar #}
+    <div style="width: 280px; flex-shrink: 0;">
+        <div class="gh-box" style="padding: 12px;">
+            {% if is_open and can_write %}
+                {# Review decision #}
+                <div style="display:flex; gap:8px; margin-bottom: 10px;">
+                    <form method="post" action="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}/approval">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="decision" value="approved">
+                        <button type="submit" class="gh-btn gh-btn-sm" style="{{ pr.approval == 'approved' ? 'background:#238636;color:#fff;' : '' }}">
+                            {{ pr.approval == 'approved' ? t('ui.pulls.approved') : t('ui.pulls.approve') }}
+                        </button>
+                    </form>
+                    <form method="post" action="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}/approval">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="decision" value="changes_requested">
+                        <button type="submit" class="gh-btn gh-btn-sm" style="{{ pr.approval == 'changes_requested' ? 'background:#bf8700;color:#fff;' : 'color:#f85149;' }}">
+                            {{ pr.approval == 'changes_requested' ? t('ui.pulls.changes_requested') : t('ui.pulls.request_changes') }}
+                        </button>
+                    </form>
+                </div>
+                {% if pr.approval == 'approved' %}
+                    <p style="font-size: 12px; color: #3fb950; margin:0 0 10px;">{{ t('ui.pulls.approved_by', {'name': pr.approved_by}) }}</p>
+                {% elseif pr.approval == 'changes_requested' %}
+                    <p style="font-size: 12px; color: #f85149; margin:0 0 10px;">{{ t('ui.pulls.changes_requested_by', {'name': pr.approved_by}) }}</p>
+                {% endif %}
+
+                {% if reviewers|length > 0 %}
+                    <div style="margin: 0 0 10px; border-top: 1px solid var(--gh-border-muted); padding-top: 8px;">
+                        <div style="font-size: 11px; font-weight: 600; color: var(--gh-fg-muted); margin-bottom: 4px;">{{ t('ui.pulls.reviewers')|default('Reviewers') }}</div>
+                        {% for rv in reviewers %}
+                            <div style="font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <span>{{ rv.username ?: 'owner' }}</span>
+                                <span style="color: {{ rv.decision == 'approved' ? '#3fb950' : '#f85149' }};">
+                                    {{ rv.decision == 'approved' ? '✓ ' ~ t('ui.pulls.approved') : 'Δ ' ~ t('ui.pulls.changes_requested') }}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            {% if pr.status == 'merged' %}
+                <div style="font-size: 13px;">
+                    {{ t('ui.pulls.merged_into_at', {'target': pr.target_branch, 'commit': pr.merged_commit|slice(0,7)}) }}
+                    {% if pr.merge_strategy and pr.merge_strategy != 'merge' %}
+                        <span class="gh-badge" style="font-size: 10px; margin-left: 4px;">{{ pr.merge_strategy }}</span>
+                    {% endif %}
+                </div>
+            {% elseif pr.status == 'closed' %}
+                <div style="font-size: 13px; display:flex; justify-content: space-between; align-items:center;">
+                    <span>{{ t('ui.pulls.closed') }}</span>
+                    {% if can_write or is_creator %}
+                    <form method="post" action="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}/close">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="gh-btn gh-btn-sm">{{ t('ui.pulls.reopen') }}</button>
+                    </form>
+                    {% endif %}
+                </div>
+            {% else %}
+                {% if can_merge and can_write %}
+                    <form method="post" action="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}/merge">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">{{ t('ui.pulls.merge_msg_label') }}</label>
+                        <input type="text" name="merge_message" placeholder="{{ t_attr('ui.pulls.merge_msg_placeholder', {'number': pr.number}) }}"
+                               style="width:100%; margin-bottom:8px; background: var(--gh-bg-canvas, #0d1117); color: var(--gh-fg-default); border:1px solid var(--gh-border-default, #30363d); border-radius:6px; padding:6px 8px;">
+                        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">{{ t('ui.pulls.merge_strategy')|default('Merge method') }}</label>
+                        <select name="merge_strategy" class="gh-form-control" style="width:100%; margin-bottom:8px; font-size: 13px;">
+                            <option value="merge">{{ t('ui.pulls.strat_merge')|default('Merge commit') }}</option>
+                            <option value="squash">{{ t('ui.pulls.strat_squash')|default('Squash and merge') }}</option>
+                            <option value="rebase">{{ t('ui.pulls.strat_rebase')|default('Rebase and merge') }}</option>
+                            <option value="ff">{{ t('ui.pulls.strat_ff')|default('Fast-forward') }}</option>
+                        </select>
+                        <button type="submit" class="gh-btn gh-btn-primary" style="width:100%;">{{ t('ui.pulls.merge_btn') }}</button>
+                    </form>
+                {% elseif can_merge %}
+                    <p style="font-size: 12px; color: var(--gh-fg-muted);">{{ t('ui.pulls.no_conflicts') }}</p>
+                {% elseif ahead_count == 0 %}
+                    <p style="font-size: 12px; color: var(--gh-fg-muted);">{{ t('ui.pulls.nothing_to_merge') }}</p>
+                {% else %}
+                    <p style="font-size: 12px; color: var(--gh-danger-fg, #f85149);">{{ t('ui.pulls.has_conflicts') }}</p>
+                {% endif %}
+
+                {% if can_write or is_creator %}
+                    <form method="post" action="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}/close" style="margin-top: 8px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="gh-btn gh-btn-sm" style="width:100%;">{{ t('ui.pulls.close_pull') }}</button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="gh-box" style="padding: 12px; margin-top: 12px; font-size: 12px; color: var(--gh-fg-muted);">
+            <div><strong style="color: var(--gh-fg-default);">{{ commits|length }}</strong> {{ t('ui.pulls.commits_count', {'count': commits|length}) }}</div>
+            <div><strong style="color: var(--gh-fg-default);">{{ comments|length }}</strong> {{ t('ui.pulls.comments_count', {'count': comments|length}) }}</div>
+            <div><strong style="color: var(--gh-fg-default);">{{ review_total }}</strong> {{ t('ui.pulls.reviews_count', {'count': review_total}) }}</div>
+            <div style="margin-top: 6px;"><span class="gh-mono" dir="ltr">{{ pr.source_branch }} → {{ pr.target_branch }}</span></div>
+        </div>
+    </div>
+</div>

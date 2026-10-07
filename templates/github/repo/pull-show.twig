@@ -1,0 +1,46 @@
+{% extends "layout.twig" %}
+
+{% block title %}#{{ pr.number }} {{ pr.title }} · {{ repo.name }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'pulls' } %}
+
+    <h1 style="font-size: 22px; font-weight: 400; margin: 16px 0 4px;">
+        {{ pr.title }} <span style="color: var(--gh-fg-muted);">#{{ pr.number }}</span>
+    </h1>
+
+    <div style="display:flex; gap: 8px; align-items:center; font-size: 13px; color: var(--gh-fg-muted); margin-bottom: 8px; flex-wrap: wrap;">
+        {% if pr.status == 'open' %}
+            <span class="gh-badge" style="background: #238636; color:#fff;">{{ t('ui.pulls.open') }}</span>
+        {% elseif pr.status == 'merged' %}
+            <span class="gh-badge" style="background: #58a6ff; color:#fff;">{{ t('ui.pulls.merged') }}</span>
+        {% else %}
+            <span class="gh-badge gh-badge-private" style="color:#fff;">{{ t('ui.pulls.closed') }}</span>
+        {% endif %}
+        <span>
+            <strong style="color: var(--gh-fg-default);">{{ pr.author_name }}</strong>
+            {{ t('ui.pulls.wants_to_merge', {'count': ahead_count, 'target': pr.target_branch, 'source': pr.source_branch}) }}
+        </span>
+    </div>
+
+    <div style="display:flex; gap: 4px; border-bottom: 1px solid var(--gh-border-default); margin-bottom: 16px;">
+        <a href="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}"
+           style="padding: 8px 14px; font-size: 13px; text-decoration:none; {{ tab == 'conversation' ? 'border-bottom: 2px solid #f78166; font-weight: 600;' : 'color: var(--gh-fg-muted);' }}">
+            {{ t('ui.pulls.conversation') }}
+        </a>
+        <a href="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}/files"
+           style="padding: 8px 14px; font-size: 13px; text-decoration:none; {{ tab == 'files' ? 'border-bottom: 2px solid #f78166; font-weight: 600;' : 'color: var(--gh-fg-muted);' }}">
+            {{ t('ui.pulls.files_changed') }}{% if diff_files is not empty and is_open %} · {{ diff_files|length }}{% endif %}
+        </a>
+    </div>
+
+    {% if tab == 'files' %}
+        {% include "partials/pr-files.twig" %}
+    {% else %}
+        {% include "partials/pr-conversation.twig" %}
+    {% endif %}
+</div>
+{% endblock %}

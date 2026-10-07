@@ -1,0 +1,33 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ page.title }} — {{ t('ui.wiki.revision')|default('Revision') }} #{{ revision.id }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+    {% include "partials/repo-nav.twig" with { active_tab: 'wiki' } %}
+
+    <div class="gh-box" style="margin-top: 16px; max-width: 860px;">
+        <div class="gh-box-header" style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <h1 class="gh-box-title" style="font-size: 15px;">
+                {{ t('ui.wiki.revision')|default('Revision') }} #{{ revision.id }} — {{ page.title }}
+            </h1>
+            <div style="display: flex; gap: 8px;">
+                {% if can_write %}
+                    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/wiki/{{ page.slug }}/restore/{{ revision.id }}" onsubmit="return confirm('Restore this revision?');" style="margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="gh-btn gh-btn-sm gh-btn-primary">{{ t('ui.wiki.restore')|default('Restore') }}</button>
+                    </form>
+                {% endif %}
+                <a class="gh-btn gh-btn-sm" href="/{{ owner }}/{{ repo.slug }}/wiki/{{ page.slug }}/history">{{ t('ui.wiki.history')|default('History') }}</a>
+            </div>
+        </div>
+        <div class="gh-box-body">
+            <div style="font-size: 12px; color: var(--gh-fg-muted); margin-bottom: 12px;">
+                {{ revision.editor_name ?: 'owner' }} · {{ revision.created_at|time_ago }}
+            </div>
+            <div class="markdown-body">{{ content_html|raw }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

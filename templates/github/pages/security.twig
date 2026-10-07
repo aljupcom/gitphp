@@ -1,0 +1,30 @@
+{% extends "pages/base.twig" %}
+
+{% block page_content %}
+<p>Security is a top priority for {{ app_name }}. This page summarizes the practices we implement to protect your account and data. For reports of vulnerabilities, please see our <a href="/contact">contact page</a>.</p>
+
+<h2>Transport &amp; Storage</h2>
+<ul>
+    <li><strong>Encryption in transit</strong> — all traffic is served over HTTPS/TLS.</li>
+    <li><strong>Credential hashing</strong> — passwords are stored using one-way hashing, never in plain text.</li>
+    <li><strong>Encrypted short links</strong> — repository snapshots can be shared via signed, short-lived links.</li>
+</ul>
+
+<h2>Account Protection</h2>
+<ul>
+    <li><strong>Two-factor authentication (2FA)</strong> — optional, highly recommended, and can be enforced by policy.</li>
+    <li><strong>Personal access tokens (PAT)</strong> — scoped tokens for pushing and API access instead of raw passwords.</li>
+    <li><strong>Active session management</strong> — review and revoke devices from your security settings.</li>
+</ul>
+
+<h2>Platform Hardening</h2>
+<ul>
+    <li><strong>Cross-site protections</strong> — CSRF tokens, session hardening, and strict security headers on every response.</li>
+    <li><strong>Access control</strong> — repository, branch, and collaborator permissions enforced server-side.</li>
+    <li><strong>Audit logging</strong> — administrative actions are recorded for the operator.</li>
+    <li><strong>Rate limiting &amp; abuse prevention</strong> — uploads and API calls are bounded to protect the platform.</li>
+</ul>
+
+<h2>Your Role</h2>
+<p>Keep your credentials private, enable two-factor authentication, use revocable tokens where possible, and report suspected incidents promptly.</p>
+{% endblock %}

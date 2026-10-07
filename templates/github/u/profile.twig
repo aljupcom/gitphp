@@ -1,0 +1,640 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ display_name }} ({{ profile_name }}) — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-profile-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+
+    {# Top Sticky Profile Sub-Navigation #}
+    <div class="gh-profile-nav-wrap" style="border-bottom: 1px solid var(--gh-border-default); margin-bottom: 24px;">
+        <nav class="gh-profile-nav" style="display: flex; gap: 8px; font-size: 14px; overflow-x: auto;" aria-label="User profile tabs">
+            <a href="/{{ profile_name }}?tab=overview"
+               class="gh-profile-tab{{ tab == 'overview' ? ' active' : '' }}"
+               style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; text-decoration: none; border-bottom: 2px solid {{ tab == 'overview' ? '#f78166' : 'transparent' }}; font-weight: {{ tab == 'overview' ? '600' : '400' }}; color: {{ tab == 'overview' ? 'var(--gh-fg-default)' : 'var(--gh-fg-muted)' }};">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z"/></svg>
+                <span>{{ t('ui.repo.about') }}</span>
+            </a>
+            <a href="/{{ profile_name }}?tab=repositories"
+               class="gh-profile-tab{{ tab == 'repositories' ? ' active' : '' }}"
+               style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; text-decoration: none; border-bottom: 2px solid {{ tab == 'repositories' ? '#f78166' : 'transparent' }}; font-weight: {{ tab == 'repositories' ? '600' : '400' }}; color: {{ tab == 'repositories' ? 'var(--gh-fg-default)' : 'var(--gh-fg-muted)' }};">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z"/></svg>
+                <span>Repositories</span>
+                <span class="gh-tab-count" style="font-size: 12px; padding: 1px 7px; border-radius: 10px; background: rgba(110, 118, 129, 0.2); font-weight: 500;">{{ repos|length }}</span>
+            </a>
+            <a href="/{{ profile_name }}?tab=stars"
+               class="gh-profile-tab{{ tab == 'stars' ? ' active' : '' }}"
+               style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; text-decoration: none; border-bottom: 2px solid {{ tab == 'stars' ? '#f78166' : 'transparent' }}; font-weight: {{ tab == 'stars' ? '600' : '400' }}; color: {{ tab == 'stars' ? 'var(--gh-fg-default)' : 'var(--gh-fg-muted)' }};">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+                <span>{{ t('ui.repo.stars') }}</span>
+                <span class="gh-tab-count" style="font-size: 12px; padding: 1px 7px; border-radius: 10px; background: rgba(110, 118, 129, 0.2); font-weight: 500;">{{ starred_repos|length }}</span>
+            </a>
+        </nav>
+    </div>
+
+    {# Two Column Grid: Left Sidebar (296px) + Main Content (Flex: 1) #}
+    <div class="gh-profile-layout" style="display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;">
+
+        {# ── LEFT SIDEBAR (User VCard) ─────────────────────────────────── #}
+        <aside class="gh-profile-sidebar" style="width: 296px; flex-shrink: 0;">
+
+            {# User Avatar #}
+            <div class="gh-profile-avatar-box" style="position: relative; margin-bottom: 16px;">
+                {% if avatar_path %}
+                    <img src="{{ avatar_path }}" alt="{{ display_name }}"
+                         style="width: 100%; aspect-ratio: 1/1; border-radius: 50%; object-fit: cover; border: 1px solid var(--gh-border-default); box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+                {% else %}
+                    <div style="width: 100%; aspect-ratio: 1/1; border-radius: 50%; background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 88px; font-weight: 600; border: 1px solid var(--gh-border-default); box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        {{ display_name|slice(0, 1)|upper }}
+                    </div>
+                {% endif %}
+
+                {% if is_owner_profile %}
+                    <span style="position: absolute; bottom: 8px; right: 8px; background: #238636; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 2px solid var(--gh-bg-canvas); display: inline-flex; align-items: center; gap: 4px;">
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M7.425.269a.75.75 0 0 1 .75 0l5.5 3.056a.75.75 0 0 1 .387.657v6.036a5.5 5.5 0 0 1-2.923 4.85l-3.25 1.773a.75.75 0 0 1-.728 0l-3.25-1.773A5.5 5.5 0 0 1 1 10.018V3.982a.75.75 0 0 1 .387-.657L6.887.27ZM2.5 4.417v5.601c0 1.545.818 2.966 2.146 3.738L7.5 15.314l2.854-1.558A4.25 4.25 0 0 0 12.5 10.018V4.417L7.5 1.639 2.5 4.417Z"/></svg>
+                        Admin
+                    </span>
+                {% endif %}
+            </div>
+
+            {# User Names #}
+            <div class="vcard-names" style="margin-bottom: 16px;">
+                <h1 style="font-size: 24px; line-height: 1.25; font-weight: 600; color: var(--gh-fg-default); margin: 0;">
+                    {{ display_name }}
+                </h1>
+                <div style="font-size: 20px; font-weight: 300; line-height: 24px; color: var(--gh-fg-muted);">
+                    {{ profile_name }}
+                </div>
+            </div>
+
+            {# Bio #}
+            {% if bio %}
+                <div class="p-note" style="font-size: 14px; color: var(--gh-fg-default); margin-bottom: 16px; line-height: 1.5;">
+                    {{ bio }}
+                </div>
+            {% endif %}
+
+            {# Primary Action Button (Real Follow/Unfollow/Edit Profile) #}
+            <div style="margin-bottom: 16px;">
+                {% if viewer_is_self %}
+                    <a href="/settings/account" class="gh-btn" style="width: 100%; justify-content: center; font-size: 14px; font-weight: 500; padding: 5px 16px;">
+                        Edit profile
+                    </a>
+                {% else %}
+                    <form id="follow-user-form" action="/{{ profile_name }}/follow" method="POST" style="margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                        <button type="submit" id="follow-user-btn" class="gh-btn{{ is_following ? '' : ' gh-btn-primary' }}" style="width: 100%; justify-content: center; font-size: 14px; font-weight: 500; padding: 5px 16px;">
+                            {{ is_following ? 'Unfollow' : 'Follow' }}
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+
+            {# Follows / Stats line (Dynamic Real Counts) #}
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--gh-fg-muted); margin-bottom: 16px; flex-wrap: wrap;">
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 5.5a3.5 3.5 0 1 1 5.898 2.549 5.508 5.508 0 0 1 3.034 4.084.75.75 0 1 1-1.482.234 4.002 4.002 0 0 0-7.864 0 .75.75 0 0 1-1.482-.234A5.507 5.507 0 0 1 3.102 8.05 3.49 3.49 0 0 1 2 5.5ZM5.5 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>
+                    <strong id="followers-count-display" style="color: var(--gh-fg-default);">{{ followers_count|default(0) }}</strong> followers
+                </span>
+                <span>·</span>
+                <span><strong style="color: var(--gh-fg-default);">{{ following_count|default(0) }}</strong> following</span>
+                <span>·</span>
+                <span style="display: inline-flex; align-items: center; gap: 3px;" title="{{ total_stars|default(0) }} total stars received">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+                    <strong style="color: var(--gh-fg-default);">{{ total_stars|default(0) }}</strong>
+                </span>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--gh-border-muted, #21262d); margin: 16px 0;" />
+
+            {# User Meta Details #}
+            <ul style="list-style: none; padding: 0; margin: 0 0 16px 0; font-size: 14px; color: var(--gh-fg-default); display: flex; flex-direction: column; gap: 8px;">
+                {% if company %}
+                    <li style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--gh-fg-muted)"><path d="M1.5 14.25c0 .414.336.75.75.75h11.5a.75.75 0 0 0 .75-.75V2a.75.75 0 0 0-.75-.75H9.75a.75.75 0 0 0-.75.75v1.5H7V2a.75.75 0 0 0-.75-.75H2.25A.75.75 0 0 0 1.5 2Zm7.5.75V4.25a.75.75 0 0 1 .75-.75h3.75V13.5h-4.5ZM7.5 15H3V2.75h3.75V15Z"/></svg>
+                        <span>{{ company }}</span>
+                    </li>
+                {% endif %}
+
+                {% if location %}
+                    <li style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--gh-fg-muted)"><path d="m12.596 11.596-3.535 3.536a1.5 1.5 0 0 1-2.122 0l-3.535-3.536a6.5 6.5 0 1 1 9.192-9.193 6.5 6.5 0 0 1 0 9.193Zm-1.06-8.132A5 5 0 1 0 4.475 10.535L8 14.06l3.536-3.525a5 5 0 0 0 0-7.07Z"/></svg>
+                        <span>{{ location }}</span>
+                    </li>
+                {% endif %}
+
+                {% if website %}
+                    <li style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--gh-fg-muted)"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 2 2 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-1.22 9.57a3.5 3.5 0 0 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 2 2 0 0 0-2.83 0l-2.5 2.5a2 2 0 0 0 2.83 2.83l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25Z"/></svg>
+                        <a href="{{ website }}" target="_blank" rel="noopener noreferrer" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none; word-break: break-all;">
+                            {{ website|replace({'https://': '', 'http://': ''})|trim('/') }}
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% if twitter %}
+                    <li style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--gh-fg-muted)"><path d="M14.258 1.5H1.742A.242.242 0 0 0 1.5 1.742v12.516c0 .134.108.242.242.242h12.516c.134 0 .242-.108.242-.242V1.742a.242.242 0 0 0-.242-.242Zm-2.827 10.976H9.988L8.14 9.873 5.922 12.476H4.205l2.766-3.237-2.656-3.715h1.472l1.642 2.373 1.996-2.373h1.717L7.863 7.82l2.568 4.656Zm-1.898-.823L5.474 4.347H4.76l4.06 6.306h.713Z"/></svg>
+                        <a href="https://twitter.com/{{ twitter|trim('@') }}" target="_blank" rel="noopener noreferrer" style="color: var(--gh-fg-default); text-decoration: none;">
+                            @{{ twitter|trim('@') }}
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% if member_since %}
+                    <li style="display: flex; align-items: center; gap: 8px; color: var(--gh-fg-muted);">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 0a.75.75 0 0 1 .75.75V2h5V.75a.75.75 0 0 1 1.5 0V2h1.25c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0 1 13.25 16H2.75A1.75 1.75 0 0 1 1 14.25V3.75C1 2.784 1.784 2 2.75 2H4V.75A.75.75 0 0 1 4.75 0ZM2.5 7.5v6.75c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25V7.5Zm10.75-2a.25.25 0 0 0-.25-.25H2.75a.25.25 0 0 0-.25.25V6h11Z"/></svg>
+                        <span>Joined {{ member_since|date("M Y") }}</span>
+                    </li>
+                {% endif %}
+            </ul>
+
+            {# Achievements Box (Vector SVGs with Tooltip) #}
+            <div style="border-top: 1px solid var(--gh-border-muted, #21262d); padding-top: 16px; margin-top: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <h2 style="font-size: 16px; font-weight: 600; margin: 0; color: var(--gh-fg-default);">Achievements</h2>
+                    <span style="font-size: 12px; color: var(--gh-fg-muted);">{{ achievements|length }}</span>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    {% for ach in achievements %}
+                        <div title="{{ ach.name }}: {{ ach.desc }}" style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: {{ ach.bg }}; border: 1.5px solid {{ ach.border }}; cursor: pointer; transition: transform 0.15s ease;">
+                            {% if ach.icon == 'vault' %}
+                                {# Arctic Code Vault Snowflake Vector #}
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{ ach.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="2" x2="12" y2="22"></line>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                                    <line x1="19.07" y1="4.93" x2="4.93" y2="19.07"></line>
+                                    <polyline points="10 4 12 2 14 4"></polyline>
+                                    <polyline points="10 20 12 22 14 20"></polyline>
+                                    <polyline points="4 10 2 12 4 14"></polyline>
+                                    <polyline points="20 10 22 12 20 14"></polyline>
+                                </svg>
+                            {% elseif ach.icon == 'star' %}
+                                {# {{ t('ui.repo.stars') }}truck Golden Star #}
+                                <svg width="22" height="22" viewBox="0 0 16 16" fill="{{ ach.color }}">
+                                    <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/>
+                                </svg>
+                            {% elseif ach.icon == 'pr' %}
+                                {# Pull Shark PR Badge #}
+                                <svg width="22" height="22" viewBox="0 0 16 16" fill="{{ ach.color }}">
+                                    <path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/>
+                                </svg>
+                            {% elseif ach.icon == 'zap' %}
+                                {# Quickdraw Lightning Zap #}
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="{{ ach.color }}" stroke="{{ ach.color }}" stroke-width="1">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                </svg>
+                            {% elseif ach.icon == 'pair' %}
+                                {# Pair Extraordinaire Collaboration #}
+                                <svg width="22" height="22" viewBox="0 0 16 16" fill="{{ ach.color }}">
+                                    <path d="M2 5.5a3.5 3.5 0 1 1 5.898 2.549 5.508 5.508 0 0 1 3.034 4.084.75.75 0 1 1-1.482.234 4.002 4.002 0 0 0-7.864 0 .75.75 0 0 1-1.482-.234A5.507 5.507 0 0 1 3.102 8.05 3.49 3.49 0 0 1 2 5.5ZM11 5.5a3.5 3.5 0 1 1 5.898 2.549 5.508 5.508 0 0 1 3.034 4.084.75.75 0 1 1-1.482.234 4.002 4.002 0 0 0-7.864 0 .75.75 0 0 1-1.482-.234A5.507 5.507 0 0 1 12.102 8.05 3.49 3.49 0 0 1 11 5.5Z"/>
+                                </svg>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# Organizations Box #}
+            <div style="border-top: 1px solid var(--gh-border-muted, #21262d); padding-top: 16px; margin-top: 16px;">
+                <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: var(--gh-fg-default);">Organizations</h2>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="/admin/toolserver" title="Git Platform Organization" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 6px; background: #21262d; border: 1px solid #30363d; color: #58a6ff; font-weight: 700; text-decoration: none; font-size: 13px;">
+                        YS
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        {# ── MAIN CONTENT COLUMN ───────────────────────────────────────── #}
+        <main class="gh-profile-main" style="flex: 1; min-width: 0;">
+
+            {# ══════════════════════════════════════════════════════════════════ #}
+            {# 1. TAB: OVERVIEW                                                #}
+            {# ══════════════════════════════════════════════════════════════════ #}
+            {% if tab == 'overview' %}
+
+                {# {{ t('ui.repo.pinned')|default('Pinned') }} Repositories #}
+                <div class="gh-pinned-section" style="margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h2 style="font-size: 16px; font-weight: 600; margin: 0; color: var(--gh-fg-default);">{{ t('ui.repo.pinned')|default('Pinned') }}</h2>
+                        {% if viewer_is_self %}
+                            <a href="/{{ profile_name }}?tab=repositories" style="font-size: 12px; color: var(--gh-fg-muted); text-decoration: none;">Customize your pins</a>
+                        {% endif %}
+                    </div>
+
+                    {% if pinned_repos|length > 0 %}
+                        <div class="gh-pinned-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+                            {% for r in pinned_repos %}
+                                <div class="gh-pinned-card" style="border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 16px; background: var(--gh-bg-subtle); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+                                    <div>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+                                            <a href="/{{ r.display_owner }}/{{ r.slug }}" style="font-size: 14px; font-weight: 600; color: var(--gh-accent-fg, #58a6ff); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; word-break: break-all;">
+                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z"/></svg>
+                                                <span>{{ r.name }}</span>
+                                            </a>
+                                            <span style="font-size: 12px; font-weight: 500; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--gh-border-default); color: var(--gh-fg-muted); text-transform: capitalize;">
+                                                {{ r.visibility }}
+                                            </span>
+                                        </div>
+
+                                        {% if r.description %}
+                                            <p style="font-size: 12px; color: var(--gh-fg-muted); margin: 0 0 12px 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                                {{ r.description }}
+                                            </p>
+                                        {% else %}
+                                            <div style="height: 8px;"></div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div style="display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--gh-fg-muted); margin-top: auto;">
+                                        {% if r.primary_lang %}
+                                            <span style="display: inline-flex; align-items: center; gap: 5px;">
+                                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: {{ r.lang_color }};"></span>
+                                                <span>{{ r.primary_lang }}</span>
+                                            </span>
+                                        {% endif %}
+
+                                        {% if (r.stars_count|default(0)) > 0 %}
+                                            <a href="/{{ r.display_owner }}/{{ r.slug }}" style="display: inline-flex; align-items: center; gap: 4px; color: var(--gh-fg-muted); text-decoration: none;">
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+                                                <span>{{ r.stars_count }}</span>
+                                            </a>
+                                        {% endif %}
+
+                                        {% if (r.forks_count|default(0)) > 0 %}
+                                            <a href="/{{ r.display_owner }}/{{ r.slug }}" style="display: inline-flex; align-items: center; gap: 4px; color: var(--gh-fg-muted); text-decoration: none;">
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm0 2.122a2.25 2.25 0 1 0-1.5 0v.878A2.25 2.25 0 0 0 5.75 8.5h1.5v2.128a2.251 2.251 0 1 0 1.5 0V8.5h1.5a2.25 2.25 0 0 0 2.25-2.25v-.878a2.25 2.25 0 1 0-1.5 0v.878a.75.75 0 0 1-.75.75h-4.5A.75.75 0 0 1 5 6.25v-.878Zm3.75 7.378a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm3-8.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
+                                                <span>{{ r.forks_count }}</span>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div style="border: 1px dashed var(--gh-border-default); border-radius: 6px; padding: 28px; text-align: center; color: var(--gh-fg-muted);">
+                            <p style="margin: 0; font-size: 14px;">No pinned repositories yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {# 52-Week Contribution Heatmap Calendar #}
+                <div class="gh-contribution-section" style="margin-bottom: 32px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h2 style="font-size: 16px; font-weight: 600; margin: 0; color: var(--gh-fg-default);">
+                            {{ contributions.total|default(0) }} contributions in the last year
+                        </h2>
+                        <span style="font-size: 12px; color: var(--gh-fg-muted); border: 1px solid var(--gh-border-default); padding: 3px 10px; border-radius: 6px;">
+                            {{ contributions.year|default('2026') }}
+                        </span>
+                    </div>
+
+                    <div style="border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 16px; background: var(--gh-bg-subtle); overflow-x: auto;">
+                        <div style="min-width: 720px;">
+                            {# Month labels #}
+                            <div style="display: flex; margin-left: 28px; margin-bottom: 6px; font-size: 11px; color: var(--gh-fg-muted);">
+                                {% set m_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
+                                {% for m in m_names %}
+                                    <div style="flex: 1; text-align: left;">{{ m }}</div>
+                                {% endfor %}
+                            </div>
+
+                            {# Calendar Grid #}
+                            <div style="display: flex; gap: 3px; align-items: center;">
+                                {# Day of week labels #}
+                                <div style="display: flex; flex-direction: column; gap: 3px; font-size: 9px; color: var(--gh-fg-muted); width: 24px; text-align: right; padding-right: 4px; line-height: 10px;">
+                                    <span style="height: 10px;"></span>
+                                    <span style="height: 10px;">Mon</span>
+                                    <span style="height: 10px;"></span>
+                                    <span style="height: 10px;">Wed</span>
+                                    <span style="height: 10px;"></span>
+                                    <span style="height: 10px;">Fri</span>
+                                    <span style="height: 10px;"></span>
+                                </div>
+
+                                {# 52 Weeks Columns #}
+                                <div style="display: flex; gap: 3px; flex: 1;">
+                                    {% for week in contributions.weeks %}
+                                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                                            {% for day in week %}
+                                                {% set bg_color = '#161b22' %}
+                                                {% if day.level == 1 %}{% set bg_color = '#0e4429' %}{% endif %}
+                                                {% if day.level == 2 %}{% set bg_color = '#006d32' %}{% endif %}
+                                                {% if day.level == 3 %}{% set bg_color = '#26a641' %}{% endif %}
+                                                {% if day.level == 4 %}{% set bg_color = '#39d353' %}{% endif %}
+
+                                                <div class="gh-contrib-cell gh-contrib-{{ day.level|default(0) }}"
+                                                     title="{{ day.count }} contribution{{ day.count == 1 ? '' : 's' }} on {{ day.date }}"
+                                                     data-date="{{ day.date }}" data-count="{{ day.count }}">
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            {# Legend at bottom #}
+                            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 4px; font-size: 11px; color: var(--gh-fg-muted); margin-top: 10px;">
+                                <span>Less</span>
+                                <span class="gh-contrib-cell gh-contrib-0"></span>
+                                <span class="gh-contrib-cell gh-contrib-1"></span>
+                                <span class="gh-contrib-cell gh-contrib-2"></span>
+                                <span class="gh-contrib-cell gh-contrib-3"></span>
+                                <span class="gh-contrib-cell gh-contrib-4"></span>
+                                <span>More</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Contribution Activity Timeline #}
+                <div class="gh-activity-section">
+                    <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 16px 0; color: var(--gh-fg-default);">
+                        {{ t('ui.repo.activity') }}
+                    </h2>
+
+                    <div style="position: relative; padding-left: 28px; border-left: 2px solid var(--gh-border-default); margin-left: 12px;">
+                        <div style="margin-bottom: 24px; position: relative;">
+                            <span style="position: absolute; left: -36px; top: 0; width: 16px; height: 16px; border-radius: 50%; background: #21262d; border: 2px solid var(--gh-border-default); display: flex; align-items: center; justify-content: center; font-size: 9px; color: #58a6ff;">●</span>
+                            <h3 style="font-size: 14px; font-weight: 600; color: var(--gh-fg-default); margin: 0 0 8px 0;">
+                                August 2026
+                            </h3>
+                            <div style="border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 12px 16px; background: var(--gh-bg-subtle); font-size: 13px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="color: var(--gh-fg-default); font-weight: 500;">
+                                        Created {{ repos|length }} repositories
+                                    </span>
+                                </div>
+                                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">
+                                    {% for r in repos|slice(0, 4) %}
+                                        <li style="display: flex; align-items: center; gap: 6px;">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="var(--gh-fg-muted)"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z"/></svg>
+                                            <a href="/{{ r.display_owner }}/{{ r.slug }}" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none; font-weight: 500;">{{ r.display_owner }}/{{ r.slug }}</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            {# ══════════════════════════════════════════════════════════════════ #}
+            {# 2. TAB: REPOSITORIES                                            #}
+            {# ══════════════════════════════════════════════════════════════════ #}
+            {% elseif tab == 'repositories' %}
+
+                {# Filter Bar #}
+                <div class="gh-repo-filter-bar" style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
+                    <div style="flex: 1; min-width: 220px;">
+                        <input type="search" id="repo-search-input" placeholder="Find a repository..."
+                               style="width: 100%; padding: 5px 12px; font-size: 14px; background: var(--gh-bg-canvas); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none;" />
+                    </div>
+
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <select id="repo-type-filter" style="padding: 5px 10px; font-size: 13px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none; cursor: pointer;">
+                            <option value="all">Type: All</option>
+                            <option value="public">Public</option>
+                            <option value="private">Private</option>
+                            <option value="fork">Forks</option>
+                        </select>
+
+                        <select id="repo-lang-filter" style="padding: 5px 10px; font-size: 13px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none; cursor: pointer;">
+                            <option value="all">Language: All</option>
+                            {% for lang in languages %}
+                                <option value="{{ lang.name|lower }}">{{ lang.name }}</option>
+                            {% endfor %}
+                        </select>
+
+                        {% if viewer_is_self %}
+                            <a href="/repos/new" class="gh-btn gh-btn-primary" style="font-size: 13px; padding: 5px 12px; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+                                <span>New</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Repositories List #}
+                <div class="gh-repo-list" id="repo-list-container" style="border-top: 1px solid var(--gh-border-default);">
+                    {% for r in repos %}
+                        <div class="gh-repo-row"
+                             data-name="{{ r.name|lower }}"
+                             data-slug="{{ r.slug|lower }}"
+                             data-desc="{{ r.description|lower }}"
+                             data-visibility="{{ r.visibility }}"
+                             data-fork="{{ r.forked_from_id ? 'true' : 'false' }}"
+                             data-lang="{{ r.primary_lang|default('')|lower }}"
+                             style="padding: 24px 0; border-bottom: 1px solid var(--gh-border-muted, #21262d); display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+                                    <a href="/{{ r.display_owner }}/{{ r.slug }}" style="font-size: 20px; font-weight: 600; color: var(--gh-accent-fg, #58a6ff); text-decoration: none; word-break: break-all;">
+                                        {{ r.name }}
+                                    </a>
+                                    <span style="font-size: 12px; font-weight: 500; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--gh-border-default); color: var(--gh-fg-muted); text-transform: capitalize;">
+                                        {{ r.visibility }}
+                                    </span>
+                                </div>
+
+                                {% if r.parent_slug %}
+                                    <div style="font-size: 12px; color: var(--gh-fg-muted); margin-bottom: 6px;">
+                                        Forked from <a href="/{{ r.parent_slug }}" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none;">{{ r.parent_slug }}</a>
+                                    </div>
+                                {% endif %}
+
+                                {% if r.description %}
+                                    <p style="font-size: 14px; color: var(--gh-fg-muted); margin: 0 0 12px 0; line-height: 1.5;">
+                                        {{ r.description }}
+                                    </p>
+                                {% endif %}
+
+                                <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--gh-fg-muted); flex-wrap: wrap;">
+                                    {% if r.primary_lang %}
+                                        <span style="display: inline-flex; align-items: center; gap: 5px;">
+                                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: {{ r.lang_color }};"></span>
+                                            <span>{{ r.primary_lang }}</span>
+                                        </span>
+                                    {% endif %}
+
+                                    {% if (r.stars_count|default(0)) > 0 %}
+                                        <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+                                            <span>{{ r.stars_count }}</span>
+                                        </span>
+                                    {% endif %}
+
+                                    {% if (r.forks_count|default(0)) > 0 %}
+                                        <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm0 2.122a2.25 2.25 0 1 0-1.5 0v.878A2.25 2.25 0 0 0 5.75 8.5h1.5v2.128a2.251 2.251 0 1 0 1.5 0V8.5h1.5a2.25 2.25 0 0 0 2.25-2.25v-.878a2.25 2.25 0 1 0-1.5 0v.878a.75.75 0 0 1-.75.75h-4.5A.75.75 0 0 1 5 6.25v-.878Zm3.75 7.378a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm3-8.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
+                                            <span>{{ r.forks_count }}</span>
+                                        </span>
+                                    {% endif %}
+
+                                    <span>Updated {{ r.updated_at|time_ago }}</span>
+                                </div>
+                            </div>
+
+                            <div style="flex-shrink: 0;">
+                                <a href="/{{ r.display_owner }}/{{ r.slug }}" class="gh-btn gh-btn-sm" style="font-size: 12px; gap: 4px;">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+                                    <span>Star</span>
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div style="padding: 48px 16px; text-align: center; color: var(--gh-fg-muted);">
+                            <h3 style="font-size: 18px; color: var(--gh-fg-default); margin: 0 0 8px 0;">{{ profile_name }} doesn’t have any public repositories yet.</h3>
+                        </div>
+                    {% endfor %}
+                </div>
+
+            {# ══════════════════════════════════════════════════════════════════ #}
+            {# 3. TAB: STARS                                                   #}
+            {# ══════════════════════════════════════════════════════════════════ #}
+            {% elseif tab == 'stars' %}
+
+                <div class="gh-stars-list" style="border-top: 1px solid var(--gh-border-default);">
+                    {% for r in starred_repos %}
+                        <div class="gh-repo-row" style="padding: 24px 0; border-bottom: 1px solid var(--gh-border-muted, #21262d); display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                    <a href="/{{ r.display_owner }}/{{ r.slug }}" style="font-size: 20px; font-weight: 600; color: var(--gh-accent-fg, #58a6ff); text-decoration: none;">
+                                        {{ r.display_owner }}/{{ r.name }}
+                                    </a>
+                                    <span style="font-size: 12px; font-weight: 500; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--gh-border-default); color: var(--gh-fg-muted); text-transform: capitalize;">
+                                        {{ r.visibility }}
+                                    </span>
+                                </div>
+
+                                {% if r.description %}
+                                    <p style="font-size: 14px; color: var(--gh-fg-muted); margin: 0 0 12px 0; line-height: 1.5;">
+                                        {{ r.description }}
+                                    </p>
+                                {% endif %}
+
+                                <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--gh-fg-muted); flex-wrap: wrap;">
+                                    {% if r.primary_lang %}
+                                        <span style="display: inline-flex; align-items: center; gap: 5px;">
+                                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: {{ r.lang_color }};"></span>
+                                            <span>{{ r.primary_lang }}</span>
+                                        </span>
+                                    {% endif %}
+                                    <span>Updated {{ r.updated_at|time_ago }}</span>
+                                </div>
+                            </div>
+
+                            <div style="flex-shrink: 0;">
+                                <a href="/{{ r.display_owner }}/{{ r.slug }}" class="gh-btn gh-btn-sm" style="font-size: 12px; gap: 4px;">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+                                    <span>Starred</span>
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div style="padding: 48px 16px; text-align: center; color: var(--gh-fg-muted);">
+                            <h3 style="font-size: 18px; color: var(--gh-fg-default); margin: 0 0 8px 0;">No starred repositories yet</h3>
+                            <p style="font-size: 14px; margin: 0;">Starred repositories will appear here.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+
+            {% endif %}
+        </main>
+    </div>
+</div>
+
+{# Live Follow & Search Script #}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Interactive Follow/Unfollow Handler
+    const followForm = document.getElementById('follow-user-form');
+    const followBtn  = document.getElementById('follow-user-btn');
+    const followersEl= document.getElementById('followers-count-display');
+
+    if (followForm && followBtn) {
+        followForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            followBtn.disabled = true;
+
+            const formData = new FormData(followForm);
+            try {
+                const res = await fetch(followForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (res.redirected) {
+                    window.location.href = res.url;
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.ok) {
+                    if (data.is_following) {
+                        followBtn.textContent = 'Unfollow';
+                        followBtn.className = 'gh-btn';
+                    } else {
+                        followBtn.textContent = 'Follow';
+                        followBtn.className = 'gh-btn gh-btn-primary';
+                    }
+                    if (followersEl && data.followers_count !== undefined) {
+                        followersEl.textContent = data.followers_count;
+                    }
+                } else if (data.error) {
+                    alert(data.error);
+                }
+            } catch (err) {
+                // Fallback to normal POST submit
+                followForm.submit();
+            } finally {
+                followBtn.disabled = false;
+            }
+        });
+    }
+
+    // 2. Client-side Repository Filter Script
+    const searchInput = document.getElementById('repo-search-input');
+    const typeFilter  = document.getElementById('repo-type-filter');
+    const langFilter  = document.getElementById('repo-lang-filter');
+    const rows        = document.querySelectorAll('.gh-repo-row');
+
+    if (searchInput || typeFilter || langFilter) {
+        function applyFilters() {
+            const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+            const type  = typeFilter ? typeFilter.value : 'all';
+            const lang  = langFilter ? langFilter.value : 'all';
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const slug = row.getAttribute('data-slug') || '';
+                const desc = row.getAttribute('data-desc') || '';
+                const vis  = row.getAttribute('data-visibility') || '';
+                const fork = row.getAttribute('data-fork') || 'false';
+                const rLang= row.getAttribute('data-lang') || '';
+
+                const matchesQuery = !query || name.includes(query) || slug.includes(query) || desc.includes(query);
+
+                let matchesType = true;
+                if (type === 'public')  matchesType = (vis === 'public');
+                if (type === 'private') matchesType = (vis === 'private');
+                if (type === 'fork')    matchesType = (fork === 'true');
+
+                let matchesLang = true;
+                if (lang !== 'all') matchesLang = (rLang === lang);
+
+                if (matchesQuery && matchesType && matchesLang) {
+                    row.style.display = 'flex';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (typeFilter)  typeFilter.addEventListener('change', applyFilters);
+        if (langFilter)  langFilter.addEventListener('change', applyFilters);
+    }
+});
+</script>
+{% endblock %}

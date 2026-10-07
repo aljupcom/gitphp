@@ -1,0 +1,348 @@
+/*
+ * mobile.css — Mobile display styles (≤ 767.98px)
+ * Loaded AFTER github.css, so these rules take precedence.
+ * Covers: overflow, header, repo header, repo tabs, file list.
+ */
+
+@media screen and (max-width: 767.98px) {
+
+    /* ─────────────────────────────────────────────
+       1. Global overflow & page container
+       ───────────────────────────────────────────── */
+    html,
+    body {
+        overflow-x: hidden;   /* fallback */
+        overflow-x: clip;     /* modern: no scroll container, keeps sticky header */
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .gh-page {
+        padding: 12px 12px 48px !important;
+        overflow-x: hidden;
+        overflow-x: clip;
+        box-sizing: border-box !important;
+        max-width: 100%;
+    }
+
+    .gh-page > * {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* ─────────────────────────────────────────────
+       2. Header (top navigation)
+       ───────────────────────────────────────────── */
+    .gh-header {
+        height: 48px !important;
+        padding: 0 10px !important;
+    }
+
+    .gh-header-inner {
+        gap: 6px !important;
+        padding: 0 !important;
+        height: 100% !important;
+    }
+
+    .gh-header-left {
+        gap: 6px !important;
+        min-width: 0;
+    }
+
+    .gh-header-toggle {
+        display: inline-flex !important;
+        width: 32px !important;
+        height: 32px !important;
+        flex-shrink: 0;
+    }
+
+    .gh-header-nav-links {
+        display: none !important;
+    }
+
+    .gh-header-search-wrap {
+        display: none !important;
+    }
+
+    .gh-logo {
+        gap: 6px !important;
+        font-size: 14px !important;
+        min-width: 0;
+    }
+
+    .gh-header-actions {
+        gap: 5px !important;
+        margin-left: auto !important;
+        flex-shrink: 0;
+    }
+
+    .gh-header-actions .gh-theme-toggle,
+    .gh-header-actions .gh-notification-btn {
+        width: 30px !important;
+        height: 30px !important;
+        flex-shrink: 0;
+    }
+
+    .gh-user-dd .gh-avatar {
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    .gh-header-actions .gh-btn-sm {
+        font-size: 11px !important;
+        padding: 3px 8px !important;
+        height: 28px !important;
+    }
+
+    /* ─────────────────────────────────────────────
+       3. Repository header (breadcrumb + actions)
+       ───────────────────────────────────────────── */
+    .gh-repo-header {
+        margin-bottom: 10px !important;
+    }
+
+    .gh-repo-header-top {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+
+    .gh-repo-breadcrumb-wrap {
+        font-size: 15px !important;
+        line-height: 1.4 !important;
+    }
+
+    .gh-repo-breadcrumb {
+        font-size: 15px !important;
+    }
+
+    .gh-repo-actions {
+        width: 100% !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    .gh-repo-actions .gh-btn,
+    .gh-repo-actions .gh-social-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .gh-repo-desc {
+        font-size: 13px !important;
+    }
+
+    /* ─────────────────────────────────────────────
+       4. Repository tabs (horizontal scroll)
+       ───────────────────────────────────────────── */
+    .gh-repo-nav {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        border-bottom: 1px solid var(--gh-border-default, #30363d) !important;
+        margin-bottom: 12px !important;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .gh-repo-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .gh-tab {
+        flex-shrink: 0 !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        white-space: nowrap !important;
+    }
+
+    .gh-tab-end {
+        margin-left: 0 !important;
+    }
+
+    /* ─────────────────────────────────────────────
+       5. File list — clean mobile list layout
+       ───────────────────────────────────────────── */
+    .gh-table-wrap {
+        border-radius: 6px !important;
+        border: 1px solid var(--gh-border-default, #30363d) !important;
+        overflow: hidden !important;
+        margin-top: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .gh-file-table {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .gh-file-table thead {
+        display: none !important;
+    }
+
+    .gh-file-table tbody {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .gh-file-table tbody tr {
+        display: flex !important;
+        align-items: center !important;
+        min-height: 44px;
+        padding: 0 12px;
+        border-top: 1px solid var(--gh-border-muted, #21262d) !important;
+        box-sizing: border-box;
+    }
+
+    .gh-file-table tbody tr:first-child {
+        border-top: none !important;
+    }
+
+    .gh-file-table tbody tr:active {
+        background: var(--gh-bg-subtle, rgba(255, 255, 255, 0.04));
+    }
+
+    .gh-file-table td {
+        display: block !important;
+        border-top: none !important;
+        padding: 0 !important;
+    }
+
+    .gh-file-table td:empty {
+        display: none !important;
+    }
+
+    .gh-file-icon-cell {
+        flex: 0 0 32px !important;
+        width: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+    }
+
+    .gh-file-name {
+        flex: 1 1 auto !important;
+        min-width: 0;
+        padding: 12px 8px 12px 4px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        width: auto !important;
+        max-width: none !important;
+        box-sizing: border-box;
+    }
+
+    .gh-file-name a {
+        color: var(--gh-fg-default, #e6edf3) !important;
+        font-weight: 500 !important;
+        text-decoration: none !important;
+    }
+
+    .gh-file-msg {
+        display: none !important;
+    }
+
+    .gh-file-time {
+        flex: 0 0 auto !important;
+        display: block !important;
+        width: auto !important;
+        max-width: none !important;
+        text-align: right !important;
+        padding: 12px 0 12px 8px !important;
+        font-size: 12px !important;
+        color: var(--gh-fg-muted, #8b949e) !important;
+        white-space: nowrap !important;
+        box-sizing: border-box;
+    }
+
+    .gh-file-actions {
+        display: none !important;
+    }
+
+    /* ─────────────────────────────────────────────
+       6. Tree toolbar (branch selector + actions)
+       ───────────────────────────────────────────── */
+    .gh-tree-bar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .gh-tree-bar-left,
+    .gh-tree-bar-right {
+        width: 100% !important;
+        flex-wrap: wrap;
+    }
+
+    .gh-tree-bar-right {
+        justify-content: flex-start !important;
+        gap: 6px !important;
+    }
+
+    .gh-ref-switcher-wrap {
+        max-width: 100%;
+    }
+
+    .gh-ref-name {
+        max-width: 120px !important;
+    }
+
+    /* Latest commit bar */
+    .gh-latest-commit-bar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+        padding: 8px 12px !important;
+    }
+
+    .gh-commit-bar-right {
+        padding-left: 28px !important;
+    }
+
+    .gh-commit-bar-msg {
+        max-width: calc(100vw - 90px) !important;
+    }
+}
+
+/* ─────────────────────────────────────────────
+   Very small phones (≤ 480px)
+   ───────────────────────────────────────────── */
+@media screen and (max-width: 480px) {
+    .gh-header {
+        height: 44px !important;
+        padding: 0 8px !important;
+    }
+
+    .gh-logo {
+        font-size: 13px !important;
+    }
+
+    .gh-page {
+        padding: 10px 8px 40px !important;
+    }
+
+    .gh-header-actions .gh-btn-sm {
+        font-size: 11px !important;
+        padding: 2px 6px !important;
+        height: 26px !important;
+    }
+
+    .gh-repo-breadcrumb-wrap {
+        font-size: 14px !important;
+    }
+
+    .gh-tab {
+        padding: 8px 10px !important;
+        font-size: 12.5px !important;
+    }
+
+    .gh-file-table tbody tr {
+        padding: 0 10px;
+    }
+}

@@ -1,0 +1,121 @@
+{% extends "layout.twig" %}
+
+{% block title %}Contact Us — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" dir="ltr">
+
+    {# ── Hero + primary CTA ─────────────────────────────────── #}
+    <section class="gh-contact-hero">
+        <div class="gh-contact-hero-text">
+            <span class="gh-contact-eyebrow">
+                <svg class="ti ti-lifebuoy"><use href="#ti-lifebuoy"/></svg> Support
+            </span>
+            <h1 class="gh-contact-title">We're here to help</h1>
+            <p class="gh-contact-sub">
+                Questions about repositories, access, or the API? Open a support ticket and we'll
+                get back to you with a tracked reference — no account required.
+            </p>
+            <div class="gh-contact-cta">
+                <a class="gh-btn gh-btn-primary gh-contact-cta-main" href="/support">
+                    <svg class="ti ti-ticket"><use href="#ti-ticket"/></svg> Create a Ticket
+                </a>
+                <a class="gh-btn" href="/support?tab=track">
+                    <svg class="ti ti-list-search"><use href="#ti-list-search"/></svg> Track a ticket
+                </a>
+            </div>
+            <p class="gh-contact-note">
+                <svg class="ti ti-clock"><use href="#ti-clock"/></svg>
+                Typical first reply within 1–2 business days · urgent issues same business day
+            </p>
+        </div>
+
+        <aside class="gh-contact-hero-card">
+            <h2 class="gh-contact-card-title">Ticket at a glance</h2>
+            <ul class="gh-contact-card-list">
+                <li><strong>Open</strong> a request in under a minute</li>
+                <li><strong>Track</strong> it with a unique reference</li>
+                <li><strong>Reply</strong> in a threaded conversation</li>
+                <li><strong>Guests</strong> and members both supported</li>
+            </ul>
+            <a class="gh-btn gh-btn-block" href="/support">Go to Support Center</a>
+        </aside>
+    </section>
+
+    {# ── Channels ───────────────────────────────────────────── #}
+    <h2 class="gh-contact-section-title">Choose the right channel</h2>
+    <div class="gh-contact-grid">
+        <a class="gh-contact-card" href="/docs">
+            <span class="gh-contact-card-icon gh-contact-card-icon--blue">
+                <svg class="ti ti-book"><use href="#ti-book"/></svg>
+            </span>
+            <span class="gh-contact-card-head">Documentation</span>
+            <span class="gh-contact-card-desc">Setup, Git &amp; SSH, tokens and the REST API — most answers live here.</span>
+        </a>
+
+        <a class="gh-contact-card" href="/docs?cat=troubleshoot">
+            <span class="gh-contact-card-icon gh-contact-card-icon--amber">
+                <svg class="ti ti-alert-triangle"><use href="#ti-alert-triangle"/></svg>
+            </span>
+            <span class="gh-contact-card-head">Troubleshooting</span>
+            <span class="gh-contact-card-desc">Push errors, authentication failures and common fixes.</span>
+        </a>
+
+        <a class="gh-contact-card" href="/support">
+            <span class="gh-contact-card-icon gh-contact-card-icon--green">
+                <svg class="ti ti-ticket"><use href="#ti-ticket"/></svg>
+            </span>
+            <span class="gh-contact-card-head">Support ticket</span>
+            <span class="gh-contact-card-desc">Account, repository or billing questions that need a human reply.</span>
+        </a>
+
+        <a class="gh-contact-card" href="/security">
+            <span class="gh-contact-card-icon gh-contact-card-icon--red">
+                <svg class="ti ti-shield-lock"><use href="#ti-shield-lock"/></svg>
+            </span>
+            <span class="gh-contact-card-head">Security report</span>
+            <span class="gh-contact-card-desc">Found a vulnerability? Report it privately instead of a public issue.</span>
+        </a>
+    </div>
+
+    {# ── What to include ────────────────────────────────────── #}
+    <div class="gh-contact-split">
+        <div class="gh-box">
+            <h2 class="gh-contact-section-title" style="margin-top:0;">What to include</h2>
+            <ul class="gh-contact-checklist">
+                <li>A clear description of the problem or request.</li>
+                <li>Steps to reproduce, where relevant.</li>
+                <li>The exact error message and the affected URL.</li>
+                <li>Your username or repository name (never your password).</li>
+            </ul>
+            <p class="gh-muted" style="font-size:12.5px; margin-bottom:0;">
+                Never share passwords or access tokens in a ticket. Support will never ask for them.
+            </p>
+        </div>
+
+        <div class="gh-box">
+            <h2 class="gh-contact-section-title" style="margin-top:0;">Administration</h2>
+            <p style="font-size:13.5px;">
+                This instance is administered by <strong>{{ owner }}</strong>. Account or content
+                concerns are handled by the administrator of this deployment.
+            </p>
+            <div class="gh-contact-links">
+                <a href="/about">About &amp; rights</a>
+                <a href="/privacy">Privacy policy</a>
+                <a href="/terms">Terms</a>
+            </div>
+        </div>
+    </div>
+
+    {# ── Closing CTA ────────────────────────────────────────── #}
+    <section class="gh-contact-final">
+        <div>
+            <strong>Still stuck?</strong>
+            <span class="gh-muted">Open a ticket and we'll take it from here.</span>
+        </div>
+        <a class="gh-btn gh-btn-primary" href="/support">
+            <svg class="ti ti-ticket"><use href="#ti-ticket"/></svg> Create a Ticket
+        </a>
+    </section>
+</div>
+{% endblock %}

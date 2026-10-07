@@ -1,0 +1,51 @@
+{% set r_owner = owner|default(__h.owner|default(repo.owner|default('admin'))) %}
+{% set r_slug = repo.slug|default(__h.repo.slug|default(slug|default(''))) %}
+{% set r_app_url = app_url|default('https://git.ysnapp.com')|trim('/') %}
+{% set r_host = r_app_url|replace({'https://':'', 'http://':''})|split('/')[0]|split(':')[0] %}
+
+{% set computed_https = https_url|default(__h.https_url|default(r_app_url ~ '/' ~ r_owner ~ '/' ~ r_slug ~ '.git')) %}
+{% set computed_ssh = ssh_url|default(__h.ssh_url|default('git@' ~ r_host ~ ':' ~ r_owner ~ '/' ~ r_slug ~ '.git')) %}
+{% set computed_vscode = 'vscode://vscode.git/clone?url=' ~ computed_https|url_encode %}
+
+<div class="gh-clone-urls">
+    {# Tab Selector: HTTPS / SSH #}
+    <div style="display: flex; gap: 6px; border-bottom: 1px solid var(--gh-border-muted); margin-bottom: 10px; padding-bottom: 6px;">
+        <button type="button" class="gh-btn gh-btn-sm js-clone-tab" data-target="gh-clone-https-box" style="padding: 2px 10px; font-size: 12px; font-weight: 600;" onclick="document.querySelectorAll('.gh-clone-pane').forEach(p=>p.style.display='none');document.getElementById('gh-clone-https-box').style.display='block';document.querySelectorAll('.js-clone-tab').forEach(t=>t.classList.remove('gh-btn-primary'));this.classList.add('gh-btn-primary');">HTTPS</button>
+        <button type="button" class="gh-btn gh-btn-sm js-clone-tab" data-target="gh-clone-ssh-box" style="padding: 2px 10px; font-size: 12px; font-weight: 600;" onclick="document.querySelectorAll('.gh-clone-pane').forEach(p=>p.style.display='none');document.getElementById('gh-clone-ssh-box').style.display='block';document.querySelectorAll('.js-clone-tab').forEach(t=>t.classList.remove('gh-btn-primary'));this.classList.add('gh-btn-primary');">SSH</button>
+    </div>
+
+    {# HTTPS Box #}
+    <div id="gh-clone-https-box" class="gh-clone-pane">
+        <div class="gh-input-group" style="display: flex; align-items: stretch;">
+            <input type="text" id="clone-https" value="{{ computed_https }}" readonly data-select-on-click
+                   aria-label="HTTPS clone URL" title="Click to select" style="direction:ltr !important; text-align:left !important; flex: 1; height: 32px; padding: 0 8px; font-size: 12px; font-family: var(--gh-font-mono); background: var(--gh-bg-inset); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px 0 0 6px; outline: none;">
+            <button type="button" class="gh-btn gh-btn-sm gh-copy-inline" data-copy="{{ computed_https }}"
+                    aria-label="Copy HTTPS clone URL" title="Copy HTTPS clone URL" style="height: 32px; padding: 0 10px; border-left: none; border-radius: 0 6px 6px 0;">
+                <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    {# SSH Box #}
+    <div id="gh-clone-ssh-box" class="gh-clone-pane" style="display: none;">
+        <div class="gh-input-group" style="display: flex; align-items: stretch;">
+            <input type="text" id="clone-ssh" value="{{ computed_ssh }}" readonly data-select-on-click
+                   aria-label="SSH clone URL" title="Click to select" style="direction:ltr !important; text-align:left !important; flex: 1; height: 32px; padding: 0 8px; font-size: 12px; font-family: var(--gh-font-mono); background: var(--gh-bg-inset); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px 0 0 6px; outline: none;">
+            <button type="button" class="gh-btn gh-btn-sm gh-copy-inline" data-copy="{{ computed_ssh }}"
+                    aria-label="Copy SSH clone URL" title="Copy SSH clone URL" style="height: 32px; padding: 0 10px; border-left: none; border-radius: 0 6px 6px 0;">
+                <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    {# VS Code & CLI actions #}
+    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--gh-border-muted); display: flex; flex-direction: column; gap: 4px;">
+        <a href="{{ computed_vscode }}" style="font-size: 12px; color: var(--gh-accent-fg); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.276a1 1 0 0 0-.057 1.488l3.682 3.42-3.682 3.42a1 1 0 0 0 .057 1.488l1.322 1.217a1 1 0 0 0 1.276.057l4.12-3.128 9.46 8.63c.47.43 1.134.56 1.705.29l4.94-2.377A1.5 1.5 0 0 0 24 20.404V3.596a1.5 1.5 0 0 0-.85-1.009z"/></svg>
+            <span>Open with Visual Studio Code</span>
+        </a>
+        <a href="/settings/tokens?tab=signed" style="font-size: 11px; font-weight: 600; color: var(--gh-success-fg); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px;">
+            <span><svg class="ti ti-bolt"><use href="#ti-bolt"/></svg> Generate Signed Push Signature →</span>
+        </a>
+    </div>
+</div>

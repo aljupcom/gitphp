@@ -1,0 +1,54 @@
+{% extends "layout.twig" %}
+
+{% block title %}Choose a new password — {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="gh-auth">
+    <span class="gh-auth-mark" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 16 16" fill="currentColor"><path d="M4 4a4 4 0 0 1 8 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25v-5.5C2 6.784 2.784 6 3.75 6H4Zm8.25 3.5h-8.5a.25.25 0 0 0-.25.25v5.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25ZM10.5 6V4a2.5 2.5 0 1 0-5 0v2Z"/></svg>
+    </span>
+
+    <h1 class="gh-auth-title">Choose a new password</h1>
+    <p class="gh-auth-sub">Pick a strong password for your account.</p>
+
+    {% if error %}
+        <div class="gh-flash gh-flash-error gh-auth-error" role="alert"
+             style="width:100%; max-width:360px; margin-bottom:16px;">{{ error }}</div>
+    {% endif %}
+
+    {% if token == '' %}
+        <div class="gh-auth-alt">
+            This reset link is invalid or has expired.
+            <a href="/forgot-password">Request a new one</a>
+        </div>
+    {% else %}
+        <div class="gh-auth-card">
+            <form method="POST" action="/reset-password/{{ token }}" class="gh-auth-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <div class="gh-form-group">
+                    <label class="gh-label" for="password">New password</label>
+                    <div class="gh-pass-wrap">
+                        <input class="gh-input" type="password" id="password" name="password"
+                               placeholder="At least 8 characters" required minlength="8"
+                               autocomplete="new-password">
+                        <button type="button" class="gh-pass-toggle" data-toggle-password="#password"
+                                aria-label="Show or hide password" title="Show / hide">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 0 1 0 1.798c-.45.678-1.367 1.932-2.637 3.023C11.67 13.008 9.981 14 8 14c-1.981 0-3.671-.992-4.933-2.078C1.797 10.83.88 9.576.43 8.898a1.62 1.62 0 0 1 0-1.798c.45-.677 1.367-1.931 2.637-3.022C4.33 2.992 6.019 2 8 2ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="gh-form-group">
+                    <label class="gh-label" for="password_confirm">Confirm new password</label>
+                    <input class="gh-input" type="password" id="password_confirm" name="password_confirm"
+                           placeholder="Repeat your password" required minlength="8"
+                           autocomplete="new-password">
+                </div>
+
+                <button type="submit" class="gh-btn gh-btn-primary gh-btn-block">Change password</button>
+            </form>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

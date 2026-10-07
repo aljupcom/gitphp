@@ -1,0 +1,762 @@
+{% extends "layout.twig" %}
+
+{% block title %}License & Device Manager · Site Admin · {{ app_name }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Theme-Adaptive GitHub Admin Layout & Components */
+    .gh-license-page {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 24px 16px;
+    }
+    .gh-license-grid {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 24px;
+    }
+    .gh-stat-card {
+        background: var(--gh-bg-secondary, var(--gh-bg-subtle, #ffffff));
+        border: 1px solid var(--gh-border-default, var(--gh-border, #d0d7de));
+        border-radius: 8px;
+        padding: 16px;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .gh-stat-card:hover {
+        border-color: var(--gh-accent-fg, #0969da);
+    }
+    .gh-table-wrapper {
+        background: var(--gh-bg-secondary, var(--gh-bg-subtle, #ffffff));
+        border: 1px solid var(--gh-border-default, var(--gh-border, #d0d7de));
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .gh-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 13px;
+    }
+    .gh-table th {
+        padding: 10px 14px;
+        background: var(--gh-bg-subtle, #f6f8fa);
+        color: var(--gh-fg-muted, #57606a);
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--gh-border-default, var(--gh-border, #d0d7de));
+    }
+    .gh-table td {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--gh-border-default, var(--gh-border, #d0d7de));
+        color: var(--gh-fg-default, #1f2328);
+        vertical-align: middle;
+    }
+    .gh-table tr:last-child td {
+        border-bottom: none;
+    }
+    .gh-table tr:hover td {
+        background: var(--gh-bg-subtle, rgba(0, 0, 0, 0.02));
+    }
+
+    /* Form Inputs Theme Adaptive (Light/Dark Mode) */
+    .gh-form-input {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--gh-border-default, #d0d7de) !important;
+        background-color: var(--gh-bg-default, #ffffff) !important;
+        color: var(--gh-fg-default, #1f2328) !important;
+        font-size: 13.5px;
+        box-sizing: border-box;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .gh-form-input:focus {
+        border-color: var(--gh-accent-fg, #0969da) !important;
+        box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.2) !important;
+    }
+    .gh-form-input::placeholder {
+        color: var(--gh-fg-muted, #8c959f) !important;
+    }
+    .gh-form-label {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: var(--gh-fg-default, #1f2328) !important;
+    }
+
+    /* Badge & Button Utilities */
+    .gh-key-badge {
+        font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
+        font-weight: 700;
+        color: var(--gh-accent-fg, #0969da);
+        background: var(--gh-accent-subtle, rgba(9,105,218,0.08));
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid var(--gh-accent-muted, rgba(9,105,218,0.25));
+        font-size: 11.5px;
+    }
+    .gh-action-btn {
+        padding: 4px 8px;
+        font-size: 11.5px;
+        font-weight: 500;
+        border-radius: 6px;
+        border: 1px solid var(--gh-border-default, #d0d7de);
+        background: var(--gh-btn-bg, #f6f8fa);
+        color: var(--gh-fg-default, #24292f);
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .gh-action-btn:hover {
+        background: var(--gh-bg-subtle, #f3f4f6);
+    }
+
+    /* Compact Pill Badges */
+    .gh-pill-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 7px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+    }
+    .gh-pill-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    /* Status Themes */
+    .gh-pill-active {
+        background: rgba(46, 160, 67, 0.12);
+        color: #1a7f37;
+        border: 1px solid rgba(46, 160, 67, 0.3);
+    }
+    .gh-pill-active .gh-pill-dot { background: #1a7f37; }
+
+    .gh-pill-expired {
+        background: rgba(191, 135, 0, 0.12);
+        color: #9a6700;
+        border: 1px solid rgba(191, 135, 0, 0.3);
+    }
+    .gh-pill-expired .gh-pill-dot { background: #9a6700; }
+
+    .gh-pill-blocked {
+        background: rgba(207, 34, 46, 0.12);
+        color: #cf222e;
+        border: 1px solid rgba(207, 34, 46, 0.3);
+    }
+    .gh-pill-blocked .gh-pill-dot { background: #cf222e; }
+
+    /* Responsive Mobile Media Queries (< 768px) */
+    @media (max-width: 768px) {
+        .gh-license-page {
+            padding: 16px 12px;
+        }
+        .gh-license-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        .gh-header-box {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 12px !important;
+        }
+        .gh-header-box button {
+            width: 100%;
+            justify-content: center;
+        }
+        .gh-stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+        }
+        .gh-form-grid {
+            grid-template-columns: 1fr !important;
+        }
+        .gh-table th, .gh-table td {
+            padding: 8px 10px;
+            font-size: 12px;
+        }
+        .gh-btn-group {
+            flex-wrap: wrap;
+            justify-content: flex-start !important;
+        }
+    }
+</style>
+
+<div class="gh-license-page">
+
+    {# Breadcrumb #}
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; margin-bottom: 16px; color: var(--gh-fg-muted, #57606a);">
+        <a href="/{{ admin_sec_prefix|default('admin') }}" style="color: var(--gh-accent-fg, #0969da); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;">
+            <svg class="ti ti-dashboard" style="font-size: 15px;"><use href="#ti-dashboard"/></svg>
+            <span>{{ t('adm.nav_sections.management')|default('Site Admin') }}</span>
+        </a>
+        <span>/</span>
+        <span style="font-weight: 600; color: var(--gh-fg-default, #1f2328);">License &amp; Device Manager</span>
+    </div>
+
+    {# Flash Alerts #}
+    {% if flash_success %}
+        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 6px; background: rgba(46,160,67,0.12); border: 1px solid rgba(46,160,67,0.3); color: #1a7f37; font-size: 13.5px;">
+            <svg class="ti ti-check" style="font-size: 16px;"><use href="#ti-check"/></svg>
+            <span>{{ flash_success }}</span>
+        </div>
+    {% endif %}
+    {% if flash_error %}
+        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 6px; background: rgba(248,81,73,0.12); border: 1px solid rgba(248,81,73,0.3); color: #cf222e; font-size: 13.5px;">
+            <svg class="ti ti-alert-circle" style="font-size: 16px;"><use href="#ti-alert-circle"/></svg>
+            <span>{{ flash_error }}</span>
+        </div>
+    {% endif %}
+
+    {# Main Layout Grid #}
+    <div class="gh-license-grid">
+
+        {# Left Navigation Sidebar #}
+        <div>
+            {% include "partials/admin-nav.twig" with { active: 'licenses', counts: nav_counts|default({}) } %}
+        </div>
+
+        {# Content Area #}
+        <div style="min-width: 0;">
+
+            {# Header Banner Card with Primary Toggle Button #}
+            <div class="gh-stat-card gh-header-box" style="padding: 16px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; background: var(--gh-bg-subtle, #f6f8fa);">
+                <div>
+                    <h1 style="font-size: 17px; font-weight: 700; margin: 0 0 4px 0; color: var(--gh-fg-default, #1f2328); display: flex; align-items: center; gap: 8px;">
+                        <svg class="ti ti-shield-check" style="font-size: 20px; color: var(--gh-accent-fg, #0969da);"><use href="#ti-shield-check"/></svg>
+                        <span>{{ t('adm.licenses.engine_title')|default('Multi-Device HWID License Engine') }}</span>
+                    </h1>
+                    <p style="font-size: 12.5px; color: var(--gh-fg-muted, #57606a); margin: 0; line-height: 1.4;">
+                        {{ t('adm.licenses.engine_desc')|default('Generate multi-server licenses, bind hardware device HWIDs, enforce dynamic slot quotas (max_devices), and inspect active remote server registries.') }}
+                    </p>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <button onclick="toggleMobileOtpModal()" style="padding: 7px 14px; font-weight: 600; font-size: 12.5px; border-radius: 6px; background: #0969da; color: #ffffff; border: 1px solid rgba(240,246,252,0.1); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+                        <span>📱</span> <span>{{ t('adm.licenses.mobile_access_btn')|default('Mobile Access Code') }}</span>
+                    </button>
+                    <button onclick="toggleCreateForm()" style="padding: 7px 14px; font-weight: 600; font-size: 12.5px; border-radius: 6px; background: #238636; color: #ffffff; border: 1px solid rgba(240,246,252,0.1); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+                        <span id="btn-icon">➕</span> <span id="btn-text">{{ t('adm.licenses.generate_btn')|default('Generate New License Key') }}</span>
+                    </button>
+                </div>
+            </div>
+
+            {# Stat Summary Grid #}
+            <div class="gh-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                <div class="gh-stat-card" style="padding: 12px 14px;">
+                    <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--gh-fg-muted, #57606a); margin-bottom: 2px;">{{ t('adm.licenses.stat_total')|default('Total Licenses') }}</div>
+                    <div style="font-size: 22px; font-weight: 700; color: var(--gh-fg-default, #1f2328);">{{ stats.total }}</div>
+                </div>
+                <div class="gh-stat-card" style="padding: 12px 14px; border-color: rgba(46,160,67,0.35);">
+                    <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #1a7f37; margin-bottom: 2px;">{{ t('adm.licenses.stat_active')|default('Active Licenses') }}</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #1a7f37;">{{ stats.active }}</div>
+                </div>
+                <div class="gh-stat-card" style="padding: 12px 14px; border-color: rgba(210,153,34,0.35);">
+                    <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #9a6700; margin-bottom: 2px;">{{ t('adm.licenses.stat_expired')|default('Expired') }}</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #9a6700;">{{ stats.expired }}</div>
+                </div>
+                <div class="gh-stat-card" style="padding: 12px 14px; border-color: rgba(9,105,218,0.35);">
+                    <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #0969da; margin-bottom: 2px;">{{ t('adm.licenses.stat_servers')|default('Remote Servers') }}</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #0969da;">{{ all_devices|default([])|length }}</div>
+                </div>
+            </div>
+
+            
+            {# Mobile Access Code Generation & Confirmation Card #}
+            <div id="mobile-otp-config-card" style="display: none; background: var(--gh-bg-secondary, var(--gh-bg-subtle, #ffffff)); border: 1px solid #0969da; border-radius: 8px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(9,105,218,0.12);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--gh-border-default, #d0d7de); padding-bottom: 8px;">
+                    <h2 style="font-size: 14.5px; font-weight: 700; margin: 0; color: var(--gh-fg-default, #1f2328); display: flex; align-items: center; gap: 6px;">
+                        <span>📱 Generate Mobile Access Pairing Code</span>
+                    </h2>
+                    <button type="button" onclick="toggleMobileOtpModal()" class="gh-action-btn">✖ Close</button>
+                </div>
+                
+                {# Step 1: Configuration Form (Before Generation) #}
+                <div id="mobile-otp-step-config" style="display: block;">
+                    <p style="font-size: 12.5px; color: var(--gh-fg-muted, #57606a); margin-top: 0; margin-bottom: 14px;">
+                        Select the validity duration for the temporary 6-digit access pairing code (from 5 minutes up to 1 year / 365 days). The code will expire automatically after the selected duration.
+                    </p>
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
+                        <div style="flex: 1; min-width: 220px;">
+                            <label style="display: block; font-size: 12px; font-weight: 700; color: var(--gh-fg-default, #1f2328); margin-bottom: 6px;">Validity Duration</label>
+                            <select id="otp-duration-preset" onchange="handleOtpPresetChange(this.value)" style="width: 100%; padding: 7px 10px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default, #d0d7de); background: var(--gh-bg-secondary, #ffffff); color: var(--gh-fg-default, #1f2328);">
+                                <option value="5">⏱️ 5 Minutes</option>
+                                <option value="10" selected>⏱️ 10 Minutes (Default)</option>
+                                <option value="30">⏱️ 30 Minutes</option>
+                                <option value="60">⏱️ 1 Hour (60 Mins)</option>
+                                <option value="720">⏱️ 12 Hours</option>
+                                <option value="1440">📅 1 Day (24 Hours)</option>
+                                <option value="10080">📅 7 Days (1 Week)</option>
+                                <option value="43200">📅 30 Days (1 Month)</option>
+                                <option value="129600">📅 90 Days (Quarterly)</option>
+                                <option value="259200">📅 180 Days (Half Year)</option>
+                                <option value="525600">📅 365 Days (1 Year)</option>
+                                <option value="custom">✏️ Custom Duration (Minutes)...</option>
+                            </select>
+                        </div>
+                        <div id="otp-custom-box" style="display: none; flex: 1; min-width: 200px;">
+                            <label style="display: block; font-size: 12px; font-weight: 700; color: var(--gh-fg-default, #1f2328); margin-bottom: 6px;">Custom Minutes (1 to 525600)</label>
+                            <input type="number" id="otp-custom-minutes" placeholder="e.g. 120" min="1" max="525600" style="width: 100%; padding: 7px 10px; font-size: 13px; border-radius: 6px; border: 1px solid var(--gh-border-default, #d0d7de); background: var(--gh-bg-secondary, #ffffff); color: var(--gh-fg-default, #1f2328);">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--gh-border-default, #d0d7de); padding-top: 12px;">
+                        <button type="button" onclick="toggleMobileOtpModal()" style="padding: 6px 14px; font-size: 12.5px; font-weight: 600; border-radius: 6px; background: var(--gh-bg-subtle, #f6f8fa); color: var(--gh-fg-default, #1f2328); border: 1px solid var(--gh-border-default, #d0d7de); cursor: pointer;">Cancel</button>
+                        <button type="button" onclick="confirmAndGenerateOTP()" style="padding: 6px 16px; font-size: 12.5px; font-weight: 600; border-radius: 6px; background: #0969da; color: #ffffff; border: 1px solid rgba(240,246,252,0.1); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                            <span>⚡</span> <span>Confirm & Generate Code</span>
+                        </button>
+                    </div>
+                </div>
+
+                {# Step 2: Generated Code Result Box (After Confirmation) #}
+                <div id="mobile-otp-step-result" style="display: none; text-align: center; padding: 10px 0;">
+                    <div style="font-size: 12.5px; color: var(--gh-fg-muted, #57606a); margin-bottom: 8px;">Single-use mobile pairing authentication code:</div>
+                    <div id="mobile-otp-display" style="font-family: monospace; font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #0969da; background: var(--gh-bg-subtle, #f6f8fa); display: inline-block; padding: 12px 28px; border-radius: 8px; border: 2px dashed #0969da; margin-bottom: 12px;">
+                        ⏳ ...
+                    </div>
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span id="mobile-otp-timer" style="font-size: 12.5px; font-weight: 700; color: #bf8700; background: rgba(210,153,34,0.15); padding: 5px 12px; border-radius: 20px;">Valid for: --</span>
+                        <button type="button" onclick="copyMobileOTP()" style="padding: 6px 14px; font-size: 12.5px; font-weight: 600; border-radius: 6px; background: var(--gh-bg-subtle, #f6f8fa); color: var(--gh-fg-default, #1f2328); border: 1px solid var(--gh-border-default, #d0d7de); cursor: pointer;">📋 {{ t('adm.licenses.copy')|default('Copy') }} Code</button>
+                        <button type="button" onclick="resetOtpModal()" style="padding: 6px 14px; font-size: 12.5px; font-weight: 600; border-radius: 6px; background: var(--gh-bg-subtle, #f6f8fa); color: #0969da; border: 1px solid var(--gh-border-default, #d0d7de); cursor: pointer;">🔄 Generate Another</button>
+                    </div>
+                </div>
+            </div>
+
+            {# Generate License Form Card (Hidden by Default) #}
+            <div id="create-license-card" style="display: none; background: var(--gh-bg-secondary, var(--gh-bg-subtle, #ffffff)); border: 1px solid var(--gh-border-default, #d0d7de); border-radius: 8px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid var(--gh-border-default, #d0d7de); padding-bottom: 10px;">
+                    <h2 style="font-size: 14.5px; font-weight: 700; margin: 0; color: var(--gh-fg-default, #1f2328); display: flex; align-items: center; gap: 6px;">
+                        <span>🔑 Generate New License Key</span>
+                    </h2>
+                    <button type="button" onclick="toggleCreateForm()" class="gh-action-btn">✖ Close</button>
+                </div>
+                <form action="/{{ admin_sec_prefix|default('admin') }}/licenses/create" method="POST">
+                    <div class="gh-form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label class="gh-form-label">Server IP Address <span style="color: #cf222e;">*</span></label>
+                            <input type="text" name="ip_address" class="gh-form-input" placeholder="e.g. 84.46.254.56" required>
+                        </div>
+                        <div>
+                            <label class="gh-form-label">Customer Name / Telegram <span style="color: #cf222e;">*</span></label>
+                            <input type="text" name="customer_name" class="gh-form-input" placeholder="e.g. Abu Sultan" required>
+                        </div>
+                        <div>
+                            <label class="gh-form-label">Contact Phone / Telegram</label>
+                            <input type="text" name="customer_contact" class="gh-form-input" placeholder="e.g. @username or +966...">
+                        </div>
+                        <div>
+                            <label class="gh-form-label">Plan Duration <span style="color: #cf222e;">*</span></label>
+                            <select name="plan_type" class="gh-form-input">
+                                <option value="trial">🟢 Trial (3 Days)</option>
+                                <option value="monthly" selected>🔵 Monthly (30 Days)</option>
+                                <option value="3months">🟣 3 Months (90 Days)</option>
+                                <option value="6months">🟣 6 Months (180 Days)</option>
+                                <option value="annual">🟣 Annual (365 Days)</option>
+                                <option value="lifetime">⭐ Lifetime (Permanent)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="gh-form-label">Max Devices / Quota <span style="color: #cf222e;">*</span></label>
+                            <input type="number" name="max_devices" class="gh-form-input" value="1" min="1" max="500" required>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <label class="gh-form-label">Notes / Server Info</label>
+                            <input type="text" name="notes" class="gh-form-input" placeholder="Optional notes (e.g. VPS provider, host location...)">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button type="button" onclick="toggleCreateForm()" class="gh-action-btn">Cancel</button>
+                        <button type="submit" style="padding: 7px 16px; font-weight: 600; font-size: 12.5px; border-radius: 6px; background: #238636; color: #ffffff; border: 1px solid rgba(240,246,252,0.1); cursor: pointer;">
+                            Generate &amp; Save License
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {# TABLE 1: Active Server Licenses #}
+            <div class="gh-table-wrapper">
+                <div style="padding: 12px 16px; border-bottom: 1px solid var(--gh-border-default, #d0d7de); font-weight: 600; font-size: 13.5px; color: var(--gh-fg-default, #1f2328); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: var(--gh-bg-subtle, #f6f8fa);">
+                    <span>🛡️ {{ t('adm.licenses.table_title', {count: licenses|length})|default('Server Licenses & Keys (' ~ licenses|length ~ ')') }}</span>
+                </div>
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <table class="gh-table">
+                        <thead>
+                            <tr>
+                                <th>{{ t('adm.licenses.th_license_key')|default('License Key') }}</th>
+                                <th>{{ t('adm.licenses.th_server_ip')|default('Server IP') }}</th>
+                                <th>{{ t('adm.licenses.th_customer')|default('Customer') }}</th>
+                                <th>{{ t('adm.licenses.th_quota')|default('Quota') }}</th>
+                                <th>{{ t('adm.licenses.th_status')|default('Status') }}</th>
+                                <th>{{ t('adm.licenses.th_days_left')|default('Days Left') }}</th>
+                                <th style="text-align: right;">{{ t('adm.licenses.th_actions')|default('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lic in licenses %}
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                            <span class="gh-key-badge">
+                                                {{ lic.license_key }}
+                                            </span>
+                                            <button onclick="copyLicenseKey('{{ lic.license_key }}')" title="Copy Key" class="gh-action-btn" style="padding: 2px 5px; font-size: 11px;">
+                                                📋 {{ t('adm.licenses.copy')|default('Copy') }}
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 600; color: var(--gh-fg-default, #1f2328); font-size: 12.5px;">
+                                        {{ lic.ip_address }}
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 600; color: var(--gh-fg-default, #1f2328);">{{ lic.customer_name }}</div>
+                                        {% if lic.customer_contact %}
+                                            <div style="font-size: 11px; color: var(--gh-fg-muted, #57606a);">{{ lic.customer_contact }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span style="font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: {{ lic.active_activations >= lic.max_devices ? 'rgba(207,34,46,0.1)' : 'rgba(9,105,218,0.08)' }}; color: {{ lic.active_activations >= lic.max_devices ? '#cf222e' : '#0969da' }}; border: 1px solid {{ lic.active_activations >= lic.max_devices ? 'rgba(207,34,46,0.25)' : 'rgba(9,105,218,0.25)' }}; white-space: nowrap;">
+                                            {{ lic.active_activations }}/{{ lic.max_devices }} {{ t('adm.licenses.dev')|default('Dev') }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if lic.status == 'active' %}
+                                            <span class="gh-pill-badge gh-pill-active">
+                                                <span class="gh-pill-dot"></span> {{ t('adm.licenses.active')|default('Active') }}
+                                            </span>
+                                        {% elseif lic.status == 'expired' %}
+                                            <span class="gh-pill-badge gh-pill-expired">
+                                                <span class="gh-pill-dot"></span> {{ t('adm.licenses.expired')|default('Expired') }}
+                                            </span>
+                                        {% else %}
+                                            <span class="gh-pill-badge gh-pill-blocked">
+                                                <span class="gh-pill-dot"></span> {{ t('adm.licenses.blocked')|default('Blocked') }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="font-weight: 600; font-size: 12px;">
+                                        {% if lic.days_remaining == '∞' %}
+                                            <span style="color: #1a7f37;">{{ t('adm.licenses.permanent')|default('Permanent') }}</span>
+                                        {% elseif lic.days_remaining > 5 %}
+                                            <span style="color: #1a7f37;">{{ lic.days_remaining }}d</span>
+                                        {% elseif lic.days_remaining > 0 %}
+                                            <span style="color: #9a6700;">{{ lic.days_remaining }}d</span>
+                                        {% else %}
+                                            <span style="color: #cf222e;">0d</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <div class="gh-btn-group" style="display: flex; align-items: center; justify-content: flex-end; gap: 5px;">
+                                            {# Renew Button #}
+                                            <form action="/{{ admin_sec_prefix|default('admin') }}/licenses/{{ lic.id }}/renew" method="POST" style="margin: 0;">
+                                                <input type="hidden" name="add_days" value="{{ lic.duration_days }}">
+                                                <button type="submit" title="Renew License" class="gh-action-btn" style="color: #0969da; border-color: rgba(9,105,218,0.3); background: rgba(9,105,218,0.06); white-space: nowrap;">
+                                                    🔄 {{ t('adm.licenses.extend_btn')|default('Extend') }}
+                                                </button>
+                                            </form>
+
+                                            {# Block / Unblock Button #}
+                                            <form action="/{{ admin_sec_prefix|default('admin') }}/licenses/{{ lic.id }}/block" method="POST" style="margin: 0;">
+                                                <button type="submit" title="{{ lic.status == 'blocked' ? 'Unblock Server' : 'Block Server' }}" class="gh-action-btn" style="color: {{ lic.status == 'blocked' ? '#1a7f37' : '#cf222e' }}; border-color: {{ lic.status == 'blocked' ? 'rgba(26,127,55,0.3)' : 'rgba(207,34,46,0.3)' }}; background: {{ lic.status == 'blocked' ? 'rgba(26,127,55,0.06)' : 'rgba(207,34,46,0.06)' }}; white-space: nowrap;">
+                                                    {% if lic.status == 'blocked' %}✔ {{ t('adm.licenses.unblock_btn')|default('Unblock') }}{% else %}🚫 {{ t('adm.licenses.block_btn')|default('Block') }}{% endif %}
+                                                </button>
+                                            </form>
+
+                                            {# Delete Button #}
+                                            <form action="/{{ admin_sec_prefix|default('admin') }}/licenses/{{ lic.id }}/delete" method="POST" style="margin: 0;" onsubmit="return confirm('Delete license {{ lic.license_key }} for IP {{ lic.ip_address }}?');">
+                                                <button type="submit" title="Delete License" class="gh-action-btn" style="padding: 4px 6px;">
+                                                    🗑️
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" style="padding: 24px; text-align: center; color: var(--gh-fg-muted, #57606a);">
+                                        No server licenses generated yet. Use the button above to generate your first license key.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# TABLE 2: Remote Servers & Devices Registry #}
+            <div class="gh-table-wrapper">
+                <div style="padding: 12px 16px; border-bottom: 1px solid var(--gh-border-default, #d0d7de); font-weight: 600; font-size: 13.5px; color: var(--gh-fg-default, #1f2328); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: var(--gh-bg-subtle, #f6f8fa);">
+                    <span>🖥️ {{ t('adm.licenses.registry_title')|default('Remote Servers Registry (Attached Device HWID)') }}</span>
+                    <span style="font-size: 11.5px; color: var(--gh-fg-muted, #57606a);">Total Devices: {{ all_devices|default([])|length }}</span>
+                </div>
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <table class="gh-table">
+                        <thead>
+                            <tr>
+                                <th>{{ t('adm.licenses.th_license_key')|default('License Key') }}</th>
+                                <th>{{ t('adm.licenses.th_server_host')|default('Server IP & Host') }}</th>
+                                <th>{{ t('adm.licenses.th_hwid')|default('Device HWID') }}</th>
+                                <th>{{ t('adm.licenses.th_customer')|default('Customer') }}</th>
+                                <th>{{ t('adm.licenses.th_status')|default('Status') }}</th>
+                                <th>{{ t('adm.licenses.th_last_checkin')|default('Last Check-in') }}</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dev in all_devices|default([]) %}
+                                <tr>
+                                    <td>
+                                        <span class="gh-key-badge">
+                                            {{ dev.license_key }}
+                                        </span>
+                                    </td>
+                                    <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px;">
+                                        <div style="font-weight: 600; color: var(--gh-fg-default, #1f2328);">{{ dev.server_ip }}</div>
+                                        {% if dev.hostname %}
+                                            <div style="font-size: 11px; color: var(--gh-fg-muted, #57606a);">{{ dev.hostname }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: var(--gh-fg-muted, #57606a);" title="{{ dev.device_hwid }}">
+                                        {{ dev.device_hwid|slice(0, 16) }}...
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 600; color: var(--gh-fg-default, #1f2328);">{{ dev.customer_name|default('Standard User') }}</div>
+                                    </td>
+                                    <td>
+                                        {% if dev.status == 'active' %}
+                                            <span class="gh-pill-badge gh-pill-active">
+                                                <span class="gh-pill-dot"></span> {{ t('adm.licenses.active')|default('Active') }}
+                                            </span>
+                                        {% else %}
+                                            <span class="gh-pill-badge gh-pill-blocked">
+                                                <span class="gh-pill-dot"></span> {{ t('adm.licenses.revoked')|default('Revoked') }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="font-size: 11px; color: var(--gh-fg-muted, #57606a); white-space: nowrap;">
+                                        {{ dev.last_seen|default(dev.activated_at) }}
+                                    </td>
+                                    <td style="text-align: right;">
+                                        {% if dev.status == 'active' %}
+                                            <button onclick="revokeDevice('{{ dev.license_key }}', '{{ dev.device_hwid }}', {{ dev.id }})" class="gh-action-btn" style="color: #cf222e; border-color: rgba(207,34,46,0.3); background: rgba(207,34,46,0.06); white-space: nowrap;">
+                                                🚫 {{ t('adm.licenses.revoke_slot')|default('Revoke Slot') }}
+                                            </button>
+                                        {% else %}
+                                            <span style="font-size: 11px; color: var(--gh-fg-muted, #57606a);">Revoked</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" style="padding: 24px; text-align: center; color: var(--gh-fg-muted, #57606a);">
+                                        No remote server HWID activations registered yet.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCreateForm() {
+    var card = document.getElementById('create-license-card');
+    var btnIcon = document.getElementById('btn-icon');
+    var btnText = document.getElementById('btn-text');
+    
+    if (card.style.display === 'none' || card.style.display === '') {
+        card.style.display = 'block';
+        if (btnIcon) btnIcon.innerText = '✖';
+        if (btnText) btnText.innerText = 'Close Form';
+    } else {
+        card.style.display = 'none';
+        if (btnIcon) btnIcon.innerText = '➕';
+        if (btnText) btnText.innerText = 'Generate New License Key';
+    }
+}
+
+
+var otpTimer = null;
+
+function toggleMobileOtpModal() {
+    var card = document.getElementById('mobile-otp-config-card');
+    if (!card) return;
+    if (card.style.display === 'none' || card.style.display === '') {
+        card.style.display = 'block';
+        resetOtpModal();
+    } else {
+        card.style.display = 'none';
+    }
+}
+
+function handleOtpPresetChange(val) {
+    var customBox = document.getElementById('otp-custom-box');
+    if (!customBox) return;
+    if (val === 'custom') {
+        customBox.style.display = 'block';
+    } else {
+        customBox.style.display = 'none';
+    }
+}
+
+function resetOtpModal() {
+    var configStep = document.getElementById('mobile-otp-step-config');
+    var resultStep = document.getElementById('mobile-otp-step-result');
+    if (configStep) configStep.style.display = 'block';
+    if (resultStep) resultStep.style.display = 'none';
+    if (otpTimer) clearInterval(otpTimer);
+}
+
+function confirmAndGenerateOTP() {
+    var presetVal = document.getElementById('otp-duration-preset').value;
+    var durationMins = 10;
+    
+    if (presetVal === 'custom') {
+        var customInput = document.getElementById('otp-custom-minutes');
+        durationMins = customInput ? (parseInt(customInput.value, 10) || 10) : 10;
+    } else {
+        durationMins = parseInt(presetVal, 10) || 10;
+    }
+    
+    document.getElementById('mobile-otp-step-config').style.display = 'none';
+    document.getElementById('mobile-otp-step-result').style.display = 'block';
+    document.getElementById('mobile-otp-display').innerText = '⏳ ...';
+    
+    fetch('/api/v1/auth/mobile-otp/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duration_minutes: durationMins })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.success && data.otp_code) {
+            document.getElementById('mobile-otp-display').innerText = data.otp_code;
+            startOtpCountdown(data.expires_in_seconds || (durationMins * 60));
+        } else {
+            alert('Failed to generate pairing code: ' + (data.message || 'Unknown error'));
+            resetOtpModal();
+        }
+    })
+    .catch(function(err) {
+        alert('Network error generating pairing code.');
+        resetOtpModal();
+    });
+}
+
+function startOtpCountdown(seconds) {
+    if (otpTimer) clearInterval(otpTimer);
+    var remaining = seconds;
+    var timerEl = document.getElementById('mobile-otp-timer');
+    
+    function updateDisplay() {
+        if (remaining <= 0) {
+            clearInterval(otpTimer);
+            if (timerEl) timerEl.innerText = '⚠️ Code Expired';
+            var disp = document.getElementById('mobile-otp-display');
+            if (disp) disp.innerText = 'EXPIRED';
+        } else {
+            var days = Math.floor(remaining / 86400);
+            var hours = Math.floor((remaining % 86400) / 3600);
+            var mins = Math.floor((remaining % 3600) / 60);
+            var secs = remaining % 60;
+            
+            var text = 'Valid for: ';
+            if (days > 0) text += days + 'd ';
+            if (hours > 0 || days > 0) text += hours + 'h ';
+            text += mins + 'm ' + (secs < 10 ? '0' : '') + secs + 's';
+            
+            if (timerEl) timerEl.innerText = text;
+        }
+    }
+    
+    updateDisplay();
+    otpTimer = setInterval(function() {
+        remaining--;
+        updateDisplay();
+    }, 1000);
+}
+
+function copyMobileOTP() {
+    var otp = document.getElementById('mobile-otp-display').innerText;
+    if (otp && otp !== '⏳ ...' && otp !== 'EXPIRED') {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(otp).then(function() {
+                alert('Copied Mobile Access Code: ' + otp);
+            }).catch(function() {
+                prompt('Mobile Access Code:', otp);
+            });
+        } else {
+            var input = document.createElement('input');
+            input.value = otp;
+            document.body.appendChild(input);
+            input.select();
+            try {
+                document.execCommand('copy');
+                alert('Copied Mobile Access Code: ' + otp);
+            } catch(e) {
+                prompt('Mobile Access Code:', otp);
+            }
+            document.body.removeChild(input);
+        }
+    }
+}
+
+function copyLicenseKey(text) {
+    if (!text) return;
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+            alert('Copied License Key: ' + text);
+        }).catch(function() {
+            prompt('Copy License Key:', text);
+        });
+    } else {
+        var input = document.createElement('input');
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        try {
+            document.execCommand('copy');
+            alert('Copied License Key: ' + text);
+        } catch(e) {
+            prompt('Copy License Key:', text);
+        }
+        document.body.removeChild(input);
+    }
+}
+
+function revokeDevice(licenseKey, hwid, deviceId) {
+    if (!confirm('Are you sure you want to revoke/unlink this remote server HWID? This will free up 1 activation slot.')) return;
+    
+    fetch('/api/v1/admin/license/device/revoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ license_key: licenseKey, hwid: hwid, device_id: deviceId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Server HWID unlinked & revoked successfully! Activation slot freed.');
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to revoke device.'));
+        }
+    })
+    .catch(err => {
+        alert('Request failed: ' + err);
+    });
+}
+</script>
+{% endblock %}

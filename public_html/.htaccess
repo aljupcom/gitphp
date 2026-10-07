@@ -1,0 +1,40 @@
+RewriteEngine On
+
+# Browser caching and anti-flash optimization for static fonts and assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/ttf "access plus 1 year"
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(woff2|woff|ttf|css|js|svg|png|jpg)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+# Pass Authorization header to PHP using mod_rewrite
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Block one-off patch/upgrade scripts that must never be web-executable.
+# Deploy tooling lives in bin/ (CLI only). If such a script is ever uploaded
+# here by mistake, Apache returns 403 before PHP can run it.
+<FilesMatch "^(update_|fix_|patch_|upgrade_).*\.php$">
+    Require all denied
+</FilesMatch>
+<Files "preflight.php">
+    Require all denied
+</Files>
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [L,QSA]
+
+RewriteEngine On
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]

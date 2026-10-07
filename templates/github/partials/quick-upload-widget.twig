@@ -1,0 +1,104 @@
+{# Embeddable Minimal Quick Upload Widget (ويدجت التحميل السريع) #}
+<div class="gh-quick-upload-widget" style="background: var(--gh-bg-subtle); border: 1px dashed var(--gh-border-default); border-radius: 8px; padding: 16px; text-align: center;">
+    <div id="quick-widget-prompt-{{ widget_id|default('default') }}">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--gh-bg-canvas); border: 1px solid var(--gh-border-default); margin-bottom: 8px; color: var(--gh-accent-fg);">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+        </div>
+        <div style="font-size: 13px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 4px;">
+            Quick File Upload & Short Link
+        </div>
+        <p style="font-size: 12px; color: var(--gh-fg-muted); margin: 0 0 12px 0;">
+            Choose any file to instantly generate a secure short download link.
+        </p>
+
+        <div style="display: flex; gap: 8px; justify-content: center; max-width: 400px; margin: 0 auto;">
+            <input type="file" id="qw-file-{{ widget_id|default('default') }}" class="gh-form-control" style="font-size: 12px; padding: 4px 8px; flex: 1;">
+            <button type="button" class="gh-btn gh-btn-sm gh-btn-primary" onclick="submitQuickWidgetUpload('{{ widget_id|default('default') }}')">
+                Upload & Share
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Widget Result -->
+    <div id="quick-widget-result-{{ widget_id|default('default') }}" style="display: none;">
+        <div style="background: #dafbe1; border: 1px solid #4ac26b; border-radius: 6px; padding: 10px; max-width: 440px; margin: 0 auto; text-align: left;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <strong style="color: #1a7f37; font-size: 12px;">✓ Link Ready</strong>
+                <span id="qw-size-{{ widget_id|default('default') }}" style="font-size: 11px; color: #1a7f37;"></span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+                <input type="text" id="qw-url-{{ widget_id|default('default') }}" readonly class="gh-form-control" style="font-family: monospace; font-size: 11px; padding: 2px 6px; height: 26px; background: #ffffff;">
+                <button type="button" class="gh-btn gh-btn-sm gh-btn-primary" onclick="copyQuickWidgetUrl('{{ widget_id|default('default') }}', this)">
+                    Copy
+                </button>
+                <button type="button" class="gh-btn gh-btn-sm" onclick="resetQuickWidget('{{ widget_id|default('default') }}')">
+                    Reset
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function submitQuickWidgetUpload(wId) {
+    const fileInput = document.getElementById('qw-file-' + wId);
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        alert('Please select a file first.');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('title', file.name);
+
+    const csrf = '{{ csrf_token }}' || (document.querySelector('input[name="csrf_token"]') ? document.querySelector('input[name="csrf_token"]').value : '');
+    formData.append('csrf_token', csrf);
+
+    const uploadBtn = document.querySelector('#quick-widget-prompt-' + wId + ' button');
+    const originalLabel = uploadBtn ? uploadBtn.innerText : '';
+    if (uploadBtn) { uploadBtn.disabled = true; uploadBtn.innerText = 'Uploading…'; }
+
+    try {
+        const res = await fetch('/admin/downloads/upload', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        const data = await res.json().catch(() => null);
+        if (!data) throw new Error('Unexpected server response.');
+
+        if (!data.success) throw new Error(data.error || 'Upload failed.');
+
+        // Populate the result card and swap views.
+        const urlInput = document.getElementById('qw-url-' + wId);
+        const sizeSpan = document.getElementById('qw-size-' + wId);
+        if (urlInput) urlInput.value = data.url;
+        if (sizeSpan) {
+            const kb = Math.max(1, Math.round((data.size || 0) / 1024));
+            sizeSpan.textContent = kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : kb + ' KB';
+        }
+        document.getElementById('quick-widget-prompt-' + wId).style.display = 'none';
+        document.getElementById('quick-widget-result-' + wId).style.display = 'block';
+    } catch (e) {
+        alert('Upload failed: ' + e.message);
+    } finally {
+        if (uploadBtn) { uploadBtn.disabled = false; uploadBtn.innerText = originalLabel || 'Upload & Share'; }
+    }
+}
+
+function copyQuickWidgetUrl(wId, btn) {
+    const urlInput = document.getElementById('qw-url-' + wId);
+    urlInput.select();
+    navigator.clipboard.writeText(urlInput.value);
+    btn.innerText = 'Copied!';
+    setTimeout(() => { btn.innerText = 'Copy'; }, 2000);
+}
+
+function resetQuickWidget(wId) {
+    document.getElementById('quick-widget-prompt-' + wId).style.display = 'block';
+    document.getElementById('quick-widget-result-' + wId).style.display = 'none';
+    document.getElementById('qw-file-' + wId).value = '';
+}
+</script>

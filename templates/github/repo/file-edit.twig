@@ -1,0 +1,74 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ mode == 'create' ? 'Creating new file' : 'Editing ' ~ file_path }} — {{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" dir="ltr">
+    {% include "partials/repo-header.twig" %}
+    {% include "partials/repo-nav.twig" with { active_tab: 'code' } %}
+
+    <nav class="gh-breadcrumb" aria-label="Breadcrumb" style="margin-top:16px;">
+        <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}">{{ repo.slug }}</a>
+        <span class="sep">/</span>
+        <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}/{{ file_path }}">{{ file_path }}</a>
+        <span class="sep">/</span>
+        <strong>{{ mode == 'create' ? 'New file' : 'Edit' }}</strong>
+    </nav>
+
+    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/file/save">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        {# ── Editor card ─────────────────────────────────────────── #}
+        <div class="gh-box gh-file-editor">
+            {# Bar: branch + path #}
+            <div class="gh-file-editor-bar">
+                <div class="gh-file-editor-field" style="max-width:180px;">
+                    <label class="gh-label" for="branch">Branch</label>
+                    <div style="position:relative;">
+                        <select id="branch" name="branch" class="gh-select" style="padding-right:28px;">
+                            {% for b in branches %}
+                                <option value="{{ b }}"{{ b == current_ref ? ' selected' : '' }}>{{ b }}</option>
+                            {% endfor %}
+                        </select>
+                        <svg style="position:absolute; right:10px; top:50%; transform:translateY(-50%); pointer-events:none; width:13px; height:13px; fill:var(--gh-fg-muted);" viewBox="0 0 16 16"><path d="m4.427 6.427 3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 6H4.604a.25.25 0 0 0-.177.427Z"/></svg>
+                    </div>
+                </div>
+
+                <div class="gh-file-editor-field gh-file-editor-path">
+                    <label class="gh-label" for="file_path">File path</label>
+                    <input class="gh-input gh-mono" type="text" id="file_path" name="file_path"
+                           value="{{ file_path }}" placeholder="src/App.php or docs/README.md" required
+                           {{ mode == 'edit' ? '' : 'autofocus' }}>
+                </div>
+            </div>
+
+            {# Content editor #}
+            <div class="gh-file-editor-area">
+                <label class="gh-label" for="content">Content</label>
+                <textarea class="gh-file-editor" id="content" name="content" rows="24" required
+                          spellcheck="false" placeholder="Type file content here…">{{ content }}</textarea>
+            </div>
+
+            {# Commit box #}
+            <div class="gh-file-editor-commit">
+                <h3 class="gh-file-editor-commit-title">Commit changes</h3>
+                <div class="gh-form-group" style="margin-bottom:14px;">
+                    <label class="gh-label" for="commit_message">Commit message</label>
+                    <input class="gh-input" type="text" id="commit_message" name="commit_message"
+                           placeholder="{{ mode == 'create' ? 'Create new file' : 'Update ' ~ file_path }}"
+                           style="max-width:520px;">
+                </div>
+                <div class="gh-file-editor-actions">
+                    <button type="submit" class="gh-btn gh-btn-primary">
+                        <svg class="ti ti-device-floppy"><use href="#ti-device-floppy"/></svg>
+                        Commit changes
+                    </button>
+                    <a class="gh-btn" href="/{{ owner }}/{{ repo.slug }}/{{ mode == 'edit' ? 'blob/' ~ current_ref ~ '/' ~ file_path : 'tree/' ~ current_ref }}">
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

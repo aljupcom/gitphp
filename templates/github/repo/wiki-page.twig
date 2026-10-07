@@ -1,0 +1,56 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ page.title }} — {{ repo.name }} {{ t('ui.wiki.wiki') }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'wiki' } %}
+
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px;">
+        {% if can_write or is_owner %}
+            <a href="/{{ owner }}/{{ repo.slug }}/wiki/{{ page.slug }}/history" class="gh-btn gh-btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1.643 3.143 2.3 2h13.4l.657 1.143v9.714L15.7 14H2.3l-.657-1.143V3.143ZM2.6 3v10h12.8V3H2.6Z"/></svg>
+                <span>{{ t('ui.wiki.history') }}</span>
+            </a>
+            <a href="/{{ owner }}/{{ repo.slug }}/wiki/{{ page.slug }}/edit" class="gh-btn gh-btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm1.414 1.06a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354l-1.086-1.086ZM9.75 4.81l-6.97 6.971a.249.249 0 0 0-.064.108l-.558 1.953 1.953-.558a.249.249 0 0 0 .108-.064l6.97-6.97-1.439-1.44Z"/></svg>
+                <span>{{ t('ui.wiki.edit_page') }}</span>
+            </a>
+            <a href="/{{ owner }}/{{ repo.slug }}/wiki/new" class="gh-btn gh-btn-primary gh-btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+                <span>{{ t('ui.wiki.new_page') }}</span>
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="gh-wiki-layout">
+        <aside class="gh-wiki-sidebar" aria-label="{{ t_attr('ui.wiki.pages') }}">
+            <h2 class="gh-wiki-sidebar-title">{{ t('ui.wiki.pages') }}</h2>
+            <ul class="gh-wiki-pages">
+                {% for p in pages %}
+                    <li>
+                        <a class="{{ p.slug == page.slug ? 'active' : '' }}"
+                           href="/{{ owner }}/{{ repo.slug }}/wiki/{{ p.slug }}">{{ p.title }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </aside>
+
+        <article class="gh-wiki-article">
+            <h1 class="gh-wiki-article-title">{{ page.title }}</h1>
+            <p class="gh-wiki-article-meta">
+                {% if page.updated_by_name %}
+                    {{ t('ui.wiki.last_updated_by', {time: page.updated_at|time_ago, name: page.updated_by_name}) }}
+                {% else %}
+                    {{ t('ui.wiki.last_updated', {time: page.updated_at|time_ago}) }}
+                {% endif %}
+            </p>
+            <div class="markdown-body gh-wiki-body">
+                {% if content_html %}{{ content_html|raw }}{% else %}<p class="gh-muted">{{ t('ui.wiki.page_empty') }}</p>{% endif %}
+            </div>
+        </article>
+    </div>
+</div>
+{% endblock %}

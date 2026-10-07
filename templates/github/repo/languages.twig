@@ -1,0 +1,99 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ active_lang ? active_lang.name : 'Languages' }} — {{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" dir="ltr">
+    {% include "partials/repo-header.twig" %}
+    {% include "partials/repo-nav.twig" with { active_tab: 'code' } %}
+
+    <nav class="gh-breadcrumb" aria-label="Breadcrumb" style="margin-top:16px;">
+        <a href="/{{ owner }}/{{ repo.slug }}">{{ repo.slug }}</a>
+        <span class="sep">/</span>
+        {% if active_lang %}<a href="/{{ owner }}/{{ repo.slug }}/languages">Languages</a><span class="sep">/</span>{% endif %}
+        <strong>{{ active_lang ? active_lang.name : 'Languages' }}</strong>
+    </nav>
+
+    <div class="gh-box gh-lang-page">
+
+        {% if active_lang %}
+            {# ── Single language detail ──────────────────────────── #}
+            <div class="gh-lang-langhead">
+                <span class="gh-lang-dot-lg" style="background: {{ active_lang.color }};"></span>
+                <div>
+                    <h1 class="gh-lang-page-title">{{ active_lang.name }}</h1>
+                    <div class="gh-muted" style="font-size:13px;">
+                        {{ active_lang.file_count }} files · {{ active_lang.percentage }}% of the repository
+                        {% if total_lines > 0 %}· {{ total_lines|number_format }} lines{% endif %}
+                    </div>
+                </div>
+                <a class="gh-btn gh-btn-sm" href="/{{ owner }}/{{ repo.slug }}/languages"
+                   style="margin-left:auto;"><svg class="ti ti-arrow-left"><use href="#ti-arrow-left"/></svg> All languages</a>
+            </div>
+
+            <div class="gh-lang-files">
+                {% if files|length > 0 %}
+                    <div class="gh-table-wrap">
+                        <table class="gh-table">
+                            <thead><tr><th>File</th><th class="gh-lang-col-num">Lines</th></tr></thead>
+                            <tbody>
+                                {% for f in files %}
+                                    <tr>
+                                        <td>
+                                            <a class="gh-lang-file" href="/{{ owner }}/{{ repo.slug }}/blob/{{ current_ref }}/{{ f.path }}">
+                                                {{ file_icon(f.path, 'blob') }} <span class="gh-mono">{{ f.path }}</span>
+                                            </a>
+                                        </td>
+                                        <td class="gh-lang-col-num">{{ f.lines > 0 ? f.lines|number_format : '—' }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="gh-empty"><div class="gh-empty-title">No files</div><p class="gh-muted" style="margin:0;">No {{ active_lang.name }} files were found.</p></div>
+                {% endif %}
+            </div>
+        {% else %}
+            {# ── Overview: bar + all languages ───────────────────── #}
+            <div class="gh-lang-page-head">
+                <h1 class="gh-lang-page-title">Languages</h1>
+                <span class="gh-badge">{{ languages|length }} languages</span>
+            </div>
+
+            <div class="gh-lang-bar" role="img" aria-label="Repository language breakdown">
+                {% for l in languages %}
+                    <span class="gh-lang-bar-seg" style="width: {{ l.percentage }}%; background: {{ l.color }};" title="{{ l.name }}: {{ l.percentage }}%"></span>
+                {% endfor %}
+            </div>
+
+            {% if languages|length > 0 %}
+                <div class="gh-table-wrap">
+                    <table class="gh-table gh-lang-table">
+                        <thead>
+                            <tr><th>Language</th><th class="gh-lang-col-num">Files</th><th class="gh-lang-col-num">%</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for l in languages %}
+                                <tr>
+                                    <td>
+                                        <a class="gh-lang-row" href="/{{ owner }}/{{ repo.slug }}/languages?lang={{ l.name|url_encode }}" title="{{ l.name }}">
+                                            <span class="gh-lang-dot" style="background: {{ l.color }};"></span>
+                                            <span class="gh-lang-name">{{ l.name }}</span>
+                                        </a>
+                                    </td>
+                                    <td class="gh-lang-col-num">{{ l.file_count }}</td>
+                                    <td class="gh-lang-col-num">{{ l.percentage }}%</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="gh-empty"><div class="gh-empty-title">No languages detected</div><p class="gh-muted" style="margin:0;">No code files were found in this repository.</p></div>
+            {% endif %}
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

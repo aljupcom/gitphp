@@ -1,0 +1,102 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.pulls.comparing_changes') }} · {{ repo.name }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'pulls' } %}
+
+    <h2 style="font-size: 18px; margin: 20px 0 4px;">{{ t('ui.pulls.comparing_changes') }}</h2>
+    <p style="color: var(--gh-fg-muted); font-size: 13px; margin-bottom: 16px;">
+        {{ t('ui.pulls.comparing_desc') }}
+    </p>
+
+    {% if error %}
+        <div class="gh-flash gh-flash-error" style="margin-bottom: 12px;">{{ error }}</div>
+    {% endif %}
+
+    <form method="get" style="display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+        <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">{{ t('ui.pulls.base_target') }}</label>
+            <select name="base" class="gh-form-control" style="min-width:180px;">
+                {% for b in branches %}
+                    <option value="{{ b }}"{{ b == base ? ' selected' : '' }}>{{ b }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-fg-muted); margin-bottom: 8px;"><path d="M11.75 2.5a.75.75 0 0 1 .75.75v7.69l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06l2.22 2.22V3.25a.75.75 0 0 1 .75-.75Z"/></svg>
+        <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">{{ t('ui.pulls.compare_source') }}</label>
+            <select name="head" class="gh-form-control" style="min-width:180px;">
+                <option value=""{{ head == '' ? ' selected' : '' }}>{{ t('ui.pulls.pick_branch') }}</option>
+                {% for b in branches %}
+                    <option value="{{ b }}"{{ b == head ? ' selected' : '' }}>{{ b }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="gh-btn">{{ t('ui.pulls.compare_btn') }}</button>
+    </form>
+
+    {% if comparison is not null and head != '' and base != head %}
+        <div class="gh-box" style="margin-bottom: 16px;">
+            <div style="padding: 12px 16px; border-bottom: 1px solid var(--gh-border-default); font-size: 13px; display:flex; gap:16px; align-items:center;">
+                <strong>{{ commits|length }} {{ t('ui.pulls.commits_count', {'count': commits|length}) }}</strong>
+                <strong>{{ diff_files|length }} {{ t('ui.pulls.files_summary', {'count': diff_files|length}) }}</strong>
+                {% if comparison.can_merge and (comparison.ahead_count > 0) %}
+                    <span style="color: var(--gh-success-fg); font-weight:600;">{{ t('ui.pulls.able_to_merge') }}</span>
+                {% else %}
+                    <span style="color: var(--gh-fg-muted);">{{ t('ui.pulls.no_mergeable') }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="post" action="/{{ owner }}/{{ repo.slug }}/pulls/new">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="base" value="{{ base }}">
+            <input type="hidden" name="head" value="{{ head }}">
+
+            <div class="gh-box" style="padding: 16px;">
+                <label for="pr-title" style="font-weight:600; font-size:14px; display:block; margin-bottom:6px;">{{ t('ui.pulls.title_label') }}</label>
+                <input type="text" id="pr-title" name="title" required maxlength="255"
+                       value="{{ commits[0].subject ?? 'Merge ' ~ head ~ ' into ' ~ base }}"
+                       class="gh-form-control" style="width:100%; margin-bottom: 12px;">
+
+                <label for="pr-body" style="font-weight:600; font-size:14px; display:block; margin-bottom:6px;">{{ t('ui.pulls.desc_label') }}</label>
+                <textarea id="pr-body" name="body" rows="6" class="gh-form-control" style="width:100%;"
+                          placeholder="{{ t_attr('ui.pulls.desc_placeholder') }}"></textarea>
+            </div>
+
+            <button type="submit" class="gh-btn gh-btn-primary" style="margin-top: 12px;"
+                    {{ comparison.can_merge or true ? '' : 'disabled' }}>
+                {{ t('ui.pulls.create_pr_btn') }}
+            </button>
+        </form>
+
+        {% if diff_files is not empty %}
+            <h3 style="font-size: 15px; margin: 24px 0 8px;">{{ t('ui.pulls.preview_title') }}</h3>
+            <div class="gh-box">
+                {% set adds = 0 %}{% set dels = 0 %}
+                {% for f in diff_files %}{% set adds = adds + f.additions %}{% set dels = dels + f.deletions %}{% endfor %}
+                <div style="padding:10px 16px; font-size:12px; border-bottom:1px solid var(--gh-border-default);">
+                    {{ t('ui.pulls.files_summary', {'count': diff_files|length}) }} ·
+                    <span style="color: var(--gh-success-fg);">+{{ adds }}</span> /
+                    <span style="color: var(--gh-danger-fg, #f85149);">−{{ dels }}</span>
+                </div>
+                <ul style="list-style:none; margin:0; padding: 8px 0;">
+                    {% for f in diff_files %}
+                        <li style="padding: 6px 16px; font-size: 13px; font-family: monospace;" dir="ltr">
+                            {{ f.path }}
+                            <span style="float:right; color: var(--gh-fg-muted);">
+                                <span style="color: var(--gh-success-fg);">+{{ f.additions }}</span>
+                                <span style="color: var(--gh-danger-fg, #f85149);">−{{ f.deletions }}</span>
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{# GitPHP Official Logo Mark - Elegant Flowing "GP" Monogram (Theme Adaptive) #}
+{% set size = size|default(30) %}
+{% set class = class|default('') %}
+
+<svg class="gitphp-logo {{ class }}" width="{{ size }}" height="{{ size }}" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display: inline-block; vertical-align: middle; flex-shrink: 0;">
+  <!-- Theme-Adaptive Shield Base -->
+  <rect class="gitphp-logo-base" x="0.5" y="0.5" width="31" height="31" rx="7" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Fluid Ribbon 'G' (Git Coral to Amber Flame) -->
+  <path d="M14.5 9.5C13 8 10.5 8 8.5 9.5C6 11.5 5.5 14.5 5.5 16C5.5 17.5 6 20.5 8.5 22.5C10.5 24 13 24 14.5 22.5V15.5H10.5" 
+        stroke="#f05032" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Fluid Ribbon 'P' (GitHub Blue to Electric Violet) -->
+  <path d="M17.5 23.5V8.5H22C24.5 8.5 26.5 9.5 26.5 12C26.5 14.5 24.5 15.5 22 15.5H17.5" 
+        stroke="#58a6ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Elegant Twisted Connection Ribbon (Connecting G and P) -->
+  <path d="M14.5 15.5C15.5 15.5 16.5 15.5 17.5 15.5" 
+        stroke="#a371f7" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- Git Commit Glowing Accent Nodes -->
+  <circle cx="14.5" cy="9.5" r="1.5" fill="#f0883e"/>
+  <circle cx="10.5" cy="15.5" r="1.5" fill="#ff7b72"/>
+  <circle cx="17.5" cy="23.5" r="1.5" fill="#58a6ff"/>
+  <circle cx="22" cy="15.5" r="1.5" fill="#bc8cff"/>
+</svg>

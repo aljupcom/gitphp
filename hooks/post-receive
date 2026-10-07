@@ -1,0 +1,194 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * GitPHP — post-receive hook.
+ *
+ * Runs after every successful `git push`:
+ *   1. Refreshes `repositories.updated_at` in MariaDB.
+ *   2. Appends a `push` entry to `activity_log`.
+ *
+ * The hook is copied into repos/{slug}.git/hooks/ by GitService::installHooks(),
+ * which substitutes {{BASE_PATH}} with the absolute project root so the hook can
+ * locate the .env file even when REPOS_PATH lives outside the project tree.
+ *
+ * A hook must NEVER break a push — every failure exits 0 with a stderr note.
+ */
+
+// Repositories must never fail because of bookkeeping.
+set_exception_handler(static function (Throwable $e): void {
+    fwrite(STDERR, 'post-receive: ' . $e->getMessage() . PHP_EOL);
+    exit(0);
+});
+
+/** Platform-appropriate null sink for child process output. */
+function os_temp_null(): string
+{
+    return DIRECTORY_SEPARATOR === '/' ? '/dev/null' : 'NUL';
+}
+
+// ── Resolve repository slug from the hook location ─────────────────
+// Hook path: <repos_path>/<slug>.git/hooks/post-receive
+$repoDir = dirname(__DIR__);
+$slug    = basename($repoDir);
+
+if (str_ends_with($slug, '.git')) {
+    $slug = substr($slug, 0, -4);
+}
+
+// ── Locate the project root (.env lives there) ─────────────────────
+$basePath = '{{BASE_PATH}}'; // substituted at install time
+
+if ($basePath === '{{BASE_PATH}}' || !is_file($basePath . '/.env')) {
+    $basePath = null;
+
+    // Fallback: walk up from the repo directory looking for .env
+    for ($dir = dirname($repoDir), $i = 0; $i < 6 && $dir !== dirname($dir); $dir = dirname($dir), $i++) {
+        if (is_file($dir . '/.env')) {
+            $basePath = $dir;
+            break;
+        }
+    }
+}
+
+if ($basePath === null || !is_file($basePath . '/.env')) {
+    exit(0); // No configuration available — nothing to update.
+}
+
+// ── Load DB credentials from .env ──────────────────────────────────
+$env = [];
+
+foreach (file($basePath . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+    $line = trim($line);
+
+    if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+        continue;
+    }
+
+    [$key, $value]   = explode('=', $line, 2);
+    $env[trim($key)] = trim($value, " \t\"'");
+}
+
+$dsn = sprintf(
+    'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+    $env['DB_HOST'] ?? '127.0.0.1',
+    $env['DB_PORT'] ?? '3306',
+    $env['DB_NAME'] ?? 'gitphp',
+);
+
+$pdo = new PDO($dsn, $env['DB_USER'] ?? '', $env['DB_PASS'] ?? '', [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_TIMEOUT => 5,
+]);
+
+// ── Look up the repository record ──────────────────────────────────
+$stmt = $pdo->prepare('SELECT `id`, `name` FROM `repositories` WHERE `slug` = :slug LIMIT 1');
+$stmt->execute(['slug' => $slug]);
+$repo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if ($repo === false) {
+    exit(0); // Repo exists on disk but not in DB — nothing to update.
+}
+
+$repoId   = (int) $repo['id'];
+$repoName = (string) $repo['name'];
+
+// ── Collect ref updates from stdin ─────────────────────────────────
+// Each line: "<old-sha> <new-sha> <refname>"
+$updates = [];
+
+while (($line = fgets(STDIN)) !== false) {
+    $parts = preg_split('/\s+/', trim($line));
+
+    if (count($parts) !== 3) {
+        continue;
+    }
+
+    [, $newRev, $refName] = $parts;
+
+    // refs/heads/main → heads/main (keeps the line short in the log)
+    $refDisplay = str_starts_with($refName, 'refs/')
+        ? substr($refName, strlen('refs/'))
+        : $refName;
+
+    if (preg_match('/^0{7,40}$/', $newRev)) {
+        $updates[] = "deleted {$refDisplay}";
+    } else {
+        $updates[] = "pushed to {$refDisplay} (" . substr($newRev, 0, 7) . ')';
+    }
+}
+
+if ($updates === []) {
+    exit(0);
+}
+
+// ── Update timestamp + log activity ────────────────────────────────
+$pdo->prepare('UPDATE `repositories` SET `updated_at` = CURRENT_TIMESTAMP WHERE `id` = :id')
+    ->execute(['id' => (int) $repoId]);
+
+$pdo->prepare(
+    'INSERT INTO `activity_log` (`repo_id`, `action`, `details`) VALUES (:id, :action, :details)',
+)->execute([
+    'id'      => (int) $repoId,
+    'action'  => 'push',
+    'details' => implode('; ', $updates),
+]);
+
+// ── Notify watchers and write collaborators ────────────────────────
+$ownerName = $env['APP_OWNER'] ?? 'admin';
+$message   = mb_substr($repoName . ': ' . implode('; ', $updates), 0, 500);
+$link      = '/' . $ownerName . '/' . $slug;
+
+// Every watcher gets a notification for the push.
+$pdo->prepare(
+    "INSERT IGNORE INTO `notifications` (`user_id`, `repo_id`, `type`, `message`, `link`, `created_at`)
+     SELECT `user_id`, :repo, 'push', :message, :link, CURRENT_TIMESTAMP
+     FROM `repo_subscriptions`
+     WHERE `repo_id` = :repo",
+)->execute(['repo' => $repoId, 'message' => $message, 'link' => $link]);
+
+// Write collaborators also get notified, unless they already watch.
+$pdo->prepare(
+    "INSERT IGNORE INTO `notifications` (`user_id`, `repo_id`, `type`, `message`, `link`, `created_at`)
+     SELECT c.user_id, :repo, 'push', :message, :link, CURRENT_TIMESTAMP
+     FROM `repo_collaborators` c
+     WHERE c.repo_id = :repo AND c.role = 'write'
+       AND NOT EXISTS (
+           SELECT 1 FROM `repo_subscriptions` s
+           WHERE s.repo_id = c.repo_id AND s.user_id = c.user_id
+       )",
+)->execute(['repo' => $repoId, 'message' => $message, 'link' => $link]);
+
+// ── Fire push webhooks (best-effort, short timeout) ────────────────
+// bin/webhook-dispatch.php handles delivery + logging; a failure here
+// must never break the push, hence the @ suppression and exit 0 below.
+try {
+    $payload = json_encode([
+        'ref'     => $updates,
+        'pusher'  => getenv('GITPHP_PUSH_USER') ?: ($_ENV['GITPHP_PUSH_USER'] ?? null),
+    ], JSON_UNESCAPED_SLASHES);
+
+    if ($payload !== false) {
+        $tmp = tempnam(sys_get_temp_dir(), 'gitphp_hook_');
+        if ($tmp !== false) {
+            file_put_contents($tmp, $payload);
+            $php = PHP_BINARY ?: 'php';
+
+            // Fire-and-forget delivery; output goes to the null sink.
+            $devnull = os_temp_null();
+
+            @proc_open(
+                [$php, $basePath . '/bin/webhook-dispatch.php', $slug, 'push', $tmp],
+                [1 => ['file', $devnull, 'w'], 2 => ['file', $devnull, 'w']],
+                $pipes,
+            );
+            // Temp file is removed by the dispatcher itself.
+        }
+    }
+} catch (Throwable $e) {
+    fwrite(STDERR, 'post-receive: webhook dispatch skipped (' . $e->getMessage() . ')' . PHP_EOL);
+}
+
+exit(0);

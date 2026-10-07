@@ -1,0 +1,60 @@
+{% extends "layout.twig" %}
+
+{% block title %}Fork {{ repo.name }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-container" style="max-width: 680px; margin: 2rem auto; padding: 0 1rem;">
+    <div style="background: var(--gh-bg-secondary); border: 1px solid var(--gh-border); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        
+        <div style="padding: 1.5rem 1.5rem 1rem 1.5rem; border-bottom: 1px solid var(--gh-border);">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-text-muted);">
+                    <path d="M5 3.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm0 2.122a2.25 2.25 0 1 0-1.5 0v.878A2.25 2.25 0 0 0 5.75 8.5h1.5v2.128a2.251 2.251 0 1 0 1.5 0V8.5h1.5a2.25 2.25 0 0 0 2.25-2.25v-.878a2.25 2.25 0 1 0-1.5 0v.878a.75.75 0 0 1-.75.75h-4.5A.75.75 0 0 1 5 6.25v-.878Zm3.75 7.378a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm3-8.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
+                </svg>
+                <h1 style="font-size: 1.35rem; margin: 0; font-weight: 600; color: var(--gh-text);">
+                    Create a new fork
+                </h1>
+            </div>
+            <p style="margin: 0; color: var(--gh-text-muted); font-size: 0.9rem; line-height: 1.5;">
+                A fork is a copy of a repository. Forking a repository allows you to freely experiment with changes without affecting the original project.
+            </p>
+        </div>
+
+        <form method="POST" action="/{{ owner }}/{{ repo.slug }}/fork" style="padding: 1.5rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.4rem; font-size: 0.9rem; color: var(--gh-text);">
+                    Owner
+                </label>
+                <input type="text" value="{{ target_user }}" disabled class="gh-input" style="background: var(--gh-bg); opacity: 0.8; width: 100%;">
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+                <label for="name" style="display: block; font-weight: 600; margin-bottom: 0.4rem; font-size: 0.9rem; color: var(--gh-text);">
+                    Repository name <span style="color: #cf222e;">*</span>
+                </label>
+                <input type="text" id="name" name="name" value="{{ suggested_name }}" required class="gh-input" style="width: 100%;">
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label for="slug" style="display: block; font-weight: 600; margin-bottom: 0.4rem; font-size: 0.9rem; color: var(--gh-text);">
+                    Identifier (Slug) <span style="color: #cf222e;">*</span>
+                </label>
+                <input type="text" id="slug" name="slug" value="{{ suggested_slug }}" required class="gh-input" style="width: 100%; font-family: monospace;">
+                <small style="color: var(--gh-text-muted); display: block; margin-top: 0.35rem; font-size: 0.82rem;">
+                    Will be accessed at <code>/{{ owner }}/&lt;slug&gt;</code>
+                </small>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--gh-border); padding-top: 1.25rem; margin-top: 1.5rem;">
+                <a href="/{{ owner }}/{{ repo.slug }}" class="gh-btn" style="padding: 0.5rem 1rem;">Cancel</a>
+                <button type="submit" class="gh-btn gh-btn-primary" style="padding: 0.5rem 1.25rem; font-weight: 600;">
+                    Create fork
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

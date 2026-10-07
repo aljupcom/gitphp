@@ -1,0 +1,238 @@
+{% extends "layout.twig" %}
+
+{% block title %}User Management — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Page Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600; color: var(--gh-fg-default);">{{ t('adm.users.title')|default('User & Member Management') }}</h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                {{ t('adm.users.description')|default('Manage registered user accounts, system roles, login suspensions, security credentials, and owned repositories.') }}
+            </p>
+        </div>
+        <div>
+            <button type="button" class="gh-btn gh-btn-primary" onclick="document.getElementById('modal-create-user').style.display='flex';" style="display:inline-flex; align-items:center; gap:6px; font-weight:600;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 5.5a3.5 3.5 0 1 1 5.898 2.549 5.508 5.508 0 0 1 3.034 4.084.75.75 0 1 1-1.482.235 4.002 4.002 0 0 0-6.9 0 .75.75 0 0 1-1.482-.236A5.507 5.507 0 0 1 3.102 8.05 3.493 3.493 0 0 1 2 5.5ZM11 4a.75.75 0 1 0 0 1.5h1.5V7a.75.75 0 0 0 1.5 0V5.5H15a.75.75 0 0 0 0-1.5h-1.5V2.5a.75.75 0 0 0-1.5 0V4H11Z"/></svg>
+                <span>New User Account</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'users', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; max-width: 860px; flex: 1; width: 100%;">
+            
+            {% if flash_success %}
+                <div class="gh-flash gh-flash-success" role="status" style="margin-bottom: 16px; padding: 10px 14px; border-radius: 6px; background: rgba(46,160,67,0.12); border: 1px solid rgba(46,160,67,0.35); color: #2ea043; font-size: 13.5px;">
+                    {{ flash_success }}
+                </div>
+            {% endif %}
+            {% if flash_error %}
+                <div class="gh-flash gh-flash-error" role="alert" style="margin-bottom: 16px; padding: 10px 14px; border-radius: 6px; background: rgba(248,81,73,0.12); border: 1px solid rgba(248,81,73,0.35); color: #f85149; font-size: 13.5px;">
+                    {{ flash_error }}
+                </div>
+            {% endif %}
+
+            {# ── METRICS OVERVIEW ────────────────────────────────────────────── #}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 12px 14px;">
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); text-transform: uppercase; font-weight: 600;">{{ t('adm.users.total_users')|default('Total Users') }}</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #58a6ff; margin-top: 4px;">{{ total_users|number_format }}</div>
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); margin-top: 2px;">{{ t('adm.users.registered_accounts')|default('Registered Accounts') }}</div>
+                </div>
+
+                <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 12px 14px;">
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); text-transform: uppercase; font-weight: 600;">{{ t('adm.users.administrators')|default('Administrators') }}</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #a371f7; margin-top: 4px;">{{ total_admins|number_format }}</div>
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); margin-top: 2px;">{{ t('adm.users.admin_permissions')|default('Admin Permissions') }}</div>
+                </div>
+
+                <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 12px 14px;">
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); text-transform: uppercase; font-weight: 600;">{{ t('adm.users.active_today')|default('Active Today') }}</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #3fb950; margin-top: 4px;">{{ active_24h|number_format }}</div>
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); margin-top: 2px;">{{ t('adm.users.logged_in_24h')|default('Logged in last 24h') }}</div>
+                </div>
+
+                <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 12px 14px;">
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); text-transform: uppercase; font-weight: 600;">{{ t('adm.users.suspended')|default('Suspended') }}</div>
+                    <div style="font-size: 22px; font-weight: 700; color: {% if total_suspended > 0 %}#f85149{% else %}var(--gh-fg-muted){% endif %}; margin-top: 4px;">{{ total_suspended }}</div>
+                    <div style="font-size: 11px; color: var(--gh-fg-muted); margin-top: 2px;">{{ t('adm.users.blocked_login')|default('Blocked from login') }}</div>
+                </div>
+            </div>
+
+            {# ── SEARCH & FILTER BAR ─────────────────────────────────────────── #}
+            <div class="gh-box" style="padding: 12px 16px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); margin-bottom: 16px;">
+                <form method="get" action="{{ admin_prefix|default('/admin') }}/users" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <div style="flex:1 1 200px; position:relative;">
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="{{ t('adm.users.filter_placeholder')|default('Filter by username, email, or name...') }}" 
+                               style="width: 100%; padding: 6px 12px; font-size: 13px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none;">
+                    </div>
+
+                    <select name="role" onchange="this.form.submit()" style="padding: 6px 10px; font-size: 13px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px;">
+                        <option value="all" {% if role_filter == 'all' %}selected{% endif %}>{{ t('adm.users.role_all')|default('Role: All') }}</option>
+                        <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>{{ t('adm.users.role_admins')|default('Role: Admins') }}</option>
+                        <option value="user" {% if role_filter == 'user' %}selected{% endif %}>{{ t('adm.users.role_users')|default('Role: Users') }}</option>
+                    </select>
+
+                    <select name="status" onchange="this.form.submit()" style="padding: 6px 10px; font-size: 13px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px;">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>{{ t('adm.users.status_all')|default('Status: All') }}</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>{{ t('adm.users.status_active')|default('Status: Active') }}</option>
+                        <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>{{ t('adm.users.status_suspended')|default('Status: Suspended') }}</option>
+                    </select>
+
+                    <button type="submit" class="gh-btn" style="padding: 6px 12px;">{{ t('adm.users.filter_btn')|default('Filter') }}</button>
+                    {% if search_query or role_filter != 'all' or status_filter != 'all' %}
+                        <a href="{{ admin_prefix|default('/admin') }}/users" class="gh-btn" style="padding: 6px 12px; color: var(--gh-fg-muted);">{{ t('adm.users.clear_btn')|default('Clear') }}</a>
+                    {% endif %}
+                </form>
+            </div>
+
+            {# ── USERS TABLE ─────────────────────────────────────────────────── #}
+            <div class="gh-box" style="border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); overflow: hidden;">
+                <div style="overflow-x: auto;">
+                    <table class="gh-table" style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--gh-bg-subtle); border-bottom: 1px solid var(--gh-border-default);">
+                                <th style="padding: 10px 12px; text-align: left;">{{ t('adm.users.th_user')|default('User') }}</th>
+                                <th style="padding: 10px 12px; text-align: left;">{{ t('adm.users.th_role_status')|default('Role & Status') }}</th>
+                                <th style="padding: 10px 12px; text-align: center;">{{ t('adm.users.th_repos')|default('Repos') }}</th>
+                                <th style="padding: 10px 12px; text-align: center;">{{ t('adm.users.th_sessions')|default('Sessions') }}</th>
+                                <th style="padding: 10px 12px; text-align: left;">{{ t('adm.users.th_joined')|default('Joined Date') }}</th>
+                                <th style="padding: 10px 12px; text-align: right;">{{ t('adm.users.th_actions')|default('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                                <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                                    <td style="padding: 10px 12px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--gh-accent-emphasis, #1f6feb); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0;">
+                                                {{ u.username|slice(0, 1)|upper }}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 600;">
+                                                    <a href="{{ admin_prefix|default('/admin') }}/users/{{ u.id }}" style="color: var(--gh-fg-default); text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                                        <span>{{ u.display_name|default(u.username) }}</span>
+                                                        <span style="color: var(--gh-fg-muted); font-size: 12px; font-weight: normal;">@{{ u.username }}</span>
+                                                    </a>
+                                                </div>
+                                                <div style="font-size: 11.5px; color: var(--gh-fg-muted);">{{ u.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 10px 12px;">
+                                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                            {% if u.role == 'admin' %}
+                                                <span class="gh-badge" style="background: rgba(137,87,229,0.15); color: #a371f7; border: 1px solid rgba(137,87,229,0.4); font-size: 11px;">{{ t('adm.users.role_admin')|default('Site Admin') }}</span>
+                                            {% elseif u.role == 'staff' %}
+                                                <span class="gh-badge" style="background: rgba(56,139,253,0.15); color: #58a6ff; border: 1px solid rgba(56,139,253,0.4); font-size: 11px;">{{ t('adm.users.role_staff')|default('Staff') }}</span>
+                                            {% elseif u.role == 'auditor' %}
+                                                <span class="gh-badge" style="background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.4); font-size: 11px;">{{ t('adm.users.role_auditor')|default('Auditor') }}</span>
+                                            {% elseif u.role == 'restricted' %}
+                                                <span class="gh-badge" style="background: rgba(227,179,65,0.15); color: #e3b341; border: 1px solid rgba(227,179,65,0.4); font-size: 11px;">{{ t('adm.users.role_restricted')|default('Restricted') }}</span>
+                                            {% elseif u.role == 'bot' %}
+                                                <span class="gh-badge" style="background: rgba(57,197,187,0.15); color: #39c5bb; border: 1px solid rgba(57,197,187,0.4); font-size: 11px;">{{ t('adm.users.role_bot')|default('Bot') }}</span>
+                                            {% else %}
+                                                <span class="gh-badge" style="font-size: 11px;">{{ t('adm.users.role_member')|default('Member') }}</span>
+                                            {% endif %}
+
+                                            {% if u.is_suspended %}
+                                                {% if u.suspension_type == 'locked' %}
+                                                    <span class="gh-badge" style="background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.4); font-size: 11px;">{{ t('adm.users.status_locked')|default('Locked') }}</span>
+                                                {% elseif u.suspension_type == 'read_only' %}
+                                                    <span class="gh-badge" style="background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid rgba(88,166,255,0.4); font-size: 11px;">{{ t('adm.users.status_readonly')|default('Read-Only') }}</span>
+                                                {% elseif u.suspension_type == 'shadow_banned' %}
+                                                    <span class="gh-badge" style="background: rgba(139,148,158,0.15); color: #8b949e; border: 1px solid rgba(139,148,158,0.4); font-size: 11px;">{{ t('adm.users.status_shadow_ban')|default('Shadow Ban') }}</span>
+                                                {% else %}
+                                                    <span class="gh-badge" style="background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.4); font-size: 11px;">{{ t('adm.users.suspended')|default('Suspended') }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="gh-badge" style="background: rgba(46,160,67,0.15); color: #3fb950; border: 1px solid rgba(46,160,67,0.4); font-size: 11px;">{{ t('adm.users.status_active_badge')|default('Active') }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td style="padding: 10px 12px; text-align: center; font-weight: 600;">
+                                        {{ u.repo_count }}
+                                    </td>
+                                    <td style="padding: 10px 12px; text-align: center;">
+                                        {% if u.active_sessions_count > 0 %}
+                                            <span class="gh-badge" style="background: rgba(88,166,255,0.15); color: #58a6ff; font-size: 11px;">{{ t('adm.users.active_count', {count: u.active_sessions_count})|default(u.active_sessions_count ~ ' Active') }}</span>
+                                        {% else %}
+                                            <span style="color: var(--gh-fg-muted); font-size: 11.5px;">{{ t('adm.users.offline')|default('Offline') }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 10px 12px; color: var(--gh-fg-muted); font-size: 12px; white-space: nowrap;">
+                                        {{ u.created_at|slice(0, 10) }}
+                                    </td>
+                                    <td style="padding: 10px 12px; text-align: right; white-space: nowrap;">
+                                        <a href="{{ admin_prefix|default('/admin') }}/users/{{ u.id }}" class="gh-btn" style="padding: 4px 10px; font-size: 12px;">{{ t('adm.users.manage_btn')|default('Manage') }}</a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" style="padding: 32px; text-align: center; color: var(--gh-fg-muted);">
+                                        {{ t('adm.users.no_users_found')|default('No users matching the criteria found.') }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{# ── MODAL: CREATE NEW USER ────────────────────────────────────────────── #}
+<div id="modal-create-user" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: var(--gh-bg-default, #0d1117); border: 1px solid var(--gh-border-default); border-radius: 8px; max-width: 440px; width: 100%; padding: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 16px; font-weight: 600; margin: 0; color: var(--gh-fg-default);">Create New User Account</h3>
+            <button type="button" onclick="document.getElementById('modal-create-user').style.display='none';" style="background:none; border:none; color:var(--gh-fg-muted); font-size:18px; cursor:pointer;">&times;</button>
+        </div>
+
+        <form method="post" action="{{ admin_prefix|default('/admin') }}/users/create">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: var(--gh-fg-default);">Username</label>
+                <input type="text" name="username" required placeholder="e.g. alex2026" 
+                       style="width: 100%; padding: 7px 12px; font-size: 13px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: var(--gh-fg-default);">Email Address</label>
+                <input type="email" name="email" required placeholder="alex@company.com" 
+                       style="width: 100%; padding: 7px 12px; font-size: 13px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: var(--gh-fg-default);">Password (min 8 characters)</label>
+                <input type="password" name="password" required minlength="8" placeholder="••••••••" 
+                       style="width: 100%; padding: 7px 12px; font-size: 13px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: var(--gh-fg-default);">System Role</label>
+                <select name="role" style="width: 100%; padding: 7px 12px; font-size: 13px; background: var(--gh-bg-subtle); color: var(--gh-fg-default); border: 1px solid var(--gh-border-default); border-radius: 6px;">
+                    <option value="user">💻 Standard Member (Developer)</option>
+                    <option value="admin">👑 Site Administrator (Full Access)</option>
+                    <option value="staff">🛡️ Staff / Moderator</option>
+                    <option value="auditor">🔍 Security Auditor (Compliance)</option>
+                    <option value="restricted">🔒 Restricted User (Limited Repos)</option>
+                    <option value="bot">🤖 Service Bot Account (CI/CD)</option>
+                </select>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="gh-btn" onclick="document.getElementById('modal-create-user').style.display='none';">Cancel</button>
+                <button type="submit" class="gh-btn gh-btn-primary">Create User</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

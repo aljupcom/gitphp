@@ -1,0 +1,258 @@
+{% extends "layout.twig" %}
+
+{% block title %}System Health & Storage — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Page Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600; color: var(--gh-fg-default);">{{ t('adm.system.title')|default('System Health & Storage Diagnostics') }}</h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                {{ t('adm.system.description')|default('Live disk usage breakdown, PHP 8.5+ environment runtime, MySQL metrics, cache clearing, and database maintenance tools.') }}
+            </p>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'system', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; max-width: 860px; flex: 1; width: 100%;">
+            
+            {% if flash_success %}
+                <div class="gh-flash gh-flash-success" role="status" style="margin-bottom: 16px; padding: 10px 14px; border-radius: 6px; background: rgba(46,160,67,0.12); border: 1px solid rgba(46,160,67,0.35); color: #2ea043; font-size: 13.5px;">
+                    {{ flash_success }}
+                </div>
+            {% endif %}
+            {% if flash_error %}
+                <div class="gh-flash gh-flash-error" role="alert" style="margin-bottom: 16px; padding: 10px 14px; border-radius: 6px; background: rgba(248,81,73,0.12); border: 1px solid rgba(248,81,73,0.35); color: #f85149; font-size: 13.5px;">
+                    {{ flash_error }}
+                </div>
+            {% endif %}
+
+            {# ── DISK STORAGE OVERVIEW ───────────────────────────────────────── #}
+            <div class="gh-box" style="padding: 18px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); margin-bottom: 20px;">
+                <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 12px; color: var(--gh-fg-default); display: flex; justify-content: space-between; align-items: center;">
+                    <span>{{ t('adm.system.disk_usage_title')|default('Disk Space Usage') }}</span>
+                    <span style="font-size: 12.5px; color: var(--gh-fg-muted);">{{ t('adm.system.disk_used_label', {used: storage.disk_used, total: storage.disk_total, percent: storage.disk_percent})|default(storage.disk_used ~ ' / ' ~ storage.disk_total ~ ' (' ~ storage.disk_percent ~ '% used)') }}</span>
+                </h3>
+
+                {# Progress Bar #}
+                <div style="height: 8px; border-radius: 4px; background: var(--gh-border-default); overflow: hidden; margin-bottom: 16px;">
+                    <div style="height: 100%; width: {{ storage.disk_percent }}%; background: {% if storage.disk_percent > 85 %}#f85149{% else %}#2ea043{% endif %}; border-radius: 4px;"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 10px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted); font-weight: 600;">{{ t('adm.system.git_repos')|default('Git Repositories') }}</div>
+                        <div style="font-size: 18px; font-weight: 700; color: #58a6ff; margin-top: 4px;">{{ storage.repos_formatted }}</div>
+                    </div>
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 10px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted); font-weight: 600;">{{ t('adm.system.downloads_center')|default('Downloads Center') }}</div>
+                        <div style="font-size: 18px; font-weight: 700; color: #a371f7; margin-top: 4px;">{{ storage.downloads_formatted }}</div>
+                    </div>
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 10px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted); font-weight: 600;">{{ t('adm.system.mysql_database')|default('MySQL Database') }}</div>
+                        <div style="font-size: 18px; font-weight: 700; color: #3fb950; margin-top: 4px;">{{ storage.db_formatted }}</div>
+                    </div>
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 10px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted); font-weight: 600;">{{ t('adm.system.cache_storage')|default('Cache & Temp Storage') }}</div>
+                        <div style="font-size: 18px; font-weight: 700; color: #d29922; margin-top: 4px;">{{ storage.cache_formatted|default('0 B') }}</div>
+                    </div>
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 6px; padding: 10px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted); font-weight: 600;">{{ t('adm.system.free_space')|default('Free Space') }}</div>
+                        <div style="font-size: 18px; font-weight: 700; color: var(--gh-fg-default); margin-top: 4px;">{{ storage.disk_free }}</div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── GIT REPOSITORY STORAGE & OPTIMIZATION ───────────────────────── #}
+            {% if git_storage is defined and git_storage.details is defined %}
+            <div class="gh-box" style="padding: 18px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <h3 style="font-size: 15px; font-weight: 600; margin: 0; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                            <svg class="ti ti-git-fork" style="font-size: 16px;"><use href="#ti-git-fork"/></svg>
+                            <span>{{ t('adm.system.git_storage_title')|default('Git Storage Breakdown & Health') }}</span>
+                        </h3>
+                        <p style="font-size: 12px; color: var(--gh-fg-muted); margin: 3px 0 0;">
+                            {{ t('adm.system.git_storage_desc')|default('Deduplicated forks, object packing, and commit-graph indexing status across all hosted repositories.') }}
+                        </p>
+                    </div>
+                    <div>
+                        {% if git_storage.needs_optimization_count == 0 %}
+                            <span class="gh-badge" style="background: rgba(63,185,80,0.15); color: #3fb950; font-weight: 600; font-size: 11.5px; padding: 4px 10px;">
+                                <svg class="ti ti-circle-check" style="font-size: 12px; vertical-align: middle;"><use href="#ti-circle-check"/></svg> {{ t('adm.system.repos_optimized_all')|default('All repositories optimized & indexed') }}
+                            </span>
+                        {% else %}
+                            <span class="gh-badge" style="background: rgba(210,153,34,0.15); color: #d29922; font-weight: 600; font-size: 11.5px; padding: 4px 10px;">
+                                <svg class="ti ti-alert-triangle" style="font-size: 12px; vertical-align: middle;"><use href="#ti-alert-triangle"/></svg> {{ t('adm.system.repos_need_opt_plural', {count: git_storage.needs_optimization_count})|default(git_storage.needs_optimization_count ~ ' repositories can be compacted') }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Aggregate metric tiles #}
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-muted); border-radius: 6px; padding: 8px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted);">{{ t('adm.dashboard.total_repos')|default('Total Repos') }}</div>
+                        <div style="font-size: 16px; font-weight: 700; color: var(--gh-fg-default); margin-top: 2px;">{{ git_storage.repo_count }}</div>
+                    </div>
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-muted); border-radius: 6px; padding: 8px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted);">{{ t('adm.system.git_repos')|default('Total Git Disk') }}</div>
+                        <div style="font-size: 16px; font-weight: 700; color: #58a6ff; margin-top: 2px;">{{ git_storage.total_formatted }}</div>
+                    </div>
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-muted); border-radius: 6px; padding: 8px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted);">{{ t('adm.system.loose_objects')|default('Loose Objects') }}</div>
+                        <div style="font-size: 16px; font-weight: 700; color: {% if git_storage.total_loose_objects > 100 %}#d29922{% else %}#3fb950{% endif %}; margin-top: 2px;">{{ git_storage.total_loose_objects }}</div>
+                    </div>
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-muted); border-radius: 6px; padding: 8px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted);">{{ t('adm.system.pack_files')|default('Pack Files') }}</div>
+                        <div style="font-size: 16px; font-weight: 700; color: var(--gh-fg-default); margin-top: 2px;">{{ git_storage.total_pack_files }}</div>
+                    </div>
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-muted); border-radius: 6px; padding: 8px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted);">{{ t('adm.system.commit_graphs')|default('Commit Graphs') }}</div>
+                        <div style="font-size: 16px; font-weight: 700; color: #3fb950; margin-top: 2px;">{{ git_storage.total_commit_graphs }} / {{ git_storage.repo_count }}</div>
+                    </div>
+                    <div style="background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-muted); border-radius: 6px; padding: 8px 12px;">
+                        <div style="font-size: 11px; color: var(--gh-fg-muted);">{{ t('adm.system.shared_forks')|default('Shared Forks') }}</div>
+                        <div style="font-size: 16px; font-weight: 700; color: #a371f7; margin-top: 2px;">{{ git_storage.total_shared_forks }}</div>
+                    </div>
+                </div>
+
+                {# Repository List Detail #}
+                <div style="border: 1px solid var(--gh-border-muted); border-radius: 6px; overflow-x: auto;">
+                    <table class="gh-table" style="width: 100%; font-size: 12.5px; margin: 0;">
+                        <thead>
+                            <tr style="background: var(--gh-bg-subtle);">
+                                <th style="padding: 8px 12px; text-align: left;">Repository</th>
+                                <th style="padding: 8px 12px; text-align: left;">Size</th>
+                                <th style="padding: 8px 12px; text-align: left;">Loose Objects</th>
+                                <th style="padding: 8px 12px; text-align: left;">Packfiles</th>
+                                <th style="padding: 8px 12px; text-align: left;">Commit Graph</th>
+                                <th style="padding: 8px 12px; text-align: right;">Health</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for repo in git_storage.details %}
+                                <tr style="border-top: 1px solid var(--gh-border-muted);">
+                                    <td style="padding: 8px 12px; font-weight: 600;">
+                                        <span>{{ repo.slug }}</span>
+                                        {% if repo.has_alternates %}
+                                            <span class="gh-badge" style="margin-left: 6px; font-size: 10px; background: rgba(163,113,247,0.15); color: #a371f7;">Fork Shared</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 8px 12px; color: var(--gh-fg-default);">{{ repo.size_formatted }}</td>
+                                    <td style="padding: 8px 12px; color: {% if repo.loose_objects_count > 50 %}#d29922{% else %}var(--gh-fg-muted){% endif %};">
+                                        {{ repo.loose_objects_count }}
+                                    </td>
+                                    <td style="padding: 8px 12px; color: var(--gh-fg-muted);">{{ repo.pack_count }}</td>
+                                    <td style="padding: 8px 12px;">
+                                        {% if repo.has_commit_graph %}
+                                            <span style="color: #3fb950; font-size: 11px; font-weight: 600;">Indexed</span>
+                                        {% else %}
+                                            <span style="color: var(--gh-fg-muted); font-size: 11px;">Not built</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 8px 12px; text-align: right;">
+                                        {% if repo.needs_optimization %}
+                                            <span class="gh-badge" style="background: rgba(210,153,34,0.12); color: #d29922; font-size: 11px;">Can compact</span>
+                                        {% else %}
+                                            <span class="gh-badge" style="background: rgba(63,185,80,0.12); color: #3fb950; font-size: 11px;">Optimized</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ── RUNTIME ENVIRONMENT & SOFTWARE ──────────────────────────────── #}
+            <div class="gh-box" style="padding: 18px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); margin-bottom: 20px;">
+                <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 12px; color: var(--gh-fg-default);">
+                    {{ t('adm.system.runtime_title')|default('Environment & Stack Runtime') }}
+                </h3>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; font-size: 13px;">
+                    <div style="padding: 8px 12px; border: 1px solid var(--gh-border-muted); border-radius: 6px; background: var(--gh-bg-subtle);">
+                        <div style="color: var(--gh-fg-muted); font-size: 11.5px;">{{ t('adm.system.php_engine')|default('PHP Engine') }}</div>
+                        <div style="font-weight: 600; color: var(--gh-fg-default); margin-top: 2px;">PHP {{ env.php_version }}</div>
+                    </div>
+                    <div style="padding: 8px 12px; border: 1px solid var(--gh-border-muted); border-radius: 6px; background: var(--gh-bg-subtle);">
+                        <div style="color: var(--gh-fg-muted); font-size: 11.5px;">{{ t('adm.system.git_binary')|default('Git Binary') }}</div>
+                        <div style="font-weight: 600; color: var(--gh-fg-default); margin-top: 2px;">{{ env.git_version }}</div>
+                    </div>
+                    <div style="padding: 8px 12px; border: 1px solid var(--gh-border-muted); border-radius: 6px; background: var(--gh-bg-subtle);">
+                        <div style="color: var(--gh-fg-muted); font-size: 11.5px;">{{ t('adm.system.db_engine')|default('Database Engine') }}</div>
+                        <div style="font-weight: 600; color: var(--gh-fg-default); margin-top: 2px;">MariaDB/MySQL {{ env.mysql_version }}</div>
+                    </div>
+                    <div style="padding: 8px 12px; border: 1px solid var(--gh-border-muted); border-radius: 6px; background: var(--gh-bg-subtle);">
+                        <div style="color: var(--gh-fg-muted); font-size: 11.5px;">{{ t('adm.system.memory_upload')|default('Memory & Upload Limit') }}</div>
+                        <div style="font-weight: 600; color: var(--gh-fg-default); margin-top: 2px;">{{ env.memory_limit }} · {{ t('adm.system.max_upload')|default('Max Upload:') }} {{ env.max_upload }}</div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── SYSTEM MAINTENANCE TOOLS ────────────────────────────────────── #}
+            <div class="gh-box" style="padding: 18px; border-radius: 6px; border: 1px solid var(--gh-border-default); background: var(--gh-bg-default); margin-bottom: 20px;">
+                <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 12px; color: var(--gh-fg-default);">
+                    {{ t('adm.system.maintenance_title')|default('Platform Maintenance & Optimization Tools') }}
+                </h3>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                    {# Smart Cache & Storage Cleanup #}
+                    <div style="padding: 14px; border: 1px solid var(--gh-border-muted); border-radius: 6px; background: var(--gh-bg-subtle);">
+                        <h4 style="font-size: 13.5px; font-weight: 600; margin: 0 0 6px; color: var(--gh-fg-default);">{{ t('adm.system.smart_clean_title')|default('Smart Storage & Cache Cleaner') }}</h4>
+                        <p style="font-size: 12px; color: var(--gh-fg-muted); margin: 0 0 10px;">
+                            {{ t('adm.system.smart_clean_desc')|default('Intelligently purges expired cache, stale Twig templates, inactive sessions, and temporary files.') }}
+                        </p>
+                        <form method="post" action="{{ admin_prefix|default('/admin') }}/system/smart-clean">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="gh-btn gh-btn-primary" style="width: 100%;">{{ t('adm.system.smart_clean_btn')|default('Run Smart Cleanup') }}</button>
+                        </form>
+                    </div>
+
+                    {# Clear All Caches #}
+                    <div style="padding: 14px; border: 1px solid var(--gh-border-muted); border-radius: 6px; background: var(--gh-bg-subtle);">
+                        <h4 style="font-size: 13.5px; font-weight: 600; margin: 0 0 6px; color: var(--gh-fg-default);">{{ t('adm.system.purge_cache_title')|default('Purge Twig & OPcache') }}</h4>
+                        <p style="font-size: 12px; color: var(--gh-fg-muted); margin: 0 0 10px;">
+                            {{ t('adm.system.purge_cache_desc')|default('Flushes all compiled Twig templates and resets bytecode cache.') }}
+                        </p>
+                        <form method="post" action="{{ admin_prefix|default('/admin') }}/system/clear-cache">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="gh-btn" style="width: 100%;">{{ t('adm.system.clear_cache_btn')|default('Clear All Caches') }}</button>
+                        </form>
+                    </div>
+
+                    {# Optimize Database #}
+                    <div style="padding: 14px; border: 1px solid var(--gh-border-muted); border-radius: 6px; background: var(--gh-bg-subtle);">
+                        <h4 style="font-size: 13.5px; font-weight: 600; margin: 0 0 6px; color: var(--gh-fg-default);">{{ t('adm.system.optimize_db_title')|default('Optimize Database & Sessions') }}</h4>
+                        <p style="font-size: 12px; color: var(--gh-fg-muted); margin: 0 0 10px;">
+                            {{ t('adm.system.optimize_db_desc')|default('Purges expired sessions older than 30 days and optimizes table indexes.') }}
+                        </p>
+                        <form method="post" action="{{ admin_prefix|default('/admin') }}/system/optimize-db">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="gh-btn" style="width: 100%;">{{ t('adm.system.run_maintenance_btn')|default('Run Maintenance') }}</button>
+                        </form>
+                    </div>
+
+                    {# Optimize Git Repositories & Storage #}
+                    <div style="padding: 14px; border: 1px solid var(--gh-border-muted); border-radius: 6px; background: var(--gh-bg-subtle);">
+                        <h4 style="font-size: 13.5px; font-weight: 600; margin: 0 0 6px; color: var(--gh-fg-default);">{{ t('adm.system.optimize_git_title')|default('Optimize Git Repositories & Storage') }}</h4>
+                        <p style="font-size: 12px; color: var(--gh-fg-muted); margin: 0 0 10px;">
+                            {{ t('adm.system.optimize_git_desc')|default('Packs loose Git objects, builds commit-graphs for rapid diffs, and prunes stale download archives with zero server impact.') }}
+                        </p>
+                        <form method="post" action="{{ admin_prefix|default('/admin') }}/system/optimize-git">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="gh-btn" style="width: 100%;">{{ t('adm.system.optimize_git_btn')|default('Run Git Storage Optimization') }}</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

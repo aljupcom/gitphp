@@ -1,0 +1,56 @@
+{% extends "layout.twig" %}
+
+{% block title %}New issue — {{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+        {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'issues' } %}
+
+    <div class="gh-issue-form-wrap">
+        <h2 class="gh-section-title">Report a bug</h2>
+        <p class="gh-muted">Found a problem with this repository? Describe it as clearly as you can — the administrator will review every report.</p>
+
+        {% if error is defined and error %}
+            <div class="gh-flash gh-flash-error" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="/{{ owner }}/{{ repo.slug }}/issues" class="gh-issue-form">
+            {% if csrf_token is defined %}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            {% endif %}
+
+            <div class="gh-form-group">
+                <label class="gh-label" for="title">Title</label>
+                <input class="gh-input" type="text" id="title" name="title" maxlength="255" required
+                       value="{{ old.title is defined ? old.title : '' }}"
+                       placeholder="Short summary of the bug">
+            </div>
+
+            <div class="gh-form-group">
+                <label class="gh-label" for="description">Description</label>
+                <textarea class="gh-input gh-textarea" id="description" name="description" rows="6" required
+                          placeholder="What went wrong? What did you expect to happen instead?">{{ old.description is defined ? old.description : '' }}</textarea>
+            </div>
+
+            <div class="gh-form-group">
+                <label class="gh-label" for="environment">Environment (optional)</label>
+                <textarea class="gh-input gh-textarea" id="environment" name="environment" rows="3"
+                          placeholder="Browser and version, operating system, PHP version, database — any technical details that help.">{{ old.environment is defined ? old.environment : '' }}</textarea>
+            </div>
+
+            <div class="gh-form-group">
+                <label class="gh-label" for="steps_to_reproduce">Steps to reproduce (optional)</label>
+                <textarea class="gh-input gh-textarea" id="steps_to_reproduce" name="steps_to_reproduce" rows="4"
+                          placeholder="1. Go to ...&#10;2. Click on ...&#10;3. See the error">{{ old.steps_to_reproduce is defined ? old.steps_to_reproduce : '' }}</textarea>
+            </div>
+
+            <div class="gh-form-actions">
+                <a class="gh-btn" href="/{{ owner }}/{{ repo.slug }}/issues">Cancel</a>
+                <button type="submit" class="gh-btn gh-btn-primary">Submit bug report</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

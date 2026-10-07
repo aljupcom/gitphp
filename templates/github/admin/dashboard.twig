@@ -1,0 +1,246 @@
+{% extends "layout.twig" %}
+
+{% block title %}Site Admin — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <h1 style="font-size: 22px; margin: 0; font-weight:600;">{{ t('adm.dashboard.title') }}</h1>
+                <span class="gh-badge" style="background:rgba(63,185,80,0.15); color:#3fb950; font-weight:600; font-size:11px;">
+                    <svg class="ti ti-circle-check" style="font-size:12px;"><use href="#ti-circle-check"/></svg> Server Active
+                </span>
+            </div>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                {{ owner }} &bull; {{ t('adm.dashboard.description') }}
+            </p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a class="gh-btn gh-btn-sm" href="{{ admin_prefix|default('/admin') }}/downloads">
+                <svg class="ti ti-cloud-download"><use href="#ti-cloud-download"/></svg> Downloads
+            </a>
+            <a class="gh-btn gh-btn-sm" href="{{ admin_prefix|default('/admin') }}/audit-logs">
+                <svg class="ti ti-history"><use href="#ti-history"/></svg> Audit Log
+            </a>
+            <a class="gh-btn gh-btn-sm gh-btn-primary" href="{{ admin_prefix|default('/admin') }}/repos/create" style="font-weight:600;">
+                <svg class="ti ti-plus"><use href="#ti-plus"/></svg> New Repository
+            </a>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'overview', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; flex:1;">
+            
+            {# ── Quick Admin Actions Bar ────────────────────────────── #}
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:20px;">
+                <a href="{{ admin_prefix|default('/admin') }}/repos/create" class="gh-box" style="padding:14px; text-decoration:none; display:flex; align-items:center; gap:10px; color:var(--gh-fg-default); transition: border-color 0.15s ease;">
+                    <div style="width:36px; height:36px; border-radius:6px; background:rgba(88,166,255,0.12); color:#58a6ff; display:flex; align-items:center; justify-content:center;">
+                        <svg class="ti ti-plus" style="font-size:18px;"><use href="#ti-plus"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:600; font-size:13px;">New Repo</div>
+                        <div style="font-size:11px; color:var(--gh-fg-muted);">Initialize repository</div>
+                    </div>
+                </a>
+
+                <a href="{{ admin_prefix|default('/admin') }}/repos/import" class="gh-box" style="padding:14px; text-decoration:none; display:flex; align-items:center; gap:10px; color:var(--gh-fg-default); transition: border-color 0.15s ease;">
+                    <div style="width:36px; height:36px; border-radius:6px; background:rgba(63,185,80,0.12); color:#3fb950; display:flex; align-items:center; justify-content:center;">
+                        <svg class="ti ti-download" style="font-size:18px;"><use href="#ti-download"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:600; font-size:13px;">Import Repo</div>
+                        <div style="font-size:11px; color:var(--gh-fg-muted);">Clone from URL</div>
+                    </div>
+                </a>
+
+                <a href="{{ admin_prefix|default('/admin') }}/ssh-keys" class="gh-box" style="padding:14px; text-decoration:none; display:flex; align-items:center; gap:10px; color:var(--gh-fg-default); transition: border-color 0.15s ease;">
+                    <div style="width:36px; height:36px; border-radius:6px; background:rgba(210,153,34,0.12); color:#d29922; display:flex; align-items:center; justify-content:center;">
+                        <svg class="ti ti-key" style="font-size:18px;"><use href="#ti-key"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:600; font-size:13px;">SSH Keys</div>
+                        <div style="font-size:11px; color:var(--gh-fg-muted);">Manage deploy keys</div>
+                    </div>
+                </a>
+
+                <a href="{{ admin_prefix|default('/admin') }}/bug-reports" class="gh-box" style="padding:14px; text-decoration:none; display:flex; align-items:center; gap:10px; color:var(--gh-fg-default); transition: border-color 0.15s ease;">
+                    <div style="width:36px; height:36px; border-radius:6px; background:rgba(248,81,73,0.12); color:#f85149; display:flex; align-items:center; justify-content:center;">
+                        <svg class="ti ti-bug" style="font-size:18px;"><use href="#ti-bug"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:600; font-size:13px;">Bug Reports</div>
+                        <div style="font-size:11px; color:var(--gh-fg-muted);">{{ stats.bug_reports }} open issues</div>
+                    </div>
+                </a>
+            </div>
+
+            {# ── Stats Grid ─────────────────────────────────────────── #}
+            <div class="gh-stat-grid" style="margin-bottom:20px;">
+                <div class="gh-stat-card">
+                    <span class="gh-stat-label"><svg class="ti ti-box" style="font-size:13px;"><use href="#ti-box"/></svg> Repositories</span>
+                    <span class="gh-stat-value">{{ stats.total }}</span>
+                </div>
+                <div class="gh-stat-card">
+                    <span class="gh-stat-label"><svg class="ti ti-lock" style="font-size:13px;"><use href="#ti-lock"/></svg> Public / Private</span>
+                    <span class="gh-stat-value"><span class="gh-stat-add">{{ stats.public }}</span> / {{ stats.private }}</span>
+                </div>
+                <div class="gh-stat-card">
+                    <span class="gh-stat-label"><svg class="ti ti-users" style="font-size:13px;"><use href="#ti-users"/></svg> Registered Users</span>
+                    <span class="gh-stat-value">{{ stats.users }}</span>
+                </div>
+                <div class="gh-stat-card">
+                    <span class="gh-stat-label"><svg class="ti ti-git-pull-request" style="font-size:13px;"><use href="#ti-git-pull-request"/></svg> Open PRs</span>
+                    <span class="gh-stat-value">{{ stats.open_prs }}</span>
+                </div>
+                <div class="gh-stat-card">
+                    <span class="gh-stat-label"><svg class="ti ti-star" style="font-size:13px;"><use href="#ti-star"/></svg> Total Stars</span>
+                    <span class="gh-stat-value">{{ stats.stars }}</span>
+                </div>
+                <div class="gh-stat-card">
+                    <span class="gh-stat-label"><svg class="ti ti-git-fork" style="font-size:13px;"><use href="#ti-git-fork"/></svg> Total Forks</span>
+                    <span class="gh-stat-value">{{ stats.forks }}</span>
+                </div>
+                <div class="gh-stat-card">
+                    <span class="gh-stat-label"><svg class="ti ti-database" style="font-size:13px;"><use href="#ti-database"/></svg> Git Storage</span>
+                    <span class="gh-stat-value"><a href="{{ admin_prefix|default('/admin') }}/system" style="color:inherit; text-decoration:none;" title="View Storage Diagnostics">{{ stats.storage_size|default('312 MB') }}</a></span>
+                </div>
+            </div>
+
+            {# ── Charts & System Activity ────────────────────────────── #}
+            <div class="gh-chart-grid" style="margin-bottom:24px;">
+                <div class="gh-chart-card">
+                    <h3 class="gh-chart-title"><svg class="ti ti-chart-bar"><use href="#ti-chart-bar"/></svg> Git Activity — Last 14 Days</h3>
+                    {% if chart_max > 0 %}
+                        <svg class="gh-chart" viewBox="0 0 560 170" role="img" aria-label="Repository activity per day over the last 14 days">
+                            {% for day in chart_days %}
+                                {% set h = day.count > 0 ? (day.count / chart_max * 110) : 0 %}
+                                {% if day.count > 0 %}<text class="gh-chart-val" x="{{ 22 + loop.index0 * 40 }}" y="{{ 14 - 3 + (110 - h) }}">{{ day.count }}</text>{% endif %}
+                                <rect class="gh-chart-bar" x="{{ 9 + loop.index0 * 40 }}" y="{{ 130 - h }}" width="26" height="{{ h > 0 ? h : 3 }}" rx="3"/>
+                                <text class="gh-chart-label" x="{{ 22 + loop.index0 * 40 }}" y="150">{{ day.label }}</text>
+                            {% endfor %}
+                            <line class="gh-chart-axis" x1="0" y1="130" x2="560" y2="130"/>
+                        </svg>
+                    {% else %}
+                        <p class="gh-muted gh-chart-empty">No activity in the last 14 days.</p>
+                    {% endif %}
+                </div>
+                <div class="gh-chart-card">
+                    <h3 class="gh-chart-title"><svg class="ti ti-bug"><use href="#ti-bug"/></svg> Issues Resolution Status</h3>
+                    {% set bug_total = bug_statuses.open + bug_statuses.resolved + bug_statuses.closed %}
+                    {% if bug_total > 0 %}
+                        <div class="gh-bug-bars">
+                            {% for status_key, status_count in bug_statuses %}
+                                {% set pct = (status_count / bug_total * 100)|round %}
+                                <div class="gh-bug-bar-row">
+                                    <span class="gh-bug-bar-label">{{ status_key == 'open' ? 'Open' : (status_key == 'resolved' ? 'Resolved' : 'Closed') }}</span>
+                                    <div class="gh-bug-bar-track"><div class="gh-bug-bar-fill gh-bug-bar-{{ status_key }}" style="width: {{ pct }}%"></div></div>
+                                    <span class="gh-bug-bar-count">{{ status_count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="gh-muted gh-chart-empty">No issues yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ── Repositories Table ─────────────────────────────────── #}
+            <div class="gh-box" style="margin-bottom:24px;">
+                <div class="gh-box-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px;">
+                    <div style="font-weight:600; font-size:14px; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                        <svg class="ti ti-box"><use href="#ti-box"/></svg>
+                        <span>{{ t('adm.nav.repositories')|default('Hosted Repositories') }}</span>
+                    </div>
+                    <a href="{{ admin_prefix|default('/admin') }}/repos" class="gh-btn gh-btn-sm">{{ t('common.view_all')|default('View All') }}</a>
+                </div>
+
+                {% if repos|length > 0 %}
+                    <div style="overflow-x:auto;">
+                        <table class="gh-table" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>Repository</th>
+                                    <th>Visibility</th>
+                                    <th>Owner</th>
+                                    <th>Created</th>
+                                    <th style="text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for repo in repos|slice(0, 10) %}
+                                    <tr>
+                                        <td>
+                                            <a style="font-weight:600; text-decoration:none; color:var(--gh-accent-fg, #58a6ff);" href="/{{ owner }}/{{ repo.slug }}">{{ repo.name }}</a>
+                                            <div style="font-size:11px; font-family:monospace; color:var(--gh-fg-muted);">{{ owner }}/{{ repo.slug }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="gh-badge {{ repo.visibility == 'private' ? 'gh-badge-private' : '' }}">{{ repo.visibility == 'private' ? 'Private' : 'Public' }}</span>
+                                        </td>
+                                        <td style="font-size:13px; color:var(--gh-fg-muted);">
+                                            {% if repo.owner_user_id %}{{ repo.owner_username|default('user') }}{% else %}Administrator{% endif %}
+                                        </td>
+                                        <td style="font-size:12px; color:var(--gh-fg-muted);">
+                                            {{ repo.created_at|time_ago }}
+                                        </td>
+                                        <td style="text-align:right; white-space:nowrap;">
+                                            <a class="gh-btn gh-btn-sm" href="{{ admin_prefix|default('/admin') }}/repos/{{ repo.slug }}/edit">Edit</a>
+                                            {% if repo.source_url %}
+                                                <form method="POST" action="{{ admin_prefix|default('/admin') }}/repos/{{ repo.slug }}/sync" class="gh-inline-form" style="display:inline;">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                    <button type="submit" class="gh-btn gh-btn-sm">Sync</button>
+                                                </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div style="padding:40px 20px; text-align:center; color:var(--gh-fg-muted);">
+                        <svg class="ti ti-box-off" style="font-size:36px; margin-bottom:8px; opacity:0.6;"><use href="#ti-box"/></svg>
+                        <p style="font-size:14px; margin:0 0 4px;">No repositories created yet</p>
+                        <a href="{{ admin_prefix|default('/admin') }}/repos/create" class="gh-btn gh-btn-sm gh-btn-primary" style="margin-top:8px;">Create First Repository</a>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# ── Recent Activity Stream ─────────────────────────────── #}
+            <div class="gh-box">
+                <div class="gh-box-header" style="padding:12px 16px;">
+                    <div style="font-weight:600; font-size:14px; color:var(--gh-fg-default); display:flex; align-items:center; gap:6px;">
+                        <svg class="ti ti-history"><use href="#ti-history"/></svg>
+                        <span>{{ t('adm.dashboard.recent_activity')|default('System Activity Trail') }}</span>
+                    </div>
+                </div>
+
+                {% if activity|length > 0 %}
+                    <div style="padding:12px 16px; display:flex; flex-direction:column; gap:10px;">
+                        {% for entry in activity %}
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gh-border-muted); padding-bottom:8px; font-size:13px;">
+                                <div>
+                                    <strong style="color:var(--gh-fg-default);">{{ entry.action }}</strong>
+                                    <span style="color:var(--gh-fg-muted); margin-left:6px;">{{ entry.details }}</span>
+                                    {% if entry.repo_name %}
+                                        <span class="gh-badge" style="margin-left:6px;">{{ entry.repo_name }}</span>
+                                    {% endif %}
+                                </div>
+                                <time style="font-size:11px; color:var(--gh-fg-muted); white-space:nowrap;" datetime="{{ entry.created_at }}">{{ entry.created_at|time_ago }}</time>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="padding:30px 20px; text-align:center; color:var(--gh-fg-muted); font-size:13px;">
+                        No recent activity recorded.
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

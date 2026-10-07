@@ -1,0 +1,60 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.wiki.wiki') }} — {{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'wiki' } %}
+
+    {% if pages|length > 0 %}
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+            {% if can_write or is_owner %}
+                <a href="/{{ owner }}/{{ repo.slug }}/wiki/new" class="gh-btn gh-btn-primary gh-btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+                    <span>{{ t('ui.wiki.new_page') }}</span>
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="gh-wiki-layout">
+            <aside class="gh-wiki-sidebar" aria-label="{{ t_attr('ui.wiki.pages') }}">
+                <h2 class="gh-wiki-sidebar-title">{{ t('ui.wiki.pages') }}</h2>
+                <ul class="gh-wiki-pages">
+                    {% for p in pages %}
+                        <li>
+                            <a href="/{{ owner }}/{{ repo.slug }}/wiki/{{ p.slug }}">{{ p.title }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </aside>
+            <div class="gh-empty gh-wiki-empty">
+                <svg width="48" height="48" viewBox="0 0 16 16" aria-hidden="true"><path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z"/></svg>
+                <h2>{{ t('ui.wiki.select_page') }}</h2>
+                <p>{{ t('ui.wiki.choose_page') }}</p>
+            </div>
+        </div>
+    {% else %}
+        <div class="gh-empty">
+            <svg width="48" height="48" viewBox="0 0 16 16" aria-hidden="true"><path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z"/></svg>
+            <h2>{{ t('ui.wiki.empty_title') }}</h2>
+            <p>
+                {% if is_owner or can_write %}
+                    {{ t('ui.wiki.empty_owner_hint') }}
+                {% else %}
+                    {{ t('ui.wiki.empty_visitor_hint') }}
+                {% endif %}
+            </p>
+            {% if is_owner or can_write %}
+                <div style="margin-top: 16px;">
+                    <a href="/{{ owner }}/{{ repo.slug }}/wiki/new" class="gh-btn gh-btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+                        <span>{{ t('ui.wiki.new_page') }}</span>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

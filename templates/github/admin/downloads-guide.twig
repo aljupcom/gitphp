@@ -1,0 +1,150 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('adm.downloads_guide.downloads_guide_title') }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-container" style="max-width: 1060px; margin: 30px auto; padding: 0 16px;">
+    <!-- Breadcrumb & Header -->
+    <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+        <div>
+            <div style="font-size: 13px; color: var(--gh-fg-muted); margin-bottom: 6px;">
+                <a href="{{ admin_prefix }}/downloads" style="color: var(--gh-accent-fg); text-decoration: none;">{{ t('adm.downloads_guide.downloads_hub') }}</a> / {{ t('adm.downloads_guide.guide_documentation') }}
+            </div>
+            <h1 style="font-size: 22px; font-weight: 700; margin: 0; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-accent-fg);"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 6.5 7.75Zm0 3a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75ZM7.25 4h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1 0-1.5Z"/></svg>
+                <span>{{ t('adm.downloads_guide.downloads_guide_title') }}</span>
+            </h1>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <a href="{{ admin_prefix }}/downloads" class="gh-btn">{{ t('adm.downloads_guide.back_to_downloads') }}</a>
+        </div>
+    </div>
+
+    <!-- Security Key Box -->
+    <div style="background: var(--gh-bg-canvas); border: 1px solid var(--gh-border-default); border-radius: 8px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <div style="font-size: 14px; font-weight: 600; color: var(--gh-fg-default); margin-bottom: 4px;">
+                    🔑 {{ t('adm.downloads_guide.permanent_key_title') }}
+                </div>
+                <div style="font-size: 12px; color: var(--gh-fg-muted);">
+                    {{ t('adm.downloads_guide.permanent_key_desc') }}
+                </div>
+            </div>
+
+            <form method="POST" action="{{ admin_prefix }}/downloads/guide/regenerate-token" onsubmit="return confirm('{{ t_attr('adm.downloads_guide.regenerate_confirm') }}');" style="margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="gh-btn" style="color: var(--gh-danger-fg); border-color: rgba(207,34,46,0.4); font-size: 12px;">
+                    {{ t('adm.downloads_guide.regenerate_key') }}
+                </button>
+            </form>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; align-items: center; gap: 8px; background: var(--gh-bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--gh-border-muted);">
+            <code id="update-key-val" style="font-family: monospace; font-size: 14px; font-weight: 700; color: #2ea44e; flex: 1;">{{ update_key }}</code>
+            <button type="button" class="gh-btn gh-btn-sm" onclick="navigator.clipboard.writeText('{{ update_key }}'); this.textContent = '{{ t_attr('adm.downloads_guide.key_copied') }}'; setTimeout(() => this.textContent = '{{ t_attr('adm.downloads_guide.copy_key') }}', 1500);">
+                {{ t('adm.downloads_guide.copy_key') }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Documentation Sections -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Section 1: How Tokens Work -->
+        <div style="background: var(--gh-bg-canvas); border: 1px solid var(--gh-border-default); border-radius: 8px; padding: 20px;">
+            <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                <span style="background: var(--gh-accent-subtle); color: var(--gh-accent-fg); width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">1</span>
+                {{ t('adm.downloads_guide.sec1_title') }}
+            </h2>
+            <p style="font-size: 13px; color: var(--gh-fg-muted); line-height: 1.6; margin: 0 0 10px 0;">
+                {{ t('adm.downloads_guide.sec1_desc1') }}
+                <br>
+                <code style="color: var(--gh-accent-fg); font-weight: 600;">{{ app_url }}/d/{short_code}</code>
+            </p>
+            <p style="font-size: 13px; color: var(--gh-fg-muted); line-height: 1.6; margin: 0 0 14px 0;">
+                {{ t('adm.downloads_guide.sec1_desc2') }}
+                <br>
+                <code style="color: #2ea44e; font-weight: 600;">{{ app_url }}/d/{short_code}/get/{timestamp}_{signature}</code>
+                <br>
+                {{ t('adm.downloads_guide.sec1_desc3') }}
+            </p>
+        </div>
+
+        <!-- Section 2: Remote Updaters & Scripts -->
+        <div style="background: var(--gh-bg-canvas); border: 1px solid var(--gh-border-default); border-radius: 8px; padding: 20px;">
+            <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: var(--gh-fg-default); display: flex; align-items: center; gap: 8px;">
+                <span style="background: var(--gh-accent-subtle); color: var(--gh-accent-fg); width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">2</span>
+                {{ t('adm.downloads_guide.sec2_title') }}
+            </h2>
+            <p style="font-size: 13px; color: var(--gh-fg-muted); line-height: 1.6; margin: 0 0 12px 0;">
+                {{ t('adm.downloads_guide.sec2_desc') }}
+            </p>
+
+            <!-- Example 1: Query Param -->
+            <div style="margin-bottom: 14px;">
+                <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--gh-fg-default);">{{ t('adm.downloads_guide.method1_title') }}</div>
+                <div style="background: var(--gh-bg-subtle); padding: 12px; border-radius: 6px; border: 1px solid var(--gh-border-muted); font-family: monospace; font-size: 12px; overflow-x: auto; color: #e6edf3; direction: ltr; text-align: left;">
+# cURL CLI Download
+curl -L -O "{{ app_url }}/d/701a61/get/{{ update_key }}"
+
+# Direct Release Fallback with Remote Token
+curl -L -O "{{ app_url }}/aburasha/antigravity-installer-linux/releases/download/v2.0.2/antigravity-installer-2.0.2.tar.gz?token={{ update_key }}"
+                </div>
+            </div>
+
+            <!-- Example 2: HTTP Header -->
+            <div>
+                <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--gh-fg-default);">{{ t('adm.downloads_guide.method2_title') }}</div>
+                <div style="background: var(--gh-bg-subtle); padding: 12px; border-radius: 6px; border: 1px solid var(--gh-border-muted); font-family: monospace; font-size: 12px; overflow-x: auto; color: #e6edf3; direction: ltr; text-align: left;">
+import requests
+
+headers = {"X-Update-Token": "{{ update_key }}"}
+res = requests.get("{{ app_url }}/d/701a61/get", headers=headers, stream=True)
+with open("update.tar.gz", "wb") as f:
+    for chunk in res.iter_content(chunk_size=8192):
+        f.write(chunk)
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Summary table -->
+        <div style="background: var(--gh-bg-canvas); border: 1px solid var(--gh-border-default); border-radius: 8px; padding: 20px;">
+            <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: var(--gh-fg-default);">{{ t('adm.downloads_guide.table_title') }}</h2>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--gh-border-default); background: var(--gh-bg-subtle);">
+                            <th style="padding: 10px 12px;">{{ t('adm.downloads_guide.th_req_type') }}</th>
+                            <th style="padding: 10px 12px;">{{ t('adm.downloads_guide.th_url') }}</th>
+                            <th style="padding: 10px 12px;">{{ t('adm.downloads_guide.th_behavior') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                            <td style="padding: 10px 12px; font-weight: 600;">{{ t('adm.downloads_guide.tr1_type') }}</td>
+                            <td style="padding: 10px 12px; font-family: monospace; direction: ltr;">/{user}/{repo}/releases/download/*</td>
+                            <td style="padding: 10px 12px; color: var(--gh-accent-fg);">{{ t('adm.downloads_guide.tr1_behavior') }}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                            <td style="padding: 10px 12px; font-weight: 600;">{{ t('adm.downloads_guide.tr2_type') }}</td>
+                            <td style="padding: 10px 12px; font-family: monospace; direction: ltr;">/d/{code}/get/{token}</td>
+                            <td style="padding: 10px 12px; color: #2ea44e;">{{ t('adm.downloads_guide.tr2_behavior') }}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--gh-border-muted);">
+                            <td style="padding: 10px 12px; font-weight: 600;">{{ t('adm.downloads_guide.tr3_type') }}</td>
+                            <td style="padding: 10px 12px; font-family: monospace; direction: ltr;">/d/{code}/get/{{ update_key }}</td>
+                            <td style="padding: 10px 12px; color: #2ea44e;">{{ t('adm.downloads_guide.tr3_behavior') }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px 12px; font-weight: 600;">{{ t('adm.downloads_guide.tr4_type') }}</td>
+                            <td style="padding: 10px 12px; font-family: monospace; direction: ltr;">/d/{code}/get</td>
+                            <td style="padding: 10px 12px; color: var(--gh-danger-fg);">{{ t('adm.downloads_guide.tr4_behavior') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

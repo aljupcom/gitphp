@@ -1,0 +1,495 @@
+{% extends "layout.twig" %}
+
+{% block title %}Site Admin Settings — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600;">{{ t('adm.settings.title') }}</h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                {{ t('adm.settings.description') }}
+            </p>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'settings', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; max-width: 840px; flex: 1;">
+            
+            {% set current_tab = active_tab|default("general") %}
+
+            {# GitHub Enterprise Site Admin Tabs #}
+            <div data-tab-group="admin-settings" style="display:flex; border-bottom:1px solid var(--gh-border-default); margin-bottom:20px; gap:4px; flex-wrap:wrap;">
+                <a href="?tab=general"
+                   data-tab-target="general"
+                   data-active-style="color:var(--gh-fg-default); border-bottom-color:#58a6ff; font-weight:600;"
+                   data-inactive-style="color:var(--gh-fg-muted); border-bottom-color:transparent; font-weight:500;"
+                   class="gh-tab-btn {{ current_tab == 'general' ? 'is-active' : '' }}"
+                   style="padding:8px 14px; font-size:13.5px; text-decoration:none; cursor:pointer; color:{{ current_tab == 'general' ? 'var(--gh-fg-default)' : 'var(--gh-fg-muted)' }}; border-bottom:2px solid {{ current_tab == 'general' ? '#58a6ff' : 'transparent' }}; font-weight:{{ current_tab == 'general' ? '600' : '500' }}; display:inline-flex; align-items:center; gap:6px;">
+                    <svg class="ti ti-settings"><use href="#ti-settings"/></svg>
+                    <span>General</span>
+                </a>
+                <a href="?tab=repos"
+                   data-tab-target="repos"
+                   data-active-style="color:var(--gh-fg-default); border-bottom-color:#58a6ff; font-weight:600;"
+                   data-inactive-style="color:var(--gh-fg-muted); border-bottom-color:transparent; font-weight:500;"
+                   class="gh-tab-btn {{ current_tab == 'repos' ? 'is-active' : '' }}"
+                   style="padding:8px 14px; font-size:13.5px; text-decoration:none; cursor:pointer; color:{{ current_tab == 'repos' ? 'var(--gh-fg-default)' : 'var(--gh-fg-muted)' }}; border-bottom:2px solid {{ current_tab == 'repos' ? '#58a6ff' : 'transparent' }}; font-weight:{{ current_tab == 'repos' ? '600' : '500' }}; display:inline-flex; align-items:center; gap:6px;">
+                    <svg class="ti ti-box"><use href="#ti-box"/></svg>
+                    <span>Repositories &amp; Git</span>
+                </a>
+                <a href="?tab=security"
+                   data-tab-target="security"
+                   data-active-style="color:var(--gh-fg-default); border-bottom-color:#58a6ff; font-weight:600;"
+                   data-inactive-style="color:var(--gh-fg-muted); border-bottom-color:transparent; font-weight:500;"
+                   class="gh-tab-btn {{ current_tab == 'security' ? 'is-active' : '' }}"
+                   style="padding:8px 14px; font-size:13.5px; text-decoration:none; cursor:pointer; color:{{ current_tab == 'security' ? 'var(--gh-fg-default)' : 'var(--gh-fg-muted)' }}; border-bottom:2px solid {{ current_tab == 'security' ? '#58a6ff' : 'transparent' }}; font-weight:{{ current_tab == 'security' ? '600' : '500' }}; display:inline-flex; align-items:center; gap:6px;">
+                    <svg class="ti ti-shield-lock"><use href="#ti-shield-lock"/></svg>
+                    <span>Security &amp; Auth</span>
+                </a>
+                <a href="?tab=performance"
+                   data-tab-target="performance"
+                   data-active-style="color:var(--gh-fg-default); border-bottom-color:#58a6ff; font-weight:600;"
+                   data-inactive-style="color:var(--gh-fg-muted); border-bottom-color:transparent; font-weight:500;"
+                   class="gh-tab-btn {{ current_tab == 'performance' ? 'is-active' : '' }}"
+                   style="padding:8px 14px; font-size:13.5px; text-decoration:none; cursor:pointer; color:{{ current_tab == 'performance' ? 'var(--gh-fg-default)' : 'var(--gh-fg-muted)' }}; border-bottom:2px solid {{ current_tab == 'performance' ? '#58a6ff' : 'transparent' }}; font-weight:{{ current_tab == 'performance' ? '600' : '500' }}; display:inline-flex; align-items:center; gap:6px;">
+                    <svg class="ti ti-bolt"><use href="#ti-bolt"/></svg>
+                    <span>Performance &amp; Cache</span>
+                </a>
+                <a href="?tab=dist"
+                   data-tab-target="dist"
+                   data-active-style="color:var(--gh-fg-default); border-bottom-color:#58a6ff; font-weight:600;"
+                   data-inactive-style="color:var(--gh-fg-muted); border-bottom-color:transparent; font-weight:500;"
+                   class="gh-tab-btn {{ current_tab == 'dist' ? 'is-active' : '' }}"
+                   style="padding:8px 14px; font-size:13.5px; text-decoration:none; cursor:pointer; color:{{ current_tab == 'dist' ? 'var(--gh-fg-default)' : 'var(--gh-fg-muted)' }}; border-bottom:2px solid {{ current_tab == 'dist' ? '#58a6ff' : 'transparent' }}; font-weight:{{ current_tab == 'dist' ? '600' : '500' }}; display:inline-flex; align-items:center; gap:6px;">
+                    <svg class="ti ti-cloud-download"><use href="#ti-cloud-download"/></svg>
+                    <span>Distribution &amp; Gateway</span>
+                </a>
+            </div>
+
+            <form method="POST" action="{{ admin_prefix|default('/admin') }}/settings" id="admin-settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="redirect_tab" id="redirect-tab-input" value="{{ current_tab }}">
+
+                {# ── TAB 1: General Settings ──────────────────────────────── #}
+                <div class="gh-tab-pane {{ current_tab == 'general' ? 'is-active' : '' }}"
+                     data-tab-pane="general"
+                     data-tab-pane-group="admin-settings"
+                     style="{{ current_tab == 'general' ? '' : 'display:none;' }}">
+                    
+                    <div class="gh-box" style="padding: 20px; margin-bottom: 20px;">
+                        <h2 style="font-size:15px; margin:0 0 4px; font-weight:600;">General Instance Parameters</h2>
+                        <p style="font-size:12px; color:var(--gh-fg-muted); margin:0 0 16px;">Basic branding, time representation, and site headers.</p>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;" for="app_name">Instance Name / Brand</label>
+                            <input class="gh-form-control" type="text" id="app_name" name="app_name"
+                                   value="{{ settings.app_name }}" style="width:100%; max-width:400px;" required>
+                            <div class="gh-form-hint">Displayed in navigation headers, emails, and page titles.</div>
+                        </div>
+
+                        <div style="margin-bottom: 8px;">
+                            <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;" for="timezone">Default Timezone</label>
+                            <select class="gh-form-control" id="timezone" name="timezone" style="width:100%; max-width:400px;">
+                                {% for tz_value, tz_label in timezones %}
+                                    <option value="{{ tz_value }}" {{ settings.timezone == tz_value ? 'selected' : '' }}>
+                                        {{ tz_label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="gh-form-hint">All commits, audit logs, and timestamps are displayed using this timezone.</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── TAB 2: Repositories & Git ────────────────────────────── #}
+                <div class="gh-tab-pane {{ current_tab == 'repos' ? 'is-active' : '' }}"
+                     data-tab-pane="repos"
+                     data-tab-pane-group="admin-settings"
+                     style="{{ current_tab == 'repos' ? '' : 'display:none;' }}">
+                    
+                    <div class="gh-box" style="padding: 20px; margin-bottom: 20px;">
+                        <h2 style="font-size:15px; margin:0 0 4px; font-weight:600;">Git &amp; Repository Policies</h2>
+                        <p style="font-size:12px; color:var(--gh-fg-muted); margin:0 0 16px;">Default branch naming, visibility rules, and Git over HTTP protocols.</p>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;" for="default_branch">Default Branch Name</label>
+                            <input class="gh-form-control" type="text" id="default_branch" name="default_branch"
+                                   value="{{ settings.default_branch }}" style="width:100%; max-width:260px; font-family:var(--gh-font-mono, monospace);" required>
+                            <div class="gh-form-hint">Applied to all newly initialized repositories (e.g. <code>main</code> or <code>master</code>).</div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-weight:600; font-size:13px; display:block; margin-bottom:6px;">Default Repository Visibility</label>
+                            <div style="display:flex; gap:16px;">
+                                <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+                                    <input type="radio" name="default_visibility" value="public"
+                                           {{ settings.default_visibility == 'public' ? 'checked' : '' }}>
+                                    <span>Public</span>
+                                </label>
+                                <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+                                    <input type="radio" name="default_visibility" value="private"
+                                           {{ settings.default_visibility == 'private' ? 'checked' : '' }}>
+                                    <span>Private</span>
+                                </label>
+                            </div>
+                            <div class="gh-form-hint" style="margin-top:4px;">Pre-selected choice when users create a new repository.</div>
+                        </div>
+
+                        <div style="margin-bottom: 8px;">
+                            <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; cursor:pointer;">
+                                <input type="checkbox" name="git_receive_pack" value="1" style="margin-top:3px;"
+                                       {{ settings.git_receive_pack ? 'checked' : '' }}>
+                                <div>
+                                    <strong>Enable Smart HTTP Git Push (git-receive-pack)</strong>
+                                    <div style="font-size:11.5px; color:var(--gh-fg-muted); margin-top:2px;">Allows authenticated developers to push code directly via HTTPS URL.</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── TAB 3: Security & Auth ──────────────────────────────── #}
+                <div class="gh-tab-pane {{ current_tab == 'security' ? 'is-active' : '' }}"
+                     data-tab-pane="security"
+                     data-tab-pane-group="admin-settings"
+                     style="{{ current_tab == 'security' ? '' : 'display:none;' }}">
+                    
+                    <div class="gh-box" style="padding: 20px; margin-bottom: 20px;">
+                        <h2 style="font-size:15px; margin:0 0 4px; font-weight:600;">Authentication &amp; User Access</h2>
+                        <p style="font-size:12px; color:var(--gh-fg-muted); margin:0 0 16px;">Registration permissions, email requirements, and session timeout lifespans.</p>
+
+                        <div style="margin-bottom: 14px;">
+                            <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; cursor:pointer;">
+                                <input type="checkbox" name="allow_registration" value="1" style="margin-top:3px;"
+                                       {{ settings.allow_registration ? 'checked' : '' }}>
+                                <div>
+                                    <strong>Allow Public Account Registration</strong>
+                                    <div style="font-size:11.5px; color:var(--gh-fg-muted); margin-top:2px;">When disabled, only administrators can invite new users to the platform.</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; cursor:pointer;">
+                                <input type="checkbox" name="require_email_verify" value="1" style="margin-top:3px;"
+                                       {{ settings.require_email_verify ? 'checked' : '' }}>
+                                <div>
+                                    <strong>Require Email Verification</strong>
+                                    <div style="font-size:11.5px; color:var(--gh-fg-muted); margin-top:2px;">Users must verify their email before accessing repositories and submitting PRs.</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom: 8px;">
+                            <div>
+                                <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;" for="session_lifetime">Session Lifetime (Hours)</label>
+                                <input class="gh-form-control" type="number" id="session_lifetime" name="session_lifetime"
+                                       value="{{ settings.session_lifetime }}" min="1" max="720" style="width:100%;">
+                                <div class="gh-form-hint">Hours before inactive web sessions expire automatically.</div>
+                            </div>
+                            <div>
+                                <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;" for="max_upload_mb">Max Upload Size (MB)</label>
+                                <input class="gh-form-control" type="number" id="max_upload_mb" name="max_upload_mb"
+                                       value="{{ settings.max_upload_mb }}" min="1" max="2048" style="width:100%;">
+                                <div class="gh-form-hint">Limits releases, download files, and avatars.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── TAB 4: Performance, Redis, Memcached & Caching ──────── #}
+                <div class="gh-tab-pane {{ current_tab == 'performance' ? 'is-active' : '' }}"
+                     data-tab-pane="performance"
+                     data-tab-pane-group="admin-settings"
+                     style="{{ current_tab == 'performance' ? '' : 'display:none;' }}">
+                    
+                    {# Live Engine Diagnostics Summary #}
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:20px;">
+                        {# Redis Live Card #}
+                        <div class="gh-box" style="padding:14px; background:var(--gh-bg-subtle);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                <div style="font-weight:600; font-size:13px; display:flex; align-items:center; gap:6px;">
+                                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:{{ diagnostics.redis.ok ? '#3fb950' : '#f85149' }};"></span>
+                                    <span>Redis In-Memory Engine</span>
+                                </div>
+                                <span class="gh-badge" style="font-size:10px; {{ diagnostics.redis.ok ? 'background:rgba(63,185,80,0.15); color:#3fb950;' : 'background:rgba(248,81,73,0.15); color:#f85149;' }}">
+                                    {{ diagnostics.redis.ok ? ('Online v' ~ diagnostics.redis.version) : 'Offline' }}
+                                </span>
+                            </div>
+                            <div style="font-size:11px; color:var(--gh-fg-muted);">
+                                Status: {{ diagnostics.redis.ok ? ('Connected (' ~ diagnostics.redis.latency_ms ~ 'ms latency)') : diagnostics.redis.error }}
+                            </div>
+                        </div>
+
+                        {# Memcached Live Card #}
+                        <div class="gh-box" style="padding:14px; background:var(--gh-bg-subtle);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                <div style="font-weight:600; font-size:13px; display:flex; align-items:center; gap:6px;">
+                                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:{{ diagnostics.memcached.ok ? '#3fb950' : '#f85149' }};"></span>
+                                    <span>Memcached Daemon</span>
+                                </div>
+                                <span class="gh-badge" style="font-size:10px; {{ diagnostics.memcached.ok ? 'background:rgba(63,185,80,0.15); color:#3fb950;' : 'background:rgba(248,81,73,0.15); color:#f85149;' }}">
+                                    {{ diagnostics.memcached.ok ? ('Online v' ~ diagnostics.memcached.version) : 'Offline' }}
+                                </span>
+                            </div>
+                            <div style="font-size:11px; color:var(--gh-fg-muted);">
+                                Status: {{ diagnostics.memcached.ok ? ('Connected (' ~ diagnostics.memcached.latency_ms ~ 'ms latency)') : diagnostics.memcached.error }}
+                            </div>
+                        </div>
+
+                        {# OPcache Live Card #}
+                        <div class="gh-box" style="padding:14px; background:var(--gh-bg-subtle);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                <div style="font-weight:600; font-size:13px; display:flex; align-items:center; gap:6px;">
+                                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:{{ diagnostics.opcache.enabled ? '#3fb950' : '#d29922' }};"></span>
+                                    <span>PHP Bytecode OPcache</span>
+                                </div>
+                                <span class="gh-badge" style="font-size:10px;">
+                                    {{ diagnostics.opcache.enabled ? 'Enabled' : 'Disabled' }}
+                                </span>
+                            </div>
+                            <div style="font-size:11px; color:var(--gh-fg-muted);">
+                                Memory: {{ diagnostics.opcache.memory_mb }} MB used &bull; PHP {{ diagnostics.php_version }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Cache Driver Selector #}
+                    <div class="gh-box" style="padding: 20px; margin-bottom: 20px;">
+                        <h2 style="font-size:15px; margin:0 0 4px; font-weight:600;">Active Cache &amp; Storage Engine</h2>
+                        <p style="font-size:12px; color:var(--gh-fg-muted); margin:0 0 16px;">
+                            Select the primary backend for repository metadata, parsed markdown, and git tree caching.
+                        </p>
+
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:16px;">
+                            <label style="border:1px solid var(--gh-border-default); padding:12px; border-radius:6px; display:flex; align-items:flex-start; gap:10px; cursor:pointer; background:var(--gh-bg-subtle);">
+                                <input type="radio" name="cache_driver" value="file" {{ settings.cache_driver == 'file' ? 'checked' : '' }} style="margin-top:3px;">
+                                <div>
+                                    <strong style="font-size:13px;">File System Cache</strong>
+                                    <div style="font-size:11px; color:var(--gh-fg-muted); margin-top:2px;">Atomic disk-based cache in <code>storage/cache</code>. Zero setup required.</div>
+                                </div>
+                            </label>
+
+                            <label style="border:1px solid var(--gh-border-default); padding:12px; border-radius:6px; display:flex; align-items:flex-start; gap:10px; cursor:pointer; background:var(--gh-bg-subtle);">
+                                <input type="radio" name="cache_driver" value="redis" {{ settings.cache_driver == 'redis' ? 'checked' : '' }} style="margin-top:3px;">
+                                <div>
+                                    <strong style="font-size:13px; color:#58a6ff;">Redis In-Memory (Recommended)</strong>
+                                    <div style="font-size:11px; color:var(--gh-fg-muted); margin-top:2px;">Ultra fast RAM key-value store with sub-millisecond latency.</div>
+                                </div>
+                            </label>
+
+                            <label style="border:1px solid var(--gh-border-default); padding:12px; border-radius:6px; display:flex; align-items:flex-start; gap:10px; cursor:pointer; background:var(--gh-bg-subtle);">
+                                <input type="radio" name="cache_driver" value="memcached" {{ settings.cache_driver == 'memcached' ? 'checked' : '' }} style="margin-top:3px;">
+                                <div>
+                                    <strong style="font-size:13px;">Memcached Cluster</strong>
+                                    <div style="font-size:11px; color:var(--gh-fg-muted); margin-top:2px;">Distributed high-throughput memory caching daemon.</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    {# Redis Settings Card #}
+                    <div class="gh-box" style="padding: 20px; margin-bottom: 20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                            <div>
+                                <h3 style="font-size:14px; margin:0 0 2px; font-weight:600; display:flex; align-items:center; gap:6px;">
+                                    <svg class="ti ti-database"><use href="#ti-database"/></svg>
+                                    <span>Redis Cluster Configuration</span>
+                                </h3>
+                                <div style="font-size:11.5px; color:var(--gh-fg-muted);">Default CyberPanel port: <code>6379</code></div>
+                            </div>
+                            <button type="button" class="gh-btn gh-btn-sm" onclick="testConnection('redis', this)">
+                                <svg class="ti ti-activity"><use href="#ti-activity"/></svg> Ping Redis
+                            </button>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px; margin-bottom:12px;">
+                            <div>
+                                <label style="font-weight:600; font-size:12.5px; display:block; margin-bottom:4px;" for="redis_host">Redis Host / IP</label>
+                                <input class="gh-form-control" type="text" id="redis_host" name="redis_host" value="{{ settings.redis_host }}" placeholder="127.0.0.1" style="width:100%;">
+                            </div>
+                            <div>
+                                <label style="font-weight:600; font-size:12.5px; display:block; margin-bottom:4px;" for="redis_port">Port</label>
+                                <input class="gh-form-control" type="number" id="redis_port" name="redis_port" value="{{ settings.redis_port }}" placeholder="6379" style="width:100%;">
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
+                            <div>
+                                <label style="font-weight:600; font-size:12.5px; display:block; margin-bottom:4px;" for="redis_password">Redis Password (AUTH)</label>
+                                <input class="gh-form-control" type="password" id="redis_password" name="redis_password" value="{{ settings.redis_password }}" placeholder="Leave empty if no auth" style="width:100%;">
+                            </div>
+                            <div>
+                                <label style="font-weight:600; font-size:12.5px; display:block; margin-bottom:4px;" for="redis_db">Database Index</label>
+                                <input class="gh-form-control" type="number" id="redis_db" name="redis_db" value="{{ settings.redis_db }}" min="0" max="15" placeholder="0" style="width:100%;">
+                            </div>
+                        </div>
+                        <div id="redis-test-result" style="margin-top:10px; font-size:12px;" hidden></div>
+                    </div>
+
+                    {# Memcached Settings Card #}
+                    <div class="gh-box" style="padding: 20px; margin-bottom: 20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                            <div>
+                                <h3 style="font-size:14px; margin:0 0 2px; font-weight:600; display:flex; align-items:center; gap:6px;">
+                                    <svg class="ti ti-server"><use href="#ti-server"/></svg>
+                                    <span>Memcached Daemon Configuration</span>
+                                </h3>
+                                <div style="font-size:11.5px; color:var(--gh-fg-muted);">Default CyberPanel port: <code>11211</code></div>
+                            </div>
+                            <button type="button" class="gh-btn gh-btn-sm" onclick="testConnection('memcached', this)">
+                                <svg class="ti ti-activity"><use href="#ti-activity"/></svg> Ping Memcached
+                            </button>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
+                            <div>
+                                <label style="font-weight:600; font-size:12.5px; display:block; margin-bottom:4px;" for="memcached_host">Memcached Host / IP</label>
+                                <input class="gh-form-control" type="text" id="memcached_host" name="memcached_host" value="{{ settings.memcached_host }}" placeholder="127.0.0.1" style="width:100%;">
+                            </div>
+                            <div>
+                                <label style="font-weight:600; font-size:12.5px; display:block; margin-bottom:4px;" for="memcached_port">Port</label>
+                                <input class="gh-form-control" type="number" id="memcached_port" name="memcached_port" value="{{ settings.memcached_port }}" placeholder="11211" style="width:100%;">
+                            </div>
+                        </div>
+                        <div id="memcached-test-result" style="margin-top:10px; font-size:12px;" hidden></div>
+                    </div>
+
+                    {# Speed & Enterprise Security Tuning #}
+                    <div class="gh-box" style="padding: 20px; margin-bottom: 20px;">
+                        <h2 style="font-size:15px; margin:0 0 4px; font-weight:600;">Acceleration &amp; Security Headers</h2>
+                        <p style="font-size:12px; color:var(--gh-fg-muted); margin:0 0 16px;">HTTP response optimization, compression, and request rate throttling.</p>
+
+                        <div style="margin-bottom: 12px;">
+                            <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; cursor:pointer;">
+                                <input type="checkbox" name="enable_gzip" value="1" style="margin-top:3px;"
+                                       {{ settings.enable_gzip ? 'checked' : '' }}>
+                                <div>
+                                    <strong>Enable HTTP Gzip / Brotli Compression Headers</strong>
+                                    <div style="font-size:11.5px; color:var(--gh-fg-muted); margin-top:2px;">Shrinks HTML, JSON, and CSS payloads by up to 70% for faster page loads.</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; cursor:pointer;">
+                                <input type="checkbox" name="enable_security_headers" value="1" style="margin-top:3px;"
+                                       {{ settings.enable_security_headers ? 'checked' : '' }}>
+                                <div>
+                                    <strong>Enforce Enterprise Security Headers (HSTS, CSP, X-Frame-Options)</strong>
+                                    <div style="font-size:11.5px; color:var(--gh-fg-muted); margin-top:2px;">Mitigates clickjacking, MIME sniffing, and cross-site scripting attacks.</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                            <div>
+                                <label style="font-weight:600; font-size:12.5px; display:block; margin-bottom:4px;" for="rate_limit_per_minute">API Rate Limit (Requests/Min)</label>
+                                <input class="gh-form-control" type="number" id="rate_limit_per_minute" name="rate_limit_per_minute"
+                                       value="{{ settings.rate_limit_per_minute }}" min="10" max="10000" style="width:100%;">
+                                <div class="gh-form-hint">Maximum API calls per IP to prevent brute-force attacks.</div>
+                            </div>
+                            <div>
+                                <label style="font-weight:600; font-size:12.5px; display:block; margin-bottom:4px;" for="session_driver">Session Storage Backend</label>
+                                <select class="gh-form-control" id="session_driver" name="session_driver" style="width:100%;">
+                                    <option value="file" {{ settings.session_driver == 'file' ? 'selected' : '' }}>File System (storage/sessions)</option>
+                                    <option value="redis" {{ settings.session_driver == 'redis' ? 'selected' : '' }}>Redis RAM Sessions</option>
+                                    <option value="memcached" {{ settings.session_driver == 'memcached' ? 'selected' : '' }}>Memcached Sessions</option>
+                                </select>
+                                <div class="gh-form-hint">Storage engine for active user sessions.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── TAB 5: Distribution & Links ─────────────────────────── #}
+                <div class="gh-tab-pane {{ current_tab == 'dist' ? 'is-active' : '' }}"
+                     data-tab-pane="dist"
+                     data-tab-pane-group="admin-settings"
+                     style="{{ current_tab == 'dist' ? '' : 'display:none;' }}">
+                    
+                    <div class="gh-box" style="padding: 20px; margin-bottom: 20px;">
+                        <h2 style="font-size:15px; margin:0 0 4px; font-weight:600;">Short Links &amp; Download Gateway</h2>
+                        <p style="font-size:12px; color:var(--gh-fg-muted); margin:0 0 16px;">Settings for shareable download gateway URLs (<code>/d/xxxxxx</code>).</p>
+
+                        <div style="margin-bottom: 8px;">
+                            <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;" for="short_links_domain">Custom Short Links Base URL</label>
+                            <input class="gh-form-control" type="url" id="short_links_domain" name="short_links_domain"
+                                   value="{{ settings.short_links_domain }}" placeholder="https://git.ysnapp.com" style="width:100%; max-width:440px;">
+                            <div class="gh-form-hint">Used as the base URL when copying and generating short download links.</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Submit Actions #}
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px; padding-top:14px; border-top:1px solid var(--gh-border-default);">
+                    <a href="{{ admin_prefix|default('/admin') }}" class="gh-btn">Cancel</a>
+                    <button type="submit" class="gh-btn gh-btn-primary" style="font-weight:600;">
+                        <svg class="ti ti-check"><use href="#ti-check"/></svg> Save Settings
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// Update hidden redirect tab on tab switch
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-tab-target]');
+    if (btn && btn.closest('[data-tab-group="admin-settings"]')) {
+        var tab = btn.getAttribute('data-tab-target');
+        var input = document.getElementById('redirect-tab-input');
+        if (input) input.value = tab;
+    }
+});
+
+// Live AJAX Ping for Redis / Memcached
+async function testConnection(driver, btn) {
+    var origText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="ti ti-loader" style="font-size:13px; animation:spin 1s linear infinite;"><use href="#ti-refresh"/></svg> Testing…';
+
+    var resBox = document.getElementById(driver + '-test-result');
+    if (resBox) resBox.hidden = true;
+
+    var fd = new FormData();
+    fd.append('driver', driver);
+    fd.append('host', document.getElementById(driver === 'redis' ? 'redis_host' : 'memcached_host').value);
+    fd.append('port', document.getElementById(driver === 'redis' ? 'redis_port' : 'memcached_port').value);
+    if (driver === 'redis') {
+        fd.append('pass', document.getElementById('redis_password').value);
+    }
+
+    try {
+        var r = await fetch('{{ admin_prefix|default("/admin") }}/settings/test-cache', {
+            method: 'POST',
+            body: fd
+        });
+        var data = await r.json();
+
+        if (resBox) {
+            resBox.hidden = false;
+            if (data.ok) {
+                resBox.innerHTML = '<span style="color:#3fb950; font-weight:600;">✔ Successfully connected to ' + driver.toUpperCase() + ' (v' + data.version + ') in ' + data.latency_ms + 'ms</span>';
+            } else {
+                resBox.innerHTML = '<span style="color:#f85149; font-weight:600;">✖ ' + (data.error || 'Connection failed') + '</span>';
+            }
+        }
+    } catch (err) {
+        if (resBox) {
+            resBox.hidden = false;
+            resBox.innerHTML = '<span style="color:#f85149; font-weight:600;">✖ Request failed: ' + err.message + '</span>';
+        }
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = origText;
+    }
+}
+</script>
+{% endblock %}

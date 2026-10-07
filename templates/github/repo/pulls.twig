@@ -1,0 +1,91 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.pulls.pull_requests') }} · {{ repo.name }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'pulls' } %}
+
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin: 16px 0;">
+        {% if is_logged_in %}
+        <a href="/{{ owner }}/{{ repo.slug }}/pulls/new" class="gh-btn gh-btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
+            <span>{{ t('ui.pulls.new_pull') }}</span>
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="gh-box">
+        <div class="gh-box-header">
+            <div style="display: flex; align-items: center; gap: 16px; font-size: 13px;">
+                <span style="font-weight: 600; color: var(--gh-fg-default); display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-success-fg);"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
+                    {{ t('ui.pulls.open_count', {'count': open_pulls|length}) }}
+                </span>
+                <span style="color: var(--gh-fg-muted); display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                    {{ t('ui.pulls.closed_count', {'count': closed_pulls|length}) }}
+                </span>
+            </div>
+        </div>
+
+        {% if open_pulls is empty %}
+            <div style="text-align: center; padding: 48px 20px; background: var(--gh-bg-canvas);">
+                <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 6px 0;">{{ t('ui.pulls.no_pulls') }}</h3>
+                <p style="color: var(--gh-fg-muted); font-size: 13px; max-width: 480px; margin: 0 auto;">
+                    {{ t('ui.pulls.no_pulls_desc') }}
+                </p>
+            </div>
+        {% else %}
+            <table class="gh-table">
+                <tbody>
+                    {% for pr in open_pulls %}
+                        <tr>
+                            <td style="width: 24px; text-align: center;">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-success-fg);"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
+                            </td>
+                            <td>
+                                <a href="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}" style="font-weight: 600; color: var(--gh-fg-default); font-size: 14px; text-decoration: none;">
+                                    {{ pr.title }}
+                                </a>
+                                <div style="font-size: 12px; color: var(--gh-fg-muted); margin-top: 2px;">
+                                    #{{ pr.number }} {{ t('ui.pulls.opened_by_at', {'time': pr.created_at|time_ago, 'author': pr.author_name}) }}
+                                    · <span class="gh-mono" dir="ltr">{{ pr.source_branch }} &rarr; {{ pr.target_branch }}</span>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        {% if closed_pulls is not empty %}
+            <div style="border-top: 1px solid var(--gh-border-default); padding: 12px 16px; font-size: 13px; color: var(--gh-fg-muted); font-weight: 600;">{{ t('ui.pulls.closed_merged') }}</div>
+            <table class="gh-table">
+                <tbody>
+                    {% for pr in closed_pulls %}
+                        <tr style="opacity: .75;">
+                            <td style="width: 24px; text-align: center;">
+                                {% if pr.status == 'merged' %}
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-accent-fg);"><path d="M5.45 5.154A4.25 4.25 0 0 0 9.25 7.5h1.378a2.251 2.251 0 1 1 0 1.5H9.25A5.734 5.734 0 0 1 5 7.123v3.505a2.25 2.25 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.95-.218ZM4.25 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm8.5-4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM5 3.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Z"/></svg>
+                                {% else %}
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color: var(--gh-fg-muted);"><path d="M3.25 1A2.25 2.25 0 0 1 4 5.372v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.251 2.251 0 0 1 3.25 1Zm9.5 5.5a.75.75 0 0 1 .75.75v3.378a2.251 2.251 0 1 1-1.5 0V7.25a.75.75 0 0 1 .75-.75Zm-2.03-5.273a.75.75 0 0 1 1.06 0l.97.97.97-.97a.748.748 0 0 1 1.265.332.75.75 0 0 1-.205.729l-.97.97.97.97a.751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018l-.97-.97-.97.97a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734l.97-.97-.97-.97a.75.75 0 0 1 0-1.06Z"/></svg>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/{{ owner }}/{{ repo.slug }}/pull/{{ pr.number }}" style="font-weight: 600; text-decoration: none;">{{ pr.title }}</a>
+                                <div style="font-size: 12px; margin-top: 2px;">
+                                    #{{ pr.number }} {{ t('ui.pulls.status_by', {'status': pr.status == 'merged' ? t('ui.pulls.merged') : t('ui.pulls.closed'), 'author': pr.author_name}) }}
+                                    · <span class="gh-mono" dir="ltr">{{ pr.source_branch }} &rarr; {{ pr.target_branch }}</span>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

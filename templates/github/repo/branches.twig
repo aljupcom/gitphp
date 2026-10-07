@@ -1,0 +1,110 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.repo.branches') }} — {{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page gh-refs-page">
+        {% include "partials/repo-header.twig" %}
+
+    {% include "partials/repo-nav.twig" with { active_tab: 'branches' } %}
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <h2 style="font-size: 1.25rem; margin: 0;">{{ t('ui.repo.branches') }}</h2>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <a href="/{{ owner }}/{{ repo.slug }}/compare" class="gh-btn gh-btn-sm">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M11.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm-2.25.75a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"/></svg>
+                Compare & Merge
+            </a>
+            {% if can_write %}
+                <a href="/{{ owner }}/{{ repo.slug }}/branches/new" class="gh-btn gh-btn-primary gh-btn-sm">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+                    New branch
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if branches|length > 0 %}
+        <div class="gh-table-wrap">
+            <table class="gh-table gh-ref-table">
+                <thead>
+                    <tr>
+                        <th>Branch</th>
+                        <th>Last commit</th>
+                        <th>Author</th>
+                        <th>Updated</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in branches %}
+                        <tr>
+                            <td class="gh-ref-name">
+                                <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ b.name }}" class="gh-ref-branch-link">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"/></svg>
+                                    <span class="gh-ref-branch-name">{{ b.name }}</span>
+                                </a>
+                                {% if b.is_default %}
+                                    <span class="gh-badge gh-badge-default">default</span>
+                                {% endif %}
+                            </td>
+                            <td class="gh-ref-commit">
+                                {% if b.last_commit %}
+                                    <a class="gh-hash-link" href="/{{ owner }}/{{ repo.slug }}/commit/{{ b.last_commit.hash }}">{{ b.last_commit.short_hash }}</a>
+                                    <a class="gh-ref-subject" href="/{{ owner }}/{{ repo.slug }}/commit/{{ b.last_commit.hash }}" title="{{ b.last_commit.message }}">{{ b.last_commit.message }}</a>
+                                {% else %}
+                                    <span class="gh-ref-muted">&mdash;</span>
+                                {% endif %}
+                            </td>
+                            <td class="gh-ref-author">
+                                {{ b.last_commit ? b.last_commit.author_name : '&mdash;' }}
+                            </td>
+                            <td class="gh-ref-updated">
+                                {% if b.last_commit and b.last_commit.date %}
+                                    <time datetime="{{ b.last_commit.date }}" title="{{ b.last_commit.date }}">{{ b.last_commit.date|time_ago }}</time>
+                                {% else %}
+                                    <span class="gh-ref-muted">&mdash;</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                                    {% if not b.is_default %}
+                                        <a href="/{{ owner }}/{{ repo.slug }}/compare/{{ repo.default_branch }}...{{ b.name }}" class="gh-btn gh-btn-sm" title="Compare with default branch">
+                                            Compare
+                                        </a>
+                                    {% endif %}
+
+                                    {% if can_write and not b.is_default %}
+                                        <form method="POST" action="/{{ owner }}/{{ repo.slug }}/branches/default" style="display: inline;" onsubmit="return confirm('Set {{ b.name }} as the default branch?')">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <input type="hidden" name="default_branch" value="{{ b.name }}">
+                                            <button type="submit" class="gh-btn gh-btn-sm" title="Set as default branch">
+                                                Make default
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="/{{ owner }}/{{ repo.slug }}/branches/delete" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete branch {{ b.name }}?')">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <input type="hidden" name="branch_name" value="{{ b.name }}">
+                                            <button type="submit" class="gh-btn gh-btn-sm" style="color: var(--gh-danger);" title="Delete branch">
+                                                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.576l-.66-6.6a.75.75 0 1 1 1.492-.149ZM6.5 1.5h3a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="gh-empty">
+            <svg width="48" height="48" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"/></svg>
+            <h2>No branches</h2>
+            <p>{{ t('ui.repo.no_branches')|default('This repository has no branches yet.') }}</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

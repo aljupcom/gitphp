@@ -1,0 +1,88 @@
+{% extends "layout.twig" %}
+
+{% block title %}{{ t('ui.search.title')|default('Search') }}: {{ query }} · {{ repo.name }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page">
+    {% include "partials/repo-header.twig" %}
+    {% include "partials/repo-nav.twig" with { active_tab: 'code' } %}
+
+    <div style="margin-top: 16px; max-width: 900px;">
+        <form method="GET" action="/{{ owner }}/{{ repo.slug }}/search" style="display: flex; gap: 8px;">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search this repository…" class="gh-form-control" autofocus style="flex: 1;">
+            <button type="submit" class="gh-btn gh-btn-primary">{{ t('ui.search.button')|default('Search') }}</button>
+        </form>
+
+        {% if query %}
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin-top: 10px;">
+                {{ code_results|length }} code · {{ issue_results|length }} issues · {{ pull_results|length }} pulls · {{ wiki_results|length }} wiki
+                {% if truncated %} — results truncated for a very large repository{% endif %}
+            </p>
+
+            {% if code_results %}
+                <div class="gh-box" style="margin-top: 12px;">
+                    <div class="gh-box-header"><h2 class="gh-box-title" style="font-size: 14px;">{{ t('ui.search.code')|default('Code') }}</h2></div>
+                    <div class="gh-box-body" style="font-family: var(--gh-font-mono); font-size: 12.5px;">
+                        {% for c in code_results %}
+                            <div style="padding: 7px 10px; border-bottom: 1px solid var(--gh-border-muted);">
+                                <a href="/{{ owner }}/{{ repo.slug }}/blob/HEAD/{{ c.file }}#L{{ c.line_num }}" style="color: var(--gh-accent-fg); text-decoration: none; font-weight: 600;">
+                                    {{ c.file }}:{{ c.line_num }}
+                                </a>
+                                <div style="color: var(--gh-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.content }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if issue_results %}
+                <div class="gh-box" style="margin-top: 12px;">
+                    <div class="gh-box-header"><h2 class="gh-box-title" style="font-size: 14px;">{{ t('ui.repo.issues') }}</h2></div>
+                    <div class="gh-box-body">
+                        {% for i in issue_results %}
+                            <a href="/{{ owner }}/{{ repo.slug }}/issues/{{ i.id }}" style="display: flex; justify-content: space-between; padding: 7px 10px; border-bottom: 1px solid var(--gh-border-muted); text-decoration: none;">
+                                <span style="color: var(--gh-fg-default);">#{{ i.id }} {{ i.title }}</span>
+                                <span style="color: var(--gh-fg-muted); font-size: 12px;">{{ i.status }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if pull_results %}
+                <div class="gh-box" style="margin-top: 12px;">
+                    <div class="gh-box-header"><h2 class="gh-box-title" style="font-size: 14px;">{{ t('ui.repo.pulls')|default('Pull requests') }}</h2></div>
+                    <div class="gh-box-body">
+                        {% for p in pull_results %}
+                            <a href="/{{ owner }}/{{ repo.slug }}/pull/{{ p.number }}" style="display: flex; justify-content: space-between; padding: 7px 10px; border-bottom: 1px solid var(--gh-border-muted); text-decoration: none;">
+                                <span style="color: var(--gh-fg-default);">#{{ p.number }} {{ p.title }}</span>
+                                <span style="color: var(--gh-fg-muted); font-size: 12px;">{{ p.status }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if wiki_results %}
+                <div class="gh-box" style="margin-top: 12px;">
+                    <div class="gh-box-header"><h2 class="gh-box-title" style="font-size: 14px;">{{ t('ui.wiki.wiki') }}</h2></div>
+                    <div class="gh-box-body">
+                        {% for w in wiki_results %}
+                            <a href="/{{ owner }}/{{ repo.slug }}/wiki/{{ w.slug }}" style="display: block; padding: 7px 10px; border-bottom: 1px solid var(--gh-border-muted); color: var(--gh-accent-fg); text-decoration: none;">
+                                {{ w.title }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if not code_results and not issue_results and not pull_results and not wiki_results %}
+                <div class="gh-empty" style="margin-top: 16px;">
+                    <h2>{{ t('ui.search.no_results')|default('No results found') }}</h2>
+                    <p>{{ t('ui.search.no_results_sub')|default('Try a different keyword or check the spelling.') }}</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{# GitHub-style "delete file" confirmation dialog.
+   Expects in context: owner, repo, csrf_token. Open via openDeleteModal(branch, path, name). #}
+<dialog id="delete-file-modal" class="gh-modal" aria-labelledby="df-title">
+    <form method="post" action="/{{ owner }}/{{ repo.slug }}/file/delete" class="gh-modal-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="branch" value="">
+        <input type="hidden" name="file_path" value="">
+
+        <div class="gh-modal-head">
+            <span class="gh-modal-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>
+            </span>
+            <h3 id="df-title">Delete <span class="gh-mono" id="df-name"></span>?</h3>
+        </div>
+
+        <div class="gh-modal-body">
+            <p style="margin:0 0 10px">
+                You are about to remove this file from
+                <span class="gh-mono gh-ref-label" id="df-branch"></span>
+                in a single new commit.
+            </p>
+            <div class="gh-modal-warn">
+                <strong>Nothing is destroyed permanently.</strong>
+                The file remains fully recoverable from this repository's history —
+                you can restore it anytime from any commit before this one.
+            </div>
+            <label for="df-msg" style="display:block;margin:14px 0 6px;font-weight:600;font-size:.85rem">Commit message</label>
+            <input type="text" id="df-msg" name="commit_message" class="gh-input" autocomplete="off" required>
+        </div>
+
+        <div class="gh-modal-foot">
+            <button type="button" class="gh-btn" onclick="this.closest('dialog').close()">Cancel</button>
+            <button type="submit" class="gh-btn gh-btn-danger">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>
+                Delete file
+            </button>
+        </div>
+    </form>
+</dialog>
+
+<style>
+    dialog.gh-modal{border:1px solid var(--gh-border-default,#30363d);border-radius:12px;background:var(--gh-bg-overlay,#161b22);color:var(--gh-fg-default,#e6edf3);padding:0;width:min(460px,92vw);box-shadow:var(--gh-shadow-lg,0 8px 24px rgba(1,4,9,.6))}
+    dialog.gh-modal::backdrop{background:rgba(1,4,9,.6);backdrop-filter:blur(2px)}
+    .gh-modal-form{padding:20px}
+    .gh-modal-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .gh-modal-head h3{font-size:1rem;margin:0}
+    .gh-modal-icon{flex:none;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.45);color:var(--gh-danger-fg,#f85149)}
+    .gh-modal-warn{border:1px solid rgba(210,153,34,.5);background:rgba(210,153,34,.1);color:var(--gh-attention-fg,#d29922);border-radius:6px;padding:10px 12px;font-size:.84rem;line-height:1.55}
+    .gh-modal-warn strong{color:inherit}
+    .gh-modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+    .gh-ref-label{background:var(--gh-bg-inset,#010409);border:1px solid var(--gh-border-default,#30363d);border-radius:999px;padding:.1em .6em;font-size:.82rem}
+    .gh-input{width:100%;background:var(--gh-bg-canvas,#0d1117);color:var(--gh-fg-default,#e6edf3);border:1px solid var(--gh-border-default,#30363d);border-radius:6px;padding:.5rem .7rem;font-size:.9rem}
+    .gh-input:focus{outline:none;border-color:var(--gh-accent-fg,#58a6ff);box-shadow:0 0 0 3px rgba(88,166,255,.18)}
+</style>
+
+<script>
+function openDeleteModal(branch, path, name) {
+    var d = document.getElementById('delete-file-modal');
+    if (!d) return;
+    d.querySelector('#df-name').textContent = name;
+    d.querySelector('#df-branch').textContent = branch;
+    d.querySelector('input[name="branch"]').value = branch;
+    d.querySelector('input[name="file_path"]').value = path;
+    d.querySelector('#df-msg').value = 'Delete ' + path;
+    if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open', '');
+}
+</script>

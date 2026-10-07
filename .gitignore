@@ -1,0 +1,59 @@
+# GitPHP Production Gitignore
+# Prevents accidental commits of private credentials, lock files, and sensitive runtime data.
+
+# Composer dependencies
+/vendor/
+
+# Local Environment & Secrets
+.env
+.env.backup
+.env.production
+.env.local
+
+# Storage runtime files (keep directory skeleton via .gitkeep)
+/storage/cache/*
+!/storage/cache/.gitkeep
+/storage/data/*
+!/storage/data/.gitkeep
+/storage/downloads/*
+!/storage/downloads/.gitkeep
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/sessions/*
+!/storage/sessions/.gitkeep
+/storage/tmp/*
+!/storage/tmp/.gitkeep
+
+# Web installer lock file — MUST NEVER BE COMMITTED TO GITHUB
+/storage/installed.lock
+
+# Hosted git repositories & private code
+/repos/*
+!/repos/.gitkeep
+
+# User uploads & avatars
+/public_html/uploads/*
+!/public_html/uploads/.gitkeep
+/public_html/uploads/avatars/*
+!/public_html/uploads/avatars/.gitkeep
+
+# Backups & Server Logs
+/backup/
+/logs/
+*.log
+
+# Node dependencies & caches
+/node_modules/
+.npm
+
+# IDE, OS, & AI agent metadata
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+.agents/
+AGENTS.md
+GEMINI.md
+.imunify*

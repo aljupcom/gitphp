@@ -1,0 +1,6 @@
+{# GitPHP Dual-Tone Brand Name #}
+{% if app_name|default('GitPHP') == 'GitPHP' %}
+<span class="gitphp-brand"><span class="gitphp-part-git">Git</span><span class="gitphp-part-php">PHP</span></span>
+{% else %}
+<span>{{ app_name }}</span>
+{% endif %}

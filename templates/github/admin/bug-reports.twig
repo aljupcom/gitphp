@@ -1,0 +1,106 @@
+{% extends "layout.twig" %}
+
+{% block title %}Bug Reports &amp; Issues — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" style="max-width: 1280px; margin: 0 auto; padding: 24px 16px;">
+    {# Header #}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px; flex-wrap:wrap; gap:12px; border-bottom: 1px solid var(--gh-border-default); padding-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 20px; margin: 0 0 4px; font-weight:600;">Platform Bug Reports &amp; Feedback</h1>
+            <p style="color: var(--gh-fg-muted); font-size: 13px; margin: 0;">
+                Review, triage, and manage issue reports submitted by users across all hosted repositories.
+            </p>
+        </div>
+    </div>
+
+    <div class="gh-admin-layout">
+        {% include "partials/admin-nav.twig" with { active: 'issues', counts: nav_counts|default({}) } %}
+
+        <div style="min-width:0; flex:1;">
+            
+            {# Status filter tabs #}
+            <div style="display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--gh-border-default); padding-bottom:12px;">
+                {% for key in ['open', 'resolved', 'closed'] %}
+                    <a class="gh-btn gh-btn-sm {{ status == key ? 'gh-btn-primary' : '' }}" href="{{ admin_prefix|default('/admin') }}/bug-reports?status={{ key }}" style="display:inline-flex; align-items:center; gap:6px;">
+                        {% if key == 'open' %}
+                            <svg class="ti ti-circle-dot"><use href="#ti-circle-dot"/></svg>
+                        {% elseif key == 'resolved' %}
+                            <svg class="ti ti-circle-check"><use href="#ti-circle-check"/></svg>
+                        {% else %}
+                            <svg class="ti ti-circle-x"><use href="#ti-circle-x"/></svg>
+                        {% endif %}
+                        <span>{{ key == 'open' ? 'Open' : (key == 'resolved' ? 'Resolved' : 'Closed') }}</span>
+                        <span class="gh-badge" style="font-size:11px; {{ status == key ? 'background:rgba(255,255,255,0.2); color:#fff;' : '' }}">{{ counts[key] }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+
+            {% if reports|length > 0 %}
+                <div class="gh-box">
+                    <div style="overflow-x:auto;">
+                        <table class="gh-table" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px;">#</th>
+                                    <th>Title &amp; Reporter</th>
+                                    <th>Repository</th>
+                                    <th>Submitted</th>
+                                    <th style="text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in reports %}
+                                    <tr>
+                                        <td style="font-family:var(--gh-font-mono, monospace); font-size:12px; color:var(--gh-fg-muted);">
+                                            #{{ report.id }}
+                                        </td>
+                                        <td>
+                                            <a style="font-weight:600; text-decoration:none; color:var(--gh-accent-fg, #58a6ff);" href="/{{ owner }}/{{ report.repo_slug }}/issues/{{ report.id }}">
+                                                {{ report.title }}
+                                            </a>
+                                            <div style="font-size:11px; color:var(--gh-fg-muted); margin-top:2px;">
+                                                {% if report.reporter %}by <strong>{{ report.reporter }}</strong>{% else %}anonymous reporter{% endif %}
+                                                &bull; {{ report.created_at|time_ago }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="gh-badge" style="font-family:monospace;">{{ report.repo_slug }}</span>
+                                        </td>
+                                        <td style="font-size:12px; color:var(--gh-fg-muted);">
+                                            {{ report.created_at|date('Y-m-d') }}
+                                        </td>
+                                        <td style="text-align:right; white-space:nowrap;">
+                                            <a class="gh-btn gh-btn-sm" href="/{{ owner }}/{{ report.repo_slug }}/issues/{{ report.id }}">
+                                                View Issue
+                                            </a>
+                                            {% for next in ['open', 'resolved', 'closed'] %}
+                                                {% if next != status %}
+                                                    <form method="POST" action="{{ admin_prefix|default('/admin') }}/bug-reports/{{ report.id }}/status" class="gh-inline-form" style="display:inline;">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                        <input type="hidden" name="status" value="{{ next }}">
+                                                        <button type="submit" class="gh-btn gh-btn-sm" style="font-size:11px;">
+                                                            {{ next == 'resolved' ? 'Resolve' : (next == 'closed' ? 'Close' : 'Reopen') }}
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="gh-box" style="padding:40px 20px; text-align:center; color:var(--gh-fg-muted);">
+                    <svg class="ti ti-circle-check" style="font-size:42px; margin-bottom:8px; opacity:0.6; color:#3fb950;"><use href="#ti-circle-check"/></svg>
+                    <h2 style="font-size:16px; margin:0 0 4px; color:var(--gh-fg-default);">No {{ status }} bug reports</h2>
+                    <p style="font-size:13px; margin:0;">All clear! Issues filed by repository visitors will appear in this queue.</p>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
