@@ -218,7 +218,7 @@ final class RepoController
         });
 
         // Sidebar: Languages Breakdown
-        $languages = $this->cache->remember("repo:{$dbRepo['slug']}:lang_breakdown_v2", 600, function () use ($dbRepo, $ref) {
+        $languages = $this->cache->remember("repo:{$dbRepo['slug']}:lang_breakdown_v3", 600, function () use ($dbRepo, $ref) {
             return $this->calculateLanguageBreakdown($dbRepo['slug'], $ref);
         });
 
@@ -419,7 +419,6 @@ final class RepoController
             'toml'       => ['name' => 'TOML', 'color' => '#9c4221'],
             'xml'        => ['name' => 'XML', 'color' => '#0060ac'],
             'xsd'        => ['name' => 'XML', 'color' => '#0060ac'],
-            'svg'        => ['name' => 'SVG', 'color' => '#ff9900'],
             'ini'        => ['name' => 'INI', 'color' => '#d1dbe0'],
             'conf'       => ['name' => 'Configuration', 'color' => '#6d8086'],
             'env'        => ['name' => 'Dotenv', 'color' => '#e5cd52'],
@@ -496,7 +495,7 @@ final class RepoController
                 $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
                 // Exclude prose / documentation / markdown files from language stats (GitHub Linguist standard)
-                if (in_array($ext, ['md', 'markdown', 'rst', 'adoc', 'asciidoc', 'txt', 'textile', 'tex', 'sty', 'pdf'], true)
+                if (in_array($ext, ['svg', 'md', 'markdown', 'rst', 'adoc', 'asciidoc', 'txt', 'textile', 'tex', 'sty', 'pdf'], true)
                     || in_array($filenameLower, ['readme', 'readme.md', 'readme.txt', 'license', 'license.md', 'license.txt', 'authors', 'changelog', 'copying', 'notice'], true)) {
                     continue;
                 }
@@ -599,7 +598,7 @@ final class RepoController
     /** Cheap per-language file counts + byte proportions (no blob reads). */
     private function languagesOverview(string $slug, string $ref): array
     {
-        return $this->cache->remember("repo:{$slug}:langs_overview_v2:{$ref}", 600, function () use ($slug, $ref): array {
+        return $this->cache->remember("repo:{$slug}:langs_overview_v3:{$ref}", 600, function () use ($slug, $ref): array {
             $repoPath = $this->gitService->getRepoPath($slug);
 
             $proc = new \Symfony\Component\Process\Process(
@@ -701,7 +700,7 @@ final class RepoController
         if (isset($special[$lower])) return $special[$lower];
 
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-        if ($ext === '' || in_array($ext, ['md', 'markdown', 'rst', 'adoc', 'asciidoc', 'txt', 'textile', 'tex', 'sty', 'pdf'], true)) return '';
+        if ($ext === '' || in_array($ext, ['svg', 'md', 'markdown', 'rst', 'adoc', 'asciidoc', 'txt', 'textile', 'tex', 'sty', 'pdf'], true)) return '';
         if (isset(self::LANG_EXT[$ext]) && !in_array(self::LANG_EXT[$ext], ['Markdown', 'Text', 'AsciiDoc', 'reStructuredText', 'Textile'], true)) {
             return self::LANG_EXT[$ext];
         }
@@ -722,7 +721,7 @@ final class RepoController
         'js' => 'JavaScript', 'mjs' => 'JavaScript', 'cjs' => 'JavaScript', 'jsx' => 'JavaScript', 'vue' => 'Vue', 'svelte' => 'Svelte',
         'ts' => 'TypeScript', 'tsx' => 'TypeScript', 'php' => 'PHP', 'phtml' => 'PHP', 'ctp' => 'PHP',
         'md' => 'Markdown', 'markdown' => 'Markdown', 'rst' => 'reStructuredText', 'adoc' => 'AsciiDoc', 'textile' => 'Textile',
-        'twig' => 'Twig', 'tpl' => 'Smarty', 'xml' => 'XML', 'svg' => 'SVG', 'yml' => 'YAML', 'yaml' => 'YAML', 'toml' => 'TOML', 'json' => 'JSON', 'ini' => 'INI', 'conf' => 'Config', 'env' => 'Dotenv',
+        'twig' => 'Twig', 'tpl' => 'Smarty', 'xml' => 'XML', 'yml' => 'YAML', 'yaml' => 'YAML', 'toml' => 'TOML', 'json' => 'JSON', 'ini' => 'INI', 'conf' => 'Config', 'env' => 'Dotenv',
         // Languages
         'py' => 'Python', 'rb' => 'Ruby', 'go' => 'Go', 'rs' => 'Rust', 'java' => 'Java', 'kt' => 'Kotlin', 'kts' => 'Kotlin',
         'swift' => 'Swift', 'c' => 'C', 'h' => 'C', 'cpp' => 'C++', 'cc' => 'C++', 'cxx' => 'C++', 'hpp' => 'C++', 'cs' => 'C#',

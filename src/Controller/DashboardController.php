@@ -500,7 +500,6 @@ final class DashboardController
             'toml'       => ['name' => 'TOML', 'color' => '#9c4221'],
             'xml'        => ['name' => 'XML', 'color' => '#0060ac'],
             'xsd'        => ['name' => 'XML', 'color' => '#0060ac'],
-            'svg'        => ['name' => 'SVG', 'color' => '#ff9900'],
             'ini'        => ['name' => 'INI', 'color' => '#d1dbe0'],
             'conf'       => ['name' => 'Configuration', 'color' => '#6d8086'],
             'env'        => ['name' => 'Dotenv', 'color' => '#e5cd52'],
