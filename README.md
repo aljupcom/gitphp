@@ -180,3 +180,19 @@ Feel free to open an issue or submit a pull request to help improve GitPHP.
 ## 📄 License
 
 This project is open-sourced under the [MIT License](LICENSE).
+
+---
+
+## 📖 Live Documentation & Guides
+
+For complete production deployment tutorials, administration guides, API documentation, and step-by-step setup guides:
+- 🌐 **Official Documentation & Guides:** [https://git.ysnapp.com/docs](https://git.ysnapp.com/docs)
+- 🚀 **Live Instance:** [https://git.ysnapp.com](https://git.ysnapp.com)
+
+---
+
+## 👨‍💻 Author & Maintainer
+
+- **Developer:** Mohammed Gilani ([@aljupcom](https://github.com/aljupcom))
+- **GitHub:** [https://github.com/aljupcom](https://github.com/aljupcom)
+- **Project Repository:** [https://github.com/aljupcom/gitphp](https://github.com/aljupcom/gitphp)
