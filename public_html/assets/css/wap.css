@@ -6358,7 +6358,7 @@ html[dir="rtl"] .gh-repo-actions {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   GitHub-Authentic Dashboard Layout & Sidebar Feed Styles
+   GitHub-Authentic Dashboard Layout & Responsive System
    ───────────────────────────────────────────────────────────── */
 .gh-dashboard-layout {
     display: grid;
@@ -6383,17 +6383,244 @@ html[dir="rtl"] .gh-repo-actions {
     background: var(--gh-bg-subtle, #161b22) !important;
 }
 
+/* Hero banner */
+.gh-hero-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    border: 1px solid var(--gh-border-default);
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(31, 111, 235, 0.08) 0%, rgba(56, 139, 253, 0.03) 100%);
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.gh-hero-content {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.gh-hero-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--gh-fg-default);
+    margin: 0 0 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.gh-hero-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: rgba(56, 139, 253, 0.15);
+    color: #58a6ff;
+    border: 1px solid rgba(56, 139, 253, 0.3);
+}
+
+.gh-hero-desc {
+    font-size: 12.5px;
+    color: var(--gh-fg-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.gh-hero-metrics {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.gh-hero-metric-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    background: var(--gh-bg-canvas);
+    border: 1px solid var(--gh-border-default);
+    border-radius: 6px;
+    font-size: 12px;
+}
+.gh-hero-metric-item span {
+    color: var(--gh-fg-muted);
+}
+.gh-hero-metric-item strong {
+    color: var(--gh-fg-default);
+    font-weight: 600;
+}
+
+/* Commits stream */
+.gh-commits-stream {
+    width: 100%;
+}
+
 .gh-commit-stream-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--gh-border-muted);
+    gap: 12px;
     transition: background 0.15s ease;
+}
+
+.gh-commit-stream-item:last-child {
+    border-bottom: none;
 }
 
 .gh-commit-stream-item:hover {
     background: rgba(255, 255, 255, 0.02) !important;
 }
 
+.gh-commit-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.gh-commit-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gh-bg-subtle);
+    border: 1px solid var(--gh-border-default);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gh-fg-default);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.gh-commit-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.gh-commit-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gh-fg-default);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.gh-commit-subject-link {
+    color: var(--gh-fg-default);
+    text-decoration: none;
+}
+
 .gh-commit-subject-link:hover {
     color: var(--gh-accent-fg, #58a6ff) !important;
     text-decoration: underline !important;
+}
+
+.gh-commit-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    color: var(--gh-fg-muted);
+    margin-top: 3px;
+    flex-wrap: wrap;
+}
+
+.gh-commit-repo-pill {
+    color: var(--gh-accent-fg);
+    text-decoration: none;
+    font-weight: 600;
+    background: rgba(56, 139, 253, 0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.gh-commit-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.gh-commit-hash-btn {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 12px;
+    padding: 2px 8px;
+    color: var(--gh-accent-fg);
+    background: var(--gh-bg-subtle);
+}
+
+/* Activity stream */
+.gh-activity-stream-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--gh-border-muted);
+    gap: 12px;
+}
+.gh-activity-stream-item:last-child {
+    border-bottom: none;
+}
+.gh-activity-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+.gh-activity-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(56, 139, 253, 0.15);
+    color: #58a6ff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.gh-activity-info {
+    min-width: 0;
+    flex: 1;
+}
+.gh-activity-title {
+    font-size: 13px;
+    color: var(--gh-fg-default);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.gh-activity-repo-link {
+    font-weight: 600;
+    color: var(--gh-accent-fg);
+    text-decoration: none;
+}
+.gh-activity-details {
+    font-size: 12px;
+    color: var(--gh-fg-muted);
+    margin-top: 4px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+.gh-activity-time {
+    font-size: 11px;
+    color: var(--gh-fg-muted);
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .gh-feed-tab-pane {
@@ -6405,21 +6632,78 @@ html[dir="rtl"] .gh-repo-actions {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Responsive refinements for mobile & tablet */
 @media (max-width: 992px) {
     .gh-dashboard-layout {
         grid-template-columns: 1fr !important;
-        gap: 20px !important;
+        gap: 16px !important;
     }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+    .gh-home-container {
+        padding: 10px 10px 24px !important;
+    }
     .gh-hero-banner {
         flex-direction: column !important;
-        align-items: flex-start !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        padding: 12px 14px !important;
+        gap: 10px !important;
+        margin-bottom: 14px !important;
+    }
+    .gh-hero-content {
+        flex: 0 0 auto !important;
+        width: 100% !important;
+    }
+    .gh-hero-metrics {
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        gap: 6px !important;
     }
     .gh-commit-stream-item {
         flex-direction: column !important;
         align-items: flex-start !important;
+        justify-content: flex-start !important;
+        padding: 10px 12px !important;
         gap: 8px !important;
     }
+    .gh-commit-main {
+        flex: 0 0 auto !important;
+        width: 100% !important;
+    }
+    .gh-commit-actions {
+        width: 100% !important;
+        justify-content: flex-end !important;
+        gap: 6px !important;
+        padding-top: 2px !important;
+    }
+    .gh-activity-stream-item {
+        padding: 10px 12px !important;
+        gap: 8px !important;
+    }
+    #home-repo-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
 }
+
+@media (max-width: 480px) {
+    .gh-home-container {
+        padding: 8px 6px 20px !important;
+    }
+    .gh-hero-title {
+        font-size: 15px !important;
+    }
+    .gh-hero-metric-item {
+        padding: 3px 7px !important;
+        font-size: 11px !important;
+    }
+    .gh-commit-stream-item {
+        padding: 9px 10px !important;
+    }
+    .gh-commit-title {
+        font-size: 12.5px !important;
+    }
+}
+
