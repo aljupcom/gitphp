@@ -341,7 +341,11 @@ $router->addRoute('POST', '/{user}/{repo}/releases/assets/init',           'Rele
     $router->addRoute('GET',  '/{user}/{repo}/releases/rss',                 'ReleaseController@feed');
 
     // Web File Editor & Creation
-    $router->addRoute('GET',  '/{user}/{repo}/new[/{ref}]',          'RepoController@createFile');
+        $router->addRoute('GET',  '/{user}/{repo}/new[/{ref}]',                  'RepoController@createFile');
+    $router->addRoute('GET',  '/{user}/{repo}/upload[/{ref}]',               'RepoController@uploadFilesForm');
+    $router->addRoute('GET',  '/{user}/{repo}/upload/{ref}/{path:.*}',        'RepoController@uploadFilesForm');
+    $router->addRoute('POST', '/{user}/{repo}/upload[/{ref}]',               'RepoController@processUploadFiles');
+    $router->addRoute('POST', '/{user}/{repo}/upload/{ref}/{path:.*}',        'RepoController@processUploadFiles');
     $router->addRoute('GET',  '/{user}/{repo}/edit/{ref}/{path:.*}', 'RepoController@editFile');
     $router->addRoute('POST', '/{user}/{repo}/file/save',            'RepoController@saveFile');
 $router->addRoute('POST', '/{user}/{repo}/file/delete',          'RepoController@deleteFile');

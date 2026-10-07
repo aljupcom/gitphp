@@ -1,0 +1,279 @@
+{% extends "layout.twig" %}
+
+{% block title %}Upload files · {{ repo.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="gh-page" dir="ltr">
+    {% include "partials/repo-header.twig" %}
+    {% include "partials/repo-nav.twig" with { active_tab: 'code' } %}
+
+    {# ── Breadcrumb ── #}
+    <nav class="gh-breadcrumb" aria-label="Breadcrumb" style="margin-top:16px; margin-bottom:16px;">
+        <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}">{{ repo.slug }}</a>
+        {% for seg in segments %}
+            <span class="sep">/</span>
+            {% set seg_path = segments[0:loop.index]|join('/') %}
+            <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}/{{ seg_path }}">{{ seg }}</a>
+        {% endfor %}
+        <span class="sep">/</span>
+        <strong>Upload files</strong>
+    </nav>
+
+    <form method="POST" action="/{{ owner }}/{{ repo.slug }}/upload/{{ current_ref }}{% if current_path %}/{{ current_path }}{% endif %}" enctype="multipart/form-data" id="upload-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="branch" value="{{ current_ref }}">
+        <input type="hidden" name="target_path" value="{{ current_path }}">
+
+        {# ── Dropzone Card ── #}
+        <div class="gh-box" style="margin-bottom: 24px; padding: 0; overflow: hidden; background: var(--gh-bg-default);">
+            <div id="drop-zone" style="border: 2px dashed var(--gh-border-default, #30363d); border-radius: 6px; margin: 16px; padding: 48px 24px; text-align: center; background: var(--gh-bg-subtle, #161b22); transition: all 0.2s ease; cursor: pointer;">
+                <input type="file" multiple id="file-input" name="files[]" style="display: none;">
+                
+                <div style="width: 48px; height: 48px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; background: rgba(88, 166, 255, 0.1); border-radius: 50%; color: var(--gh-accent-fg, #58a6ff);">
+                    <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M7.75 2a.75.75 0 0 1 .75.75V9.19l1.72-1.72a.749.749 0 1 1 1.06 1.06l-3 3a.749.749 0 0 1-1.06 0l-3-3a.749.749 0 1 1 1.06-1.06l1.72 1.72V2.75A.75.75 0 0 1 7.75 2Zm-5.5 10a.75.75 0 0 1 .75.75v.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25v-.5a.75.75 0 0 1 1.5 0v.5A1.75 1.75 0 0 1 12.75 15h-9.5A1.75 1.75 0 0 1 1.5 13.25v-.5a.75.75 0 0 1 .75-.75Z"/>
+                    </svg>
+                </div>
+                
+                <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: var(--gh-fg-default);">
+                    Drag files here to add them to your repository
+                </h3>
+                <p style="margin: 0; font-size: 13.5px; color: var(--gh-fg-muted);">
+                    or <button type="button" class="gh-btn gh-btn-sm" id="btn-browse" style="margin-left: 4px; font-weight: 500;">choose your files</button>
+                </p>
+                <div style="margin-top: 12px; font-size: 11.5px; color: var(--gh-fg-muted);">
+                    Destination folder: <code class="gh-mono" style="padding: 2px 6px; background: var(--gh-bg-inset); border-radius: 4px;">{{ current_path ? current_path ~ '/' : '/' }}</code>
+                </div>
+            </div>
+
+            {# ── Uploaded Files List ── #}
+            <div id="file-list-container" style="display: none; padding: 0 16px 16px 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--gh-border-subtle);">
+                    <div style="font-size: 13px; font-weight: 600; color: var(--gh-fg-default);">
+                        Selected files (<span id="file-count">0</span>)
+                    </div>
+                    <button type="button" class="gh-btn gh-btn-sm" id="btn-clear-all" style="font-size: 12px; color: #f85149;">
+                        Clear all
+                    </button>
+                </div>
+                <div id="file-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto;"></div>
+            </div>
+        </div>
+
+        {# ── Commit Section ── #}
+        <div class="gh-box" style="padding: 20px; background: var(--gh-bg-default); border-radius: 6px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: var(--gh-fg-default);">
+                Commit changes
+            </h3>
+
+            <div class="gh-form-group" style="margin-bottom: 12px;">
+                <label class="gh-label" for="commit_message" style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px;">
+                    Commit summary
+                </label>
+                <input class="gh-input" type="text" id="commit_message" name="commit_message"
+                       value="Add files via upload" placeholder="Add files via upload"
+                       style="width: 100%; max-width: 540px;">
+            </div>
+
+            <div class="gh-form-group" style="margin-bottom: 16px;">
+                <label class="gh-label" for="commit_description" style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 12.5px; color: var(--gh-fg-muted);">
+                    Optional extended description
+                </label>
+                <textarea class="gh-input" id="commit_description" name="commit_description" rows="3"
+                          placeholder="Add an optional extended description…"
+                          style="width: 100%; max-width: 540px; font-family: inherit; font-size: 13px;"></textarea>
+            </div>
+
+            <div style="margin-bottom: 20px; padding: 12px 14px; background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-subtle); border-radius: 6px; max-width: 540px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--gh-fg-default); cursor: pointer;">
+                    <input type="radio" name="commit_target" value="direct" checked style="accent-color: var(--gh-accent-fg, #58a6ff);">
+                    <span>Commit directly to the <code class="gh-mono" style="font-weight: 600; color: var(--gh-accent-fg);">{{ current_ref }}</code> branch.</span>
+                </label>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="submit" id="btn-submit-upload" class="gh-btn gh-btn-primary" disabled style="font-weight: 600; padding: 6px 16px;">
+                    Commit changes
+                </button>
+                <a class="gh-btn" href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}{% if current_path %}/{{ current_path }}{% endif %}" style="padding: 6px 14px;">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const btnBrowse = document.getElementById('btn-browse');
+    const fileListContainer = document.getElementById('file-list-container');
+    const fileList = document.getElementById('file-list');
+    const fileCount = document.getElementById('file-count');
+    const btnClearAll = document.getElementById('btn-clear-all');
+    const btnSubmit = document.getElementById('btn-submit-upload');
+
+    // DataTransfer to accumulate files
+    const dt = new DataTransfer();
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function renderFileList() {
+        // Clear children safely without innerHTML
+        fileList.replaceChildren();
+
+        const count = dt.files.length;
+        fileCount.textContent = count.toString();
+
+        if (count === 0) {
+            fileListContainer.style.display = 'none';
+            btnSubmit.disabled = true;
+            fileInput.files = dt.files;
+            return;
+        }
+
+        fileListContainer.style.display = 'block';
+        btnSubmit.disabled = false;
+        fileInput.files = dt.files;
+
+        for (let i = 0; i < dt.files.length; i++) {
+            const file = dt.files[i];
+
+            const row = document.createElement('div');
+            row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-subtle); border-radius: 6px; font-size: 13px;';
+
+            const left = document.createElement('div');
+            left.style.cssText = 'display: flex; align-items: center; gap: 8px; min-width: 0;';
+
+            // SVG file icon
+            const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            iconSvg.setAttribute('width', '16');
+            iconSvg.setAttribute('height', '16');
+            iconSvg.setAttribute('viewBox', '0 0 16 16');
+            iconSvg.setAttribute('fill', 'currentColor');
+            iconSvg.style.cssText = 'color: var(--gh-fg-muted); flex-shrink: 0;';
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z');
+            iconSvg.appendChild(path);
+            left.appendChild(iconSvg);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.style.cssText = 'font-weight: 500; color: var(--gh-fg-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+            nameSpan.textContent = file.name;
+            left.appendChild(nameSpan);
+
+            const sizeSpan = document.createElement('span');
+            sizeSpan.style.cssText = 'color: var(--gh-fg-muted); font-size: 11.5px; flex-shrink: 0;';
+            sizeSpan.textContent = '(' + formatSize(file.size) + ')';
+            left.appendChild(sizeSpan);
+
+            row.appendChild(left);
+
+            // Remove button
+            const btnRemove = document.createElement('button');
+            btnRemove.type = 'button';
+            btnRemove.className = 'gh-btn gh-btn-sm';
+            btnRemove.style.cssText = 'padding: 2px 6px; color: var(--gh-fg-muted); border: none; background: transparent; cursor: pointer;';
+            btnRemove.title = 'Remove file';
+            btnRemove.dataset.index = i.toString();
+
+            const closeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            closeSvg.setAttribute('width', '14');
+            closeSvg.setAttribute('height', '14');
+            closeSvg.setAttribute('viewBox', '0 0 16 16');
+            closeSvg.setAttribute('fill', 'currentColor');
+            const closePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            closePath.setAttribute('d', 'M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z');
+            closeSvg.appendChild(closePath);
+            btnRemove.appendChild(closeSvg);
+
+            btnRemove.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const idx = parseInt(this.dataset.index, 10);
+                const newDt = new DataTransfer();
+                for (let j = 0; j < dt.files.length; j++) {
+                    if (j !== idx) {
+                        newDt.items.add(dt.files[j]);
+                    }
+                }
+                dt.items.clear();
+                for (let j = 0; j < newDt.files.length; j++) {
+                    dt.items.add(newDt.files[j]);
+                }
+                renderFileList();
+            });
+
+            row.appendChild(btnRemove);
+            fileList.appendChild(row);
+        }
+    }
+
+    function addFiles(files) {
+        for (let i = 0; i < files.length; i++) {
+            // Check for duplicate names
+            let exists = false;
+            for (let j = 0; j < dt.files.length; j++) {
+                if (dt.files[j].name === files[i].name) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                dt.items.add(files[i]);
+            }
+        }
+        renderFileList();
+    }
+
+    btnBrowse.addEventListener('click', function (e) {
+        e.stopPropagation();
+        fileInput.click();
+    });
+
+    dropZone.addEventListener('click', function () {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function () {
+        if (this.files && this.files.length > 0) {
+            addFiles(this.files);
+        }
+    });
+
+    btnClearAll.addEventListener('click', function () {
+        dt.items.clear();
+        renderFileList();
+    });
+
+    // Drag and drop events
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderColor = 'var(--gh-accent-fg, #58a6ff)';
+            dropZone.style.background = 'rgba(88, 166, 255, 0.05)';
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderColor = 'var(--gh-border-default, #30363d)';
+            dropZone.style.background = 'var(--gh-bg-subtle, #161b22)';
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', function (e) {
+        if (e.dataTransfer && e.dataTransfer.files) {
+            addFiles(e.dataTransfer.files);
+        }
+    });
+});
+</script>
+{% endblock %}

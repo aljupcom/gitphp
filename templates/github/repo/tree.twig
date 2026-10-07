@@ -35,6 +35,25 @@
                 {% endfor %}
             </nav>
         </div>
+
+        {% if can_write %}
+            <div id="gh-wrap-add-file" style="position: relative; display: inline-block;">
+                <button type="button" class="gh-btn gh-btn-sm" id="gh-btn-add-file" onclick="toggleAddFileMenu(event);" style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; height: 32px; padding: 0 10px;">
+                    <span>{{ t('ui.repo.add_file') }}</span>
+                    <svg class="gh-caret" width="10" height="10" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg>
+                </button>
+                <div id="gh-menu-add-file" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; min-width: 170px; background: var(--gh-bg-overlay, #161b22); border: 1px solid var(--gh-border-default); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); padding: 4px 0; z-index: 1000;">
+                    <a href="/{{ owner }}/{{ repo.slug }}/new/{{ current_ref }}{% if current_path %}?filename={{ current_path }}/{% endif %}" style="display: flex; align-items: center; gap: 8px; padding: 7px 14px; font-size: 13px; color: var(--gh-fg-default); text-decoration: none;">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+                        <span>{{ t('ui.repo.create_new_file') }}</span>
+                    </a>
+                    <a href="/{{ owner }}/{{ repo.slug }}/upload/{{ current_ref }}{% if current_path %}/{{ current_path }}{% endif %}" style="display: flex; align-items: center; gap: 8px; padding: 7px 14px; font-size: 13px; color: var(--gh-fg-default); text-decoration: none;">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V9.19l1.72-1.72a.749.749 0 1 1 1.06 1.06l-3 3a.749.749 0 0 1-1.06 0l-3-3a.749.749 0 1 1 1.06-1.06l1.72 1.72V2.75A.75.75 0 0 1 7.75 2Zm-5.5 10a.75.75 0 0 1 .75.75v.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25v-.5a.75.75 0 0 1 1.5 0v.5A1.75 1.75 0 0 1 12.75 15h-9.5A1.75 1.75 0 0 1 1.5 13.25v-.5a.75.75 0 0 1 .75-.75Z"/></svg>
+                        <span>{{ t('ui.repo.upload_files') }}</span>
+                    </a>
+                </div>
+            </div>
+        {% endif %}
     </div>
 
     {# Tag & Release Banner if current_ref is a tag #}

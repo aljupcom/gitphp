@@ -922,6 +922,133 @@ final class GitService
     }
 
     /**
+     * Commit multiple files (or uploaded files) to a branch in a single commit.
+     * @param array<int, array{path: string, content?: string, tmp_name?: string}> $files
+     * @return array<string, mixed>
+     */
+    public function saveMultipleFiles(
+        string $slug,
+        string $branch,
+        array $files,
+        string $commitMessage,
+        string $authorName,
+        string $authorEmail,
+    ): array {
+        $this->assertValidSlug($slug);
+        $repoPath = $this->getRepoPath($slug);
+
+        if (empty($files)) {
+            return ['ok' => false, 'error' => 'No files provided for commit.'];
+        }
+
+        $tempIndex = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'gitphp_idx_' . uniqid('', true);
+        $env = [
+            'GIT_INDEX_FILE'      => $tempIndex,
+            'GIT_AUTHOR_NAME'     => $authorName ?: 'GitPHP',
+            'GIT_AUTHOR_EMAIL'    => $authorEmail ?: 'gitphp@localhost',
+            'GIT_COMMITTER_NAME'  => $authorName ?: 'GitPHP',
+            'GIT_COMMITTER_EMAIL' => $authorEmail ?: 'gitphp@localhost',
+        ];
+
+        try {
+            $branchRefProc = new Process(['git', 'show-ref', '--verify', '--quiet', "refs/heads/{$branch}"], $repoPath);
+            $branchRefProc->run();
+            $branchExists = $branchRefProc->isSuccessful();
+
+            if ($branchExists) {
+                $readTree = new Process(['git', 'read-tree', "refs/heads/{$branch}"], $repoPath, $env);
+                $readTree->run();
+            }
+
+            $addedCount = 0;
+            foreach ($files as $fileItem) {
+                $filePath = ltrim(str_replace('\\', '/', trim((string)($fileItem['path'] ?? ''))), '/');
+                if ($filePath === '' || str_contains($filePath, '..') || str_contains($filePath, "\0")) {
+                    continue;
+                }
+
+                $blobSha = '';
+                if (!empty($fileItem['tmp_name']) && is_file($fileItem['tmp_name'])) {
+                    $hashObj = new Process(['git', 'hash-object', '-w', $fileItem['tmp_name']], $repoPath, $env);
+                    $hashObj->run();
+                    if ($hashObj->isSuccessful()) {
+                        $blobSha = trim($hashObj->getOutput());
+                    }
+                } elseif (isset($fileItem['content'])) {
+                    $hashObj = new Process(['git', 'hash-object', '-w', '--stdin'], $repoPath, $env);
+                    $hashObj->setInput((string)$fileItem['content']);
+                    $hashObj->run();
+                    if ($hashObj->isSuccessful()) {
+                        $blobSha = trim($hashObj->getOutput());
+                    }
+                }
+
+                if ($blobSha === '' || !preg_match('/^[0-9a-f]{40}$/i', $blobSha)) {
+                    throw new RuntimeException("Failed to write object for {$filePath}");
+                }
+
+                $updateIdx = new Process(
+                    ['git', 'update-index', '--add', '--cacheinfo', '100644', $blobSha, $filePath],
+                    $repoPath,
+                    $env,
+                );
+                $updateIdx->run();
+                if (!$updateIdx->isSuccessful()) {
+                    throw new RuntimeException("Failed to update index for {$filePath}: " . trim($updateIdx->getErrorOutput()));
+                }
+                $addedCount++;
+            }
+
+            if ($addedCount === 0) {
+                throw new RuntimeException('No valid files were processed for upload.');
+            }
+
+            $writeTree = new Process(['git', 'write-tree'], $repoPath, $env);
+            $writeTree->run();
+            if (!$writeTree->isSuccessful()) {
+                throw new RuntimeException('Failed to write tree: ' . trim($writeTree->getErrorOutput()));
+            }
+            $treeSha = trim($writeTree->getOutput());
+
+            $args = ['git', 'commit-tree', $treeSha];
+            if ($branchExists) {
+                $parentShaProc = new Process(['git', 'rev-parse', "refs/heads/{$branch}"], $repoPath);
+                $parentShaProc->run();
+                $parentSha = trim($parentShaProc->getOutput());
+                if ($parentSha !== '') {
+                    $args[] = '-p';
+                    $args[] = $parentSha;
+                }
+            }
+
+            $msg = trim($commitMessage) !== '' ? $commitMessage : 'Add files via upload';
+            $args[] = '-m';
+            $args[] = $msg;
+
+            $commitProc = new Process($args, $repoPath, $env);
+            $commitProc->run();
+            if (!$commitProc->isSuccessful()) {
+                throw new RuntimeException('Failed to commit: ' . trim($commitProc->getErrorOutput()));
+            }
+            $newCommitSha = trim($commitProc->getOutput());
+
+            $updateRef = new Process(['git', 'update-ref', "refs/heads/{$branch}", $newCommitSha], $repoPath);
+            $updateRef->run();
+            if (!$updateRef->isSuccessful()) {
+                throw new RuntimeException('Failed to update branch ref: ' . trim($updateRef->getErrorOutput()));
+            }
+
+            return ['ok' => true, 'commit_sha' => $newCommitSha];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => $e->getMessage()];
+        } finally {
+            if (is_file($tempIndex)) {
+                @unlink($tempIndex);
+            }
+        }
+    }
+
+    /**
      * Delete a file from a branch by creating a removal commit.
      * Nothing is destroyed: the blob stays reachable through the parent
      * commits, so the deletion is always revertible from history.

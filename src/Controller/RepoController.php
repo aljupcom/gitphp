@@ -852,6 +852,199 @@ final class RepoController
         ]);
     }
 
+    /** GET /{user}/{repo}/upload[/{ref}[/{path}]] — web file upload form */
+    public function uploadFilesForm(string $user, string $repo, string $ref = '', string $path = ''): void
+    {
+        $this->auth->requireAuth();
+        $dbRepo = $this->resolveRepo($repo);
+        if ($dbRepo === null) {
+            $this->notFound();
+            return;
+        }
+
+        if ($this->auth->isReadOnly() || $this->auth->isBot()) {
+            $this->flash('flash_error', 'Your account is restricted from uploading files.');
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        }
+
+        $canWrite = $this->auth->isOwner() || $this->auth->canWriteRepo((int) $dbRepo['id']);
+        if (! $canWrite) {
+            $this->flash('flash_error', 'You do not have write access to this repository.');
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        }
+
+        $repoPath    = $this->gitService->getRepoPath($dbRepo['slug']);
+        $branches    = $this->branches($repoPath, $dbRepo['slug']);
+        $currentRef  = $ref !== '' ? $ref : ($dbRepo['default_branch'] ?? 'main');
+        $cleanPath   = trim(str_replace('\\', '/', $path), '/');
+        $segments    = $cleanPath !== '' ? explode('/', $cleanPath) : [];
+
+        $this->app->view()->display('repo/upload.twig', [
+            'repo'         => $dbRepo,
+            'owner'        => $user,
+            'current_ref'  => $currentRef,
+            'branches'     => $branches,
+            'current_path' => $cleanPath,
+            'segments'     => $segments,
+            'csrf_token'   => $this->auth->generateCsrf(),
+        ]);
+    }
+
+    /** POST /{user}/{repo}/upload[/{ref}[/{path}]] — process multiple file uploads into a git commit */
+    public function processUploadFiles(string $user, string $repo, string $ref = '', string $path = ''): void
+    {
+        $this->auth->requireAuth();
+        $dbRepo = $this->resolveRepo($repo);
+        if ($dbRepo === null) {
+            $this->notFound();
+            return;
+        }
+
+        if (! $this->auth->validateCsrf((string) ($_POST['csrf_token'] ?? ''))) {
+            $this->flash('flash_error', 'Invalid security token.');
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        }
+
+        $canWrite = $this->auth->isOwner() || $this->auth->canWriteRepo((int) $dbRepo['id']);
+        if (! $canWrite) {
+            $this->flash('flash_error', 'You do not have write access to this repository.');
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        }
+
+        if ($this->auth->isReadOnly() || $this->auth->isBot()) {
+            $this->flash('flash_error', 'Your account is in Read-Only mode. Uploads are blocked.');
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        }
+
+        $branch      = trim((string) ($_POST['branch'] ?? $ref ?: ($dbRepo['default_branch'] ?? 'main')));
+        $commitMsg   = trim((string) ($_POST['commit_message'] ?? ''));
+        $commitDesc  = trim((string) ($_POST['commit_description'] ?? ''));
+        $baseFolder  = trim(str_replace('\\', '/', (string)($_POST['target_path'] ?? $path)), '/');
+        if (str_contains($baseFolder, '..') || str_contains($baseFolder, "\0")) {
+            $baseFolder = '';
+        }
+
+        if ($commitDesc !== '') {
+            $fullCommitMsg = ($commitMsg !== '' ? $commitMsg : 'Add files via upload') . "\n\n" . $commitDesc;
+        } else {
+            $fullCommitMsg = $commitMsg !== '' ? $commitMsg : 'Add files via upload';
+        }
+
+        $uploadedFiles = $_FILES['files'] ?? null;
+        if (! $uploadedFiles || ! isset($uploadedFiles['name'])) {
+            $this->flash('flash_error', 'No files were selected for upload.');
+            header("Location: /{$user}/{$dbRepo['slug']}/upload/{$branch}" . ($baseFolder !== '' ? "/{$baseFolder}" : ''));
+            exit;
+        }
+
+        $maxRepoMb = (int) ($this->app->db()->fetchOne("SELECT value FROM system_settings WHERE key_name = 'repo_max_size_mb'")['value'] ?? 2048);
+        $maxUploadMb = (int) ($this->app->db()->fetchOne("SELECT value FROM system_settings WHERE key_name = 'max_upload_mb'")['value'] ?? 100);
+        $maxUploadBytes = $maxUploadMb > 0 ? $maxUploadMb * 1024 * 1024 : 100 * 1024 * 1024;
+
+        $filesToCommit = [];
+        $totalUploadSize = 0;
+
+        $names = is_array($uploadedFiles['name']) ? $uploadedFiles['name'] : [$uploadedFiles['name']];
+        $tmpNames = is_array($uploadedFiles['tmp_name']) ? $uploadedFiles['tmp_name'] : [$uploadedFiles['tmp_name']];
+        $errors = is_array($uploadedFiles['error']) ? $uploadedFiles['error'] : [$uploadedFiles['error']];
+        $sizes = is_array($uploadedFiles['size']) ? $uploadedFiles['size'] : [$uploadedFiles['size']];
+
+        $clientPaths = $_POST['file_paths'] ?? [];
+        if (!is_array($clientPaths)) $clientPaths = [];
+
+        for ($i = 0; $i < count($names); $i++) {
+            $name = $names[$i];
+            $tmp = $tmpNames[$i] ?? '';
+            $err = $errors[$i] ?? UPLOAD_ERR_NO_FILE;
+            $sz = (int)($sizes[$i] ?? 0);
+
+            if ($err === UPLOAD_ERR_NO_FILE || $name === '') {
+                continue;
+            }
+            if ($err !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) {
+                $this->flash('flash_error', "Error uploading file '{$name}'.");
+                header("Location: /{$user}/{$dbRepo['slug']}/upload/{$branch}" . ($baseFolder !== '' ? "/{$baseFolder}" : ''));
+                exit;
+            }
+            if ($sz > $maxUploadBytes) {
+                $this->flash('flash_error', "File '{$name}' exceeds the maximum allowed upload size ({$maxUploadMb} MB).");
+                header("Location: /{$user}/{$dbRepo['slug']}/upload/{$branch}" . ($baseFolder !== '' ? "/{$baseFolder}" : ''));
+                exit;
+            }
+
+            $relPath = isset($clientPaths[$i]) && trim((string)$clientPaths[$i]) !== '' ? trim((string)$clientPaths[$i]) : $name;
+            $relPath = str_replace('\\', '/', $relPath);
+            $parts = array_filter(explode('/', $relPath), fn($p) => $p !== '' && $p !== '.' && $p !== '..');
+            $cleanRel = implode('/', $parts);
+
+            $finalPath = $baseFolder !== '' ? ($baseFolder . '/' . $cleanRel) : $cleanRel;
+            $finalPath = ltrim($finalPath, '/');
+
+            if ($finalPath === '') continue;
+
+            $totalUploadSize += $sz;
+            $filesToCommit[] = [
+                'path'     => $finalPath,
+                'tmp_name' => $tmp,
+            ];
+        }
+
+        if (empty($filesToCommit)) {
+            $this->flash('flash_error', 'No valid files were uploaded.');
+            header("Location: /{$user}/{$dbRepo['slug']}/upload/{$branch}" . ($baseFolder !== '' ? "/{$baseFolder}" : ''));
+            exit;
+        }
+
+        if ($maxRepoMb > 0) {
+            $repoPath = $this->gitService->getRepoPath($dbRepo['slug']);
+            $currRepoSize = 0;
+            if (is_dir($repoPath)) {
+                try {
+                    $flags = \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::CURRENT_AS_FILEINFO;
+                    $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($repoPath, $flags));
+                    foreach ($it as $f) { if ($f->isFile()) $currRepoSize += $f->getSize(); }
+                } catch (\Throwable) {}
+            }
+            if (($currRepoSize + $totalUploadSize) >= ($maxRepoMb * 1024 * 1024)) {
+                $this->flash('flash_error', "Repository size limit exceeded ({$maxRepoMb} MB). Upload rejected.");
+                header("Location: /{$user}/{$dbRepo['slug']}/upload/{$branch}" . ($baseFolder !== '' ? "/{$baseFolder}" : ''));
+                exit;
+            }
+        }
+
+        $authorName  = $this->auth->displayName();
+        $authorEmail = $this->auth->isOwner() ? 'owner@localhost' : ($this->auth->user()['email'] ?? 'user@localhost');
+
+        $result = $this->gitService->saveMultipleFiles(
+            $dbRepo['slug'],
+            $branch,
+            $filesToCommit,
+            $fullCommitMsg,
+            $authorName,
+            $authorEmail,
+        );
+
+        if (! $result['ok']) {
+            $this->flash('flash_error', 'Failed to commit uploaded files: ' . ($result['error'] ?? 'Unknown error'));
+            header("Location: /{$user}/{$dbRepo['slug']}/upload/{$branch}" . ($baseFolder !== '' ? "/{$baseFolder}" : ''));
+            exit;
+        }
+
+        $this->cache->forget("repo:{$dbRepo['slug']}:lang_breakdown_v4");
+        $this->cache->forget("repo:{$dbRepo['slug']}:langs_overview_v5:{$branch}");
+
+        $fileCount = count($filesToCommit);
+        $this->flash('flash_success', $fileCount === 1 ? 'File uploaded successfully.' : "{$fileCount} files uploaded successfully.");
+        $redirectUrl = "/{$user}/{$dbRepo['slug']}/tree/{$branch}" . ($baseFolder !== '' ? "/{$baseFolder}" : '');
+        header("Location: {$redirectUrl}");
+        exit;
+    }
+
     /** GET /{user}/{repo}/edit/{ref}/{path} — web file editor form */
     public function editFile(string $user, string $repo, string $ref, string $path): void
     {
