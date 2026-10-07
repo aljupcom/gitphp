@@ -218,7 +218,7 @@ final class RepoController
         });
 
         // Sidebar: Languages Breakdown
-        $languages = $this->cache->remember("repo:{$dbRepo['slug']}:lang_breakdown_v3", 600, function () use ($dbRepo, $ref) {
+        $languages = $this->cache->remember("repo:{$dbRepo['slug']}:lang_breakdown_v4", 600, function () use ($dbRepo, $ref) {
             return $this->calculateLanguageBreakdown($dbRepo['slug'], $ref);
         });
 
@@ -402,46 +402,7 @@ final class RepoController
             'v'          => ['name' => 'Verilog', 'color' => '#b2b7f8'],
             'sv'         => ['name' => 'SystemVerilog', 'color' => '#DAE1C2'],
 
-            // Data, Config, Infrastructure & Query
-            'sql'        => ['name' => 'SQL', 'color' => '#e38c00'],
-            'pgsql'      => ['name' => 'PLpgSQL', 'color' => '#336790'],
-            'plsql'      => ['name' => 'PLSQL', 'color' => '#dad8d8'],
-            'prisma'     => ['name' => 'Prisma', 'color' => '#2D3748'],
-            'graphql'    => ['name' => 'GraphQL', 'color' => '#e10098'],
-            'gql'        => ['name' => 'GraphQL', 'color' => '#e10098'],
-            'proto'      => ['name' => 'Protocol Buffer', 'color' => '#4f87c4'],
-            'thrift'     => ['name' => 'Thrift', 'color' => '#D12127'],
-            'json'       => ['name' => 'JSON', 'color' => '#292929'],
-            'json5'      => ['name' => 'JSON5', 'color' => '#267CB9'],
-            'jsonc'      => ['name' => 'JSON with Comments', 'color' => '#267CB9'],
-            'yaml'       => ['name' => 'YAML', 'color' => '#cb171e'],
-            'yml'        => ['name' => 'YAML', 'color' => '#cb171e'],
-            'toml'       => ['name' => 'TOML', 'color' => '#9c4221'],
-            'xml'        => ['name' => 'XML', 'color' => '#0060ac'],
-            'xsd'        => ['name' => 'XML', 'color' => '#0060ac'],
-            'ini'        => ['name' => 'INI', 'color' => '#d1dbe0'],
-            'conf'       => ['name' => 'Configuration', 'color' => '#6d8086'],
-            'env'        => ['name' => 'Dotenv', 'color' => '#e5cd52'],
-            'tf'         => ['name' => 'HCL (Terraform)', 'color' => '#844FBA'],
-            'tfvars'     => ['name' => 'HCL', 'color' => '#844FBA'],
-            'hcl'        => ['name' => 'HCL', 'color' => '#844FBA'],
-            'dockerfile' => ['name' => 'Dockerfile', 'color' => '#384d54'],
-            'containerfile'=> ['name' => 'Dockerfile', 'color' => '#384d54'],
-            'sol'        => ['name' => 'Solidity', 'color' => '#AA6746'],
-            'nix'        => ['name' => 'Nix', 'color' => '#7e7eff'],
-            'makefile'   => ['name' => 'Makefile', 'color' => '#427819'],
-            'mk'         => ['name' => 'Makefile', 'color' => '#427819'],
-            'cmake'      => ['name' => 'CMake', 'color' => '#DA3434'],
-            'gradle'     => ['name' => 'Gradle', 'color' => '#02303a'],
-            'pas'        => ['name' => 'Pascal', 'color' => '#E3F171'],
-            'pp'         => ['name' => 'Puppet', 'color' => '#302B6D'],
-            'tex'        => ['name' => 'TeX / LaTeX', 'color' => '#3D6117'],
-            'sty'        => ['name' => 'TeX', 'color' => '#3D6117'],
-            'md'         => ['name' => 'Markdown', 'color' => '#083fa1'],
-            'markdown'   => ['name' => 'Markdown', 'color' => '#083fa1'],
-            'rst'        => ['name' => 'reStructuredText', 'color' => '#141414'],
-            'asciidoc'   => ['name' => 'AsciiDoc', 'color' => '#73a0c5'],
-            'adoc'       => ['name' => 'AsciiDoc', 'color' => '#73a0c5'],
+
         ];
 
         // Exact-filename map for files with no meaningful extension
@@ -483,7 +444,7 @@ final class RepoController
                 $size = (int) ($m[1] === '-' ? 0 : $m[1]);
                 $path = (string) $m[2];
 
-                if (preg_match('#(^|/)(\.git|vendor|node_modules|dist|build|\.gradle|Pods|target|bin|obj)/#i', $path)) {
+                if (preg_match('#(^|/)(\.git|vendor|node_modules|dist|build|\.gradle|Pods|target|obj|tabler-icons|webfonts|fonts)/#i', $path)) {
                     continue;
                 }
                 $filename = basename($path);
@@ -495,8 +456,20 @@ final class RepoController
                 $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
                 // Exclude prose / documentation / markdown files from language stats (GitHub Linguist standard)
-                if (in_array($ext, ['svg', 'md', 'markdown', 'rst', 'adoc', 'asciidoc', 'txt', 'textile', 'tex', 'sty', 'pdf'], true)
-                    || in_array($filenameLower, ['readme', 'readme.md', 'readme.txt', 'license', 'license.md', 'license.txt', 'authors', 'changelog', 'copying', 'notice'], true)) {
+                if (preg_match('#\.(min\.css|min\.js|bundle\.css|bundle\.js)$#i', $filename)) {
+                    continue;
+                }
+
+                // Exclude media, fonts, data/query formats, config, and prose files (GitHub Linguist standard)
+                if (in_array($ext, [
+                    'svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'webp', 'bmp', 'tiff',
+                    'ttf', 'woff', 'woff2', 'eot', 'otf', 'mp3', 'mp4', 'wav', 'ogg',
+                    'sql', 'pgsql', 'plsql', 'cql',
+                    'json', 'json5', 'jsonc', 'yaml', 'yml', 'toml', 'xml', 'xsd',
+                    'ini', 'conf', 'env', 'cfg', 'cnf', 'properties',
+                    'csv', 'tsv', 'lock', 'log', 'map',
+                    'md', 'markdown', 'rst', 'adoc', 'asciidoc', 'txt', 'textile', 'tex', 'sty', 'pdf',
+                ], true) || in_array($filenameLower, ['readme', 'readme.md', 'readme.txt', 'license', 'license.md', 'license.txt', 'authors', 'changelog', 'copying', 'notice'], true)) {
                     continue;
                 }
 
@@ -520,8 +493,7 @@ final class RepoController
 
             foreach ($bytesByLang as $name => $b) {
                 $pct = round(($b / $totalBytes) * 100, 1);
-                if ($pct < 0.5) {
-                    $otherBytes += $b;
+                if ($pct < 0.1) {
                     continue;
                 }
                 $color = '#58a6ff';
@@ -536,17 +508,6 @@ final class RepoController
                     'color'      => $color,
                     'percentage' => $pct,
                 ];
-            }
-
-            if ($otherBytes > 0) {
-                $otherPct = round(($otherBytes / $totalBytes) * 100, 1);
-                if ($otherPct >= 0.1) {
-                    $result[] = [
-                        'name'       => 'Other',
-                        'color'      => '#8b949e',
-                        'percentage' => $otherPct,
-                    ];
-                }
             }
 
             return $result;
@@ -598,7 +559,7 @@ final class RepoController
     /** Cheap per-language file counts + byte proportions (no blob reads). */
     private function languagesOverview(string $slug, string $ref): array
     {
-        return $this->cache->remember("repo:{$slug}:langs_overview_v3:{$ref}", 600, function () use ($slug, $ref): array {
+        return $this->cache->remember("repo:{$slug}:langs_overview_v4:{$ref}", 600, function () use ($slug, $ref): array {
             $repoPath = $this->gitService->getRepoPath($slug);
 
             $proc = new \Symfony\Component\Process\Process(
@@ -617,7 +578,7 @@ final class RepoController
                 if (! preg_match('/^\d+\s+blob\s+[a-f0-9]+\s+(\d+|-)\s+(.+)$/i', trim((string) $line), $m)) continue;
                 $size = (int) ($m[1] === '-' ? 0 : $m[1]);
                 $path = (string) $m[2];
-                if (preg_match('#(^|/)(\.git|vendor|node_modules|dist|build|\.gradle|Pods|target|bin|obj)/#i', $path)) continue;
+                if (preg_match('#(^|/)(\.git|vendor|node_modules|dist|build|\.gradle|Pods|target|obj|tabler-icons|webfonts|fonts)/#i', $path)) continue;
 
                 $name = $this->mapFilePathToLanguage($path);
                 if ($name === '') continue;
@@ -667,7 +628,7 @@ final class RepoController
                 if (! preg_match('/^\d+\s+blob\s+[a-f0-9]+\s+(\d+|-)\s+(.+)$/i', trim((string) $line), $m)) continue;
                 $size = (int) ($m[1] === '-' ? 0 : $m[1]);
                 $path = (string) $m[2];
-                if (preg_match('#(^|/)(\.git|vendor|node_modules|dist|build|\.gradle|Pods|target|bin|obj)/#i', $path)) continue;
+                if (preg_match('#(^|/)(\.git|vendor|node_modules|dist|build|\.gradle|Pods|target|obj|tabler-icons|webfonts|fonts)/#i', $path)) continue;
                 if ($this->mapFilePathToLanguage($path) !== $lang) continue;
 
                 // Count lines from blob content (skip very large / binary-ish files).
@@ -699,9 +660,20 @@ final class RepoController
         ];
         if (isset($special[$lower])) return $special[$lower];
 
+        if (preg_match('#(^|/)(\.git|vendor|node_modules|dist|build|\.gradle|Pods|target|obj|tabler-icons|webfonts|fonts)/#i', $path)) return '';
+        if (preg_match('#\.(min\.css|min\.js|bundle\.css|bundle\.js)$#i', $name)) return '';
+
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-        if ($ext === '' || in_array($ext, ['svg', 'md', 'markdown', 'rst', 'adoc', 'asciidoc', 'txt', 'textile', 'tex', 'sty', 'pdf'], true)) return '';
-        if (isset(self::LANG_EXT[$ext]) && !in_array(self::LANG_EXT[$ext], ['Markdown', 'Text', 'AsciiDoc', 'reStructuredText', 'Textile'], true)) {
+        if ($ext === '' || in_array($ext, [
+            'svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'webp', 'bmp', 'tiff',
+            'ttf', 'woff', 'woff2', 'eot', 'otf', 'mp3', 'mp4', 'wav', 'ogg',
+            'sql', 'pgsql', 'plsql', 'cql',
+            'json', 'json5', 'jsonc', 'yaml', 'yml', 'toml', 'xml', 'xsd',
+            'ini', 'conf', 'env', 'cfg', 'cnf', 'properties',
+            'csv', 'tsv', 'lock', 'log', 'map',
+            'md', 'markdown', 'rst', 'adoc', 'asciidoc', 'txt', 'textile', 'tex', 'sty', 'pdf',
+        ], true)) return '';
+        if (isset(self::LANG_EXT[$ext]) && !in_array(self::LANG_EXT[$ext], ['Markdown', 'Text', 'AsciiDoc', 'reStructuredText', 'Textile', 'JSON', 'YAML', 'TOML', 'XML', 'INI', 'Config', 'Dotenv', 'T-SQL', 'CSV', 'TSV'], true)) {
             return self::LANG_EXT[$ext];
         }
         return '';
