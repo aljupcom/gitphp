@@ -559,7 +559,7 @@ final class RepoController
     /** Cheap per-language file counts + byte proportions (no blob reads). */
     private function languagesOverview(string $slug, string $ref): array
     {
-        return $this->cache->remember("repo:{$slug}:langs_overview_v4:{$ref}", 600, function () use ($slug, $ref): array {
+        return $this->cache->remember("repo:{$slug}:langs_overview_v5:{$ref}", 600, function () use ($slug, $ref): array {
             $repoPath = $this->gitService->getRepoPath($slug);
 
             $proc = new \Symfony\Component\Process\Process(
@@ -592,10 +592,12 @@ final class RepoController
 
             $out = [];
             foreach ($byLang as $name => $d) {
+                $pct = round($d['bytes'] / $totalBytes * 100, 1);
+                if ($pct < 0.1) continue;
                 $out[] = [
                     'name'       => $name,
                     'color'      => $this->languageColor($name),
-                    'percentage' => round($d['bytes'] / $totalBytes * 100, 1),
+                    'percentage' => $pct,
                     'file_count' => $d['files'],
                     'bytes'      => $d['bytes'],
                 ];
