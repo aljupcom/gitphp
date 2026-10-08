@@ -349,6 +349,7 @@ $router->addRoute('POST', '/{user}/{repo}/releases/assets/init',           'Rele
     $router->addRoute('GET',  '/{user}/{repo}/edit/{ref}/{path:.*}', 'RepoController@editFile');
     $router->addRoute('POST', '/{user}/{repo}/file/save',            'RepoController@saveFile');
 $router->addRoute('POST', '/{user}/{repo}/file/delete',          'RepoController@deleteFile');
+    $router->addRoute('POST', '/{user}/{repo}/sync',                 'RepoController@syncRemote');
 
     // Branch management, Compare & Merge
     $router->addRoute('GET',  '/{user}/{repo}/branches',             'BranchController@index');

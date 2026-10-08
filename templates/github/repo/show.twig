@@ -329,8 +329,13 @@
                             <kbd style="display: inline-block; padding: 1px 5px; font-size: 10.5px; font-family: inherit; line-height: 12px; color: var(--gh-fg-muted); background: var(--gh-bg-subtle); border: 1px solid var(--gh-border-default); border-radius: 4px; margin-left: 4px;">t</kbd>
                         </button>
 
+                        {% if repo.source_url %}
+                            {# 2b. Sync with remote dropdown #}
+                            {% include "partials/sync-remote-btn.twig" %}
+                        {% endif %}
+
                         {% if can_write %}
-                            {# 2b. Add file dropdown #}
+                            {# 2c. Add file dropdown #}
                             <div id="gh-wrap-add-file" style="position: relative; display: inline-block;">
                                 <button type="button" class="gh-btn gh-btn-sm" id="gh-btn-add-file" onclick="toggleAddFileMenu(event);" style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; height: 32px; padding: 0 10px;">
                                     <span>{{ t('ui.repo.add_file') }}</span>

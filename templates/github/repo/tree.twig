@@ -36,8 +36,13 @@
             </nav>
         </div>
 
-        {% if can_write %}
-            <div id="gh-wrap-add-file" style="position: relative; display: inline-block;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            {% if repo.source_url %}
+                {% include "partials/sync-remote-btn.twig" %}
+            {% endif %}
+
+            {% if can_write %}
+                <div id="gh-wrap-add-file" style="position: relative; display: inline-block;">
                 <button type="button" class="gh-btn gh-btn-sm" id="gh-btn-add-file" onclick="toggleAddFileMenu(event);" style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; height: 32px; padding: 0 10px;">
                     <span>{{ t('ui.repo.add_file') }}</span>
                     <svg class="gh-caret" width="10" height="10" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg>
@@ -54,6 +59,7 @@
                 </div>
             </div>
         {% endif %}
+        </div>
     </div>
 
     {# Tag & Release Banner if current_ref is a tag #}
@@ -159,6 +165,29 @@
 
     {% if can_write %}
         {% include "partials/delete-file-modal.twig" %}
+        <script>
+        if (typeof toggleAddFileMenu !== 'function') {
+            function toggleAddFileMenu(e) {
+                if (e) e.stopPropagation();
+                var menu = document.getElementById('gh-menu-add-file');
+                var syncMenu = document.getElementById('gh-menu-sync-remote');
+                if (syncMenu) syncMenu.style.display = 'none';
+                if (menu) {
+                    menu.style.display = (menu.style.display === 'block' ? 'none' : 'block');
+                }
+            }
+            document.addEventListener('click', function(e) {
+                var addMenu = document.getElementById('gh-menu-add-file');
+                if (addMenu && !e.target.closest('#gh-wrap-add-file')) addMenu.style.display = 'none';
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    var addMenu = document.getElementById('gh-menu-add-file');
+                    if (addMenu) addMenu.style.display = 'none';
+                }
+            });
+        }
+        </script>
     {% endif %}
 </div>
 {% endblock %}

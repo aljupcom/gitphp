@@ -102,8 +102,17 @@
         </div>{# /.gh-repo-actions #}
     </div>{# /.gh-repo-header-top #}
 
-    {# Row 2: Forked-from notice #}
-    {% if __h.repo.parent_slug %}
+    {# Row 2: Imported-from or Forked-from notice #}
+    {% if __h.repo.source_url %}
+        <div style="font-size: 12px; color: var(--gh-fg-muted, #8b949e); margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="opacity: 0.85; flex-shrink: 0;"><path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7 7 0 0 1 1.05 8.84a.75.75 0 0 1 .655-.835Zm11.89-1.01a.75.75 0 0 1-.834-.656 5.5 5.5 0 0 0-9.592-2.97l1.204 1.204a.25.25 0 0 1-.177.427H.55a.25.25 0 0 1-.25-.25V1.104a.25.25 0 0 1 .427-.177l1.38 1.38A7 7 0 0 1 14.95 7.16a.75.75 0 0 1-.655.835Z"/></svg>
+            <span>{{ t('ui.repo.imported_from')|default('imported from') }} <a href="{{ __h.repo.source_url }}" target="_blank" rel="noopener noreferrer" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none; word-break: break-all;">{{ __h.repo.source_url }}</a></span>
+            {% if __h.repo.last_synced_at %}
+                <span style="color: var(--gh-fg-muted); opacity: 0.6;">·</span>
+                <span>{{ t('ui.repo_settings.last_synced')|default(t('ui.last_synced'))|replace({'{time}': __h.repo.last_synced_at|time_ago}) }}</span>
+            {% endif %}
+        </div>
+    {% elseif __h.repo.parent_slug %}
         <div style="font-size: 12px; color: var(--gh-fg-muted, #8b949e); margin-top: 4px;">
             {{ t('ui.repo.forked_from')|default('forked from') }} <a href="/{{ __h.owner }}/{{ __h.repo.parent_slug }}" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none;">{{ __h.owner }}/{{ __h.repo.parent_slug }}</a>
         </div>

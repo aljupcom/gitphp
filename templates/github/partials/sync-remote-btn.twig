@@ -1,0 +1,180 @@
+{#
+   Partial: Sync With Remote Dropdown Button (GitHub style)
+   Rendered when repo.source_url is not empty.
+   Context expected: repo, owner, can_write, csrf_token
+#}
+{% if repo.source_url %}
+<div id="gh-wrap-sync-remote" style="position: relative; display: inline-block;">
+    <button type="button" class="gh-btn gh-btn-sm" id="gh-btn-sync-remote" onclick="toggleSyncRemoteMenu(event);"
+            title="{{ t('ui.repo_settings.sync_upstream_title')|default('Mirror-sync branches and tags from upstream remote') }}"
+            style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; height: 32px; padding: 0 10px; white-space: nowrap;">
+        <svg class="gh-sync-btn-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7 7 0 0 1 1.05 8.84a.75.75 0 0 1 .655-.835Zm11.89-1.01a.75.75 0 0 1-.834-.656 5.5 5.5 0 0 0-9.592-2.97l1.204 1.204a.25.25 0 0 1-.177.427H.55a.25.25 0 0 1-.25-.25V1.104a.25.25 0 0 1 .427-.177l1.38 1.38A7 7 0 0 1 14.95 7.16a.75.75 0 0 1-.655.835Z"/>
+        </svg>
+        <span>{{ t('ui.repo.sync_with_remote')|default('Sync with remote') }}</span>
+        <svg class="gh-caret" width="10" height="10" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+            <path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/>
+        </svg>
+    </button>
+
+    <div id="gh-menu-sync-remote" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; width: 330px; max-width: calc(100vw - 24px); background: var(--gh-bg-overlay, #161b22); border: 1px solid var(--gh-border-default, #30363d); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); padding: 14px; z-index: 1000; box-sizing: border-box; text-align: start;">
+        
+        <div style="font-weight: 600; font-size: 13px; color: var(--gh-fg-default, #e6edf3); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7 7 0 0 1 1.05 8.84a.75.75 0 0 1 .655-.835Zm11.89-1.01a.75.75 0 0 1-.834-.656 5.5 5.5 0 0 0-9.592-2.97l1.204 1.204a.25.25 0 0 1-.177.427H.55a.25.25 0 0 1-.25-.25V1.104a.25.25 0 0 1 .427-.177l1.38 1.38A7 7 0 0 1 14.95 7.16a.75.75 0 0 1-.655.835Z"/>
+            </svg>
+            <span>{{ t('ui.repo.sync_with_remote')|default('Sync with remote') }}</span>
+        </div>
+
+        <p style="font-size: 12px; color: var(--gh-fg-muted, #8b949e); margin: 0 0 10px 0; line-height: 1.45;">
+            {{ t('ui.repo.sync_upstream_desc')|default('Fetch and update branches and tags from the upstream remote repository.') }}
+        </p>
+
+        <div style="font-size: 11px; margin-bottom: 10px; padding: 6px 8px; background: var(--gh-bg-subtle, #0d1117); border-radius: 5px; border: 1px solid var(--gh-border-subtle, #21262d); word-break: break-all;">
+            <span style="color: var(--gh-fg-muted, #8b949e); display: block; font-size: 10.5px; margin-bottom: 2px;">{{ t('ui.repo_settings.upstream_remote')|default('Upstream remote') }}:</span>
+            <a href="{{ repo.source_url }}" target="_blank" rel="noopener noreferrer" style="color: var(--gh-accent-fg, #58a6ff); text-decoration: none; font-family: var(--gh-font-mono, monospace);">{{ repo.source_url }}</a>
+        </div>
+
+        <div style="font-size: 11.5px; color: var(--gh-fg-muted, #8b949e); margin-bottom: 12px; display: flex; align-items: center; gap: 5px;">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity: 0.75; flex-shrink: 0;">
+                <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm7-3.25v3.5l2.5 1.5a.75.75 0 0 1-.75 1.3l-3-1.8A.75.75 0 0 1 6.5 8.5v-3.75a.75.75 0 0 1 1.5 0Z"/>
+            </svg>
+            <span id="gh-sync-last-time-label">
+                {% if repo.last_synced_at %}
+                    {{ t('ui.repo_settings.last_synced')|default(t('ui.last_synced'))|replace({'{time}': repo.last_synced_at|time_ago}) }}
+                {% else %}
+                    {{ t('ui.repo.never_synced')|default('Never synced') }}
+                {% endif %}
+            </span>
+        </div>
+
+        {% if can_write %}
+            <form method="POST" action="/{{ owner }}/{{ repo.slug }}/sync" id="gh-form-sync-remote" onsubmit="handleSyncRemoteSubmit(event, '{{ owner|e('js') }}', '{{ repo.slug|e('js') }}');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token|default(__h.csrf|default('')) }}">
+                <button type="submit" class="gh-btn gh-btn-primary" id="gh-btn-sync-submit"
+                        style="width: 100%; justify-content: center; font-size: 12.5px; font-weight: 600; height: 32px; background: var(--gh-success-emphasis, #238636) !important; border-color: rgba(240,246,252,0.1) !important; color: #ffffff !important; cursor: pointer;">
+                    <svg class="gh-sync-submit-spin" width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7 7 0 0 1 1.05 8.84a.75.75 0 0 1 .655-.835Zm11.89-1.01a.75.75 0 0 1-.834-.656 5.5 5.5 0 0 0-9.592-2.97l1.204 1.204a.25.25 0 0 1-.177.427H.55a.25.25 0 0 1-.25-.25V1.104a.25.25 0 0 1 .427-.177l1.38 1.38A7 7 0 0 1 14.95 7.16a.75.75 0 0 1-.655.835Z"/>
+                    </svg>
+                    <span id="gh-btn-sync-submit-text">{{ t('ui.repo.sync_now')|default('Sync now') }}</span>
+                </button>
+            </form>
+            <div id="gh-sync-result-msg" style="display: none; margin-top: 8px; font-size: 12px; border-radius: 4px; padding: 6px 10px; line-height: 1.4;"></div>
+        {% elseif not is_logged_in %}
+            <a href="/login" class="gh-btn" style="width: 100%; justify-content: center; font-size: 12.5px; text-decoration: none;">
+                {{ t('ui.repo.sign_in_to_sync')|default('Sign in to sync') }}
+            </a>
+        {% else %}
+            <div style="font-size: 12px; color: var(--gh-fg-muted, #8b949e); background: var(--gh-bg-subtle, #0d1117); border: 1px solid var(--gh-border-subtle, #21262d); border-radius: 4px; padding: 6px 8px; text-align: center;">
+                {{ t('ui.repo.write_access_required')|default('Write access required to sync') }}
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<style>
+@keyframes ghSyncSpinAnim {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.gh-sync-spin-anim {
+    animation: ghSyncSpinAnim 0.9s linear infinite;
+    display: inline-block;
+}
+</style>
+
+<script>
+if (typeof toggleSyncRemoteMenu !== 'function') {
+    function toggleSyncRemoteMenu(e) {
+        if (e) e.stopPropagation();
+        var menu = document.getElementById('gh-menu-sync-remote');
+        var addMenu = document.getElementById('gh-menu-add-file');
+        var cloneMenu = document.getElementById('gh-panel-clone-code');
+        if (addMenu) addMenu.style.display = 'none';
+        if (cloneMenu) cloneMenu.style.display = 'none';
+        if (menu) {
+            menu.style.display = (menu.style.display === 'block' ? 'none' : 'block');
+        }
+    }
+
+    function handleSyncRemoteSubmit(e, owner, slug) {
+        e.preventDefault();
+        var form = e.target;
+        var btn = document.getElementById('gh-btn-sync-submit');
+        var btnText = document.getElementById('gh-btn-sync-submit-text');
+        var resultMsg = document.getElementById('gh-sync-result-msg');
+        var icon = btn ? btn.querySelector('.gh-sync-submit-spin') : null;
+
+        if (btn && btn.disabled) return;
+        if (btn) btn.disabled = true;
+        if (btnText) btnText.textContent = "{{ t('ui.repo.syncing')|default('Syncing...')|e('js') }}";
+        if (icon) icon.classList.add('gh-sync-spin-anim');
+        if (resultMsg) { resultMsg.style.display = 'none'; resultMsg.textContent = ''; }
+
+        var formData = new FormData(form);
+        formData.append('format', 'json');
+
+        fetch('/' + encodeURIComponent(owner) + '/' + encodeURIComponent(slug) + '/sync', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(function(res) {
+            return res.json().then(function(data) {
+                return { ok: res.ok, data: data };
+            }).catch(function() {
+                return { ok: res.ok, data: null };
+            });
+        })
+        .then(function(res) {
+            if (res.ok && res.data && res.data.success) {
+                if (resultMsg) {
+                    resultMsg.style.display = 'block';
+                    resultMsg.style.background = 'rgba(46, 160, 67, 0.15)';
+                    resultMsg.style.color = '#3fb950';
+                    resultMsg.style.border = '1px solid rgba(46, 160, 67, 0.4)';
+                    resultMsg.textContent = res.data.message || 'Synced successfully.';
+                }
+                if (btnText) btnText.textContent = '✓ {{ t('ui.repo.synced')|default('Synced')|e('js') }}';
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1100);
+            } else {
+                var errMsg = (res.data && res.data.error) ? res.data.error : 'Sync failed. Please try again.';
+                if (resultMsg) {
+                    resultMsg.style.display = 'block';
+                    resultMsg.style.background = 'rgba(248, 81, 73, 0.15)';
+                    resultMsg.style.color = '#f85149';
+                    resultMsg.style.border = '1px solid rgba(248, 81, 73, 0.4)';
+                    resultMsg.textContent = errMsg;
+                }
+                if (btn) btn.disabled = false;
+                if (btnText) btnText.textContent = "{{ t('ui.repo.sync_now')|default('Sync now')|e('js') }}";
+                if (icon) icon.classList.remove('gh-sync-spin-anim');
+            }
+        })
+        .catch(function(err) {
+            form.submit();
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        var syncMenu = document.getElementById('gh-menu-sync-remote');
+        if (syncMenu && !e.target.closest('#gh-wrap-sync-remote')) {
+            syncMenu.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            var syncMenu = document.getElementById('gh-menu-sync-remote');
+            if (syncMenu) syncMenu.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endif %}

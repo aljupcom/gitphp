@@ -1253,6 +1253,160 @@ final class RepoController
         exit;
     }
 
+    /** POST /{user}/{repo}/sync — mirror-sync the repository from its upstream remote source */
+    public function syncRemote(string $user, string $repo): void
+    {
+        $isAjax = (! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+            || (isset($_POST['format']) && $_POST['format'] === 'json');
+
+        if (! $this->auth->isLoggedIn()) {
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Authentication required.']);
+                exit;
+            }
+            header('Location: /login');
+            exit;
+        }
+
+        $dbRepo = $this->resolveRepo($repo);
+        if ($dbRepo === null) {
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Repository not found.']);
+                exit;
+            }
+            $this->notFound();
+            return;
+        }
+
+        if (! $this->auth->validateCsrf((string) ($_POST['csrf_token'] ?? ''))) {
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'Invalid security token.']);
+                exit;
+            }
+            $this->flash('flash_error', 'Invalid security token.');
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        }
+
+        $canWrite = $this->auth->isOwner() || $this->auth->canWriteRepo((int) $dbRepo['id']);
+        if (! $canWrite) {
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'You do not have write access to sync this repository.']);
+                exit;
+            }
+            $this->flash('flash_error', 'You do not have write access to sync this repository.');
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        }
+
+        if ($this->auth->isReadOnly() || $this->auth->isBot()) {
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'Account is read-only.']);
+                exit;
+            }
+            $this->flash('flash_error', 'Account is read-only.');
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        }
+
+        $sourceUrl = trim((string) ($dbRepo['source_url'] ?? ''));
+        if ($sourceUrl === '') {
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'This repository has no upstream remote source URL.']);
+                exit;
+            }
+            $this->flash('flash_error', 'This repository has no upstream remote source URL.');
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        }
+
+        $repoId = (int) $dbRepo['id'];
+
+        $this->app->db()->execute(
+            'INSERT INTO `sync_log` (`repo_id`, `status`, `message`, `created_at`) VALUES (:repo, "started", NULL, NOW())',
+            ['repo' => $repoId],
+        );
+        $syncId = (int) $this->app->db()->lastInsertId();
+
+        @set_time_limit(600);
+
+        try {
+            $this->gitService->syncRemote($dbRepo['slug']);
+
+            $this->app->db()->execute(
+                'UPDATE `repositories` SET `last_synced_at` = NOW() WHERE `id` = :id',
+                ['id' => $repoId],
+            );
+            $this->app->db()->execute(
+                'UPDATE `sync_log` SET `status` = "success", `message` = :msg WHERE `id` = :id',
+                ['msg' => 'Synced from ' . $sourceUrl, 'id' => $syncId],
+            );
+
+            // Invalidate repository caches
+            $this->cache->forgetPrefix("repo:{$dbRepo['slug']}:");
+            $this->cache->forget("repo:{$dbRepo['slug']}:lang_breakdown_v4");
+            $this->cache->forget("repo:{$dbRepo['slug']}:langs_overview_v5");
+
+            $this->app->db()->execute(
+                'INSERT INTO `activity_log` (`repo_id`, `action`, `details`) VALUES (?, ?, ?)',
+                [$repoId, 'synced', "Repository '{$dbRepo['name']}' synced with {$sourceUrl}"],
+            );
+
+            try {
+                (new \App\Service\WebhookService($this->app))->dispatch($dbRepo['slug'], 'push', [
+                    'source' => 'mirror-sync',
+                    'remote' => $sourceUrl,
+                ]);
+            } catch (\Throwable) {}
+
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Repository synced successfully with {$sourceUrl}.",
+                    'last_synced_at' => date('Y-m-d H:i:s'),
+                ]);
+                exit;
+            }
+
+            $this->flash('flash_success', "Repository synced with {$sourceUrl}.");
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        } catch (\Throwable $e) {
+            $this->app->db()->execute(
+                'UPDATE `sync_log` SET `status` = "failed", `message` = :msg WHERE `id` = :id',
+                ['msg' => mb_substr($e->getMessage(), 0, 500), 'id' => $syncId],
+            );
+
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                http_response_code(500);
+                echo json_encode([
+                    'success' => false,
+                    'error'   => 'Sync failed: ' . $e->getMessage(),
+                ]);
+                exit;
+            }
+
+            $this->flash('flash_error', 'Sync failed: ' . $e->getMessage());
+            header("Location: /{$user}/{$dbRepo['slug']}");
+            exit;
+        }
+    }
+
     /** GET /{user}/{repo}.rss or /{user}/{repo}/rss — standard RSS 2.0 XML feed of recent commits. */
     public function rss(string $user, string $repo): void
     {
@@ -2161,6 +2315,7 @@ final class RepoController
             'homepage'          => $row['homepage'] ?? null,
             'topics'            => $row['topics'] ?? null,
             'source_url'        => $row['source_url'] ?? null,
+            'last_synced_at'    => $row['last_synced_at'] ?? null,
             'created_at'        => $row['created_at'],
             'updated_at'        => $row['updated_at'],
         ];

@@ -158,8 +158,11 @@ final class RepoHeaderBuilder
         $httpsUrl = "{$appUrl}/{$owner}/{$slug}.git";
         $sshUrl   = "{$sshUser}@{$host}:{$owner}/{$slug}.git";
 
+        $canWrite = $this->auth->canWriteRepo($repoId);
+
         $this->cached = [
             'owner'        => $owner,
+            'can_write'    => $canWrite,
             'repo'         => $repo,
             'branches'     => $branches,
             'tags'         => $tags,
