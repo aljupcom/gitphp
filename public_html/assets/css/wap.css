@@ -1179,7 +1179,7 @@ html[dir="rtl"] .gh-drawer.open .gh-drawer-panel {
 }
 
 .gh-file-icon.folder {
-    color: #54aeff !important;
+    color: #9198a1 !important;
 }
 
 .gh-file-icon.file {
@@ -1187,7 +1187,7 @@ html[dir="rtl"] .gh-drawer.open .gh-drawer-panel {
 }
 
 [data-theme="dark"] .gh-file-icon.folder {
-    color: #54aeff !important;
+    color: #9198a1 !important;
 }
 
 [data-theme="dark"] .gh-file-icon.file {
@@ -1208,8 +1208,9 @@ html[dir="rtl"] .gh-drawer.open .gh-drawer-panel {
     flex-shrink: 0;
 }
 
-.gh-ficon--folder { color: #54aeff !important; }
-.octicon-file-directory-fill { color: #54aeff !important; fill: currentColor !important; }
+.gh-ficon--folder { color: #9198a1 !important; }
+.octicon-file-directory-fill { color: #9198a1 !important; fill: currentColor !important; }
+.gh-folder-3d { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.28)); }
 .gh-ficon--php     { color: #6f73b4; }
 .gh-ficon--js      { color: #c9a227; }
 .gh-ficon--react   { color: #149eca; }
@@ -1245,7 +1246,7 @@ html[dir="rtl"] .gh-drawer.open .gh-drawer-panel {
 .gh-ficon--docker  { color: #1d63ed; }
 .gh-ficon--file    { color: #6b6b6b; }
 
-[data-theme="dark"] .gh-ficon--folder { color: #54aeff !important; }
+[data-theme="dark"] .gh-ficon--folder { color: #9198a1 !important; }
 [data-theme="dark"] .gh-ficon--php,
 [data-theme="dark"] .gh-ficon--kotlin { color: #b1b5e8; }
 [data-theme="dark"] .gh-ficon--js      { color: #e6c84a; }

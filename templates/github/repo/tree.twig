@@ -129,9 +129,9 @@
                         <td class="gh-file-name">
                             {% set file_path = current_path ? current_path ~ '/' ~ file.name : file.name %}
                             {% if file.type == 'tree' %}
-                                <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}/{{ file_path }}" dir="ltr" class="gh-mono">{{ file.name }}</a>
+                                <a href="/{{ owner }}/{{ repo.slug }}/tree/{{ current_ref }}/{{ file_path }}" dir="ltr">{{ file.name }}</a>
                             {% else %}
-                                <a href="/{{ owner }}/{{ repo.slug }}/blob/{{ current_ref }}/{{ file_path }}" dir="ltr" class="gh-mono">{{ file.name }}</a>
+                                <a href="/{{ owner }}/{{ repo.slug }}/blob/{{ current_ref }}/{{ file_path }}" dir="ltr">{{ file.name }}</a>
                             {% endif %}
                         </td>
                         <td class="gh-file-msg">
